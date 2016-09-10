@@ -12,7 +12,6 @@ import (
 	"os/signal"
 	"path/filepath"
 	"time"
-	"bitbucket.org/bingcloud/electron/states"
 )
 
 const (
@@ -161,11 +160,11 @@ func (s *electronScheduler) ResourceOffers(driver sched.SchedulerDriver, offers 
 }
 
 func (s *electronScheduler) StatusUpdate(driver sched.SchedulerDriver, status *mesos.TaskStatus) {
-	log.Printf("Received task status [%s] for task [%s]", states.NameFor(status.State), *status.TaskId.Value)
+	log.Printf("Received task status [%s] for task [%s]", NameFor(status.State), *status.TaskId.Value)
 
 	if *status.State == mesos.TaskState_TASK_RUNNING {
 		s.tasksRunning++
-	} else if states.IsTerminal(status.State) {
+	} else if IsTerminal(status.State) {
 		s.tasksRunning--
 		if s.tasksRunning == 0 {
 			select {
