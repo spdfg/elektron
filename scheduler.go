@@ -201,11 +201,9 @@ func (s *electronScheduler) ResourceOffers(driver sched.SchedulerDriver, offers 
 		if offerDecision(offer) {
 			tasks = append(tasks, s.newDockerTask(offer, 3.0, 4096, 50))
 			driver.LaunchTasks([]*mesos.OfferID{offer.Id}, tasks, defaultFilter)
-			time.Sleep(15 * time.Minute)
 		} else {
 			fmt.Println("There is enough resources to launch a task!")
 			driver.DeclineOffer(offer.Id, defaultFilter)
-			time.Sleep(15 * time.Minute)
 		}
 	}
 }
