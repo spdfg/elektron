@@ -1,4 +1,4 @@
-Electron: Power as a first class citizen
+Electron: A power budget manager
 ======================================
 
 To Do:
