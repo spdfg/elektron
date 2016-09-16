@@ -7,7 +7,7 @@ import (
 	"os/exec"
 )
 
-func main() {
+func PCP() {
 	cmd := exec.Command("sh", "-c", "pmdumptext -m -l -o -d , -c config")
 	stdout, err := os.Create("./output.txt")
 	cmd.Stdout = stdout
