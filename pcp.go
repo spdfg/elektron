@@ -5,13 +5,15 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"time"
 )
 
 func PCP() {
 	cmd := exec.Command("sh", "-c", "pmdumptext -m -l -o -d , -c config")
-	stdout, err := os.Create("./output.txt")
+	time := time.Now().Format("200601021504")
+	stdout, err := os.Create("./"+time+".txt")
 	cmd.Stdout = stdout
-    fmt.Println("PCP started: ", stdout)
+    fmt.Println("PCP started: ")
 
 	if err != nil {
 		log.Fatal(err)
