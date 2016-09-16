@@ -1,4 +1,4 @@
-# Electron: Power as a first class citizen
+Electron: Power as a first class citizen
 ======================================
 
 To Do:
