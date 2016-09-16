@@ -1,0 +1,11 @@
+[
+   {
+      "cpu": 3.0,
+      "ram": 4096,
+      "watts": 50,
+      "image": "gouravr/minife:v5",
+      "cmd": "cd src && mpirun -np 1 miniFE.x -nx 100 -ny 100 -nz 100",
+      "inst": 1
+   }
+
+]
