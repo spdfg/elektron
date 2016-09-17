@@ -9,7 +9,6 @@ import (
 	sched "github.com/mesos/mesos-go/scheduler"
 	"log"
 	"os"
-	"os/signal"
 	"time"
 )
 
@@ -125,6 +124,7 @@ func (s *electronScheduler) Disconnected(sched.SchedulerDriver) {
 
 func (s *electronScheduler) ResourceOffers(driver sched.SchedulerDriver, offers []*mesos.Offer) {
 	log.Printf("Received %d resource offers", len(offers))
+
 	for _, offer := range offers {
 		select {
 		case <-s.shutdown:
@@ -137,10 +137,6 @@ func (s *electronScheduler) ResourceOffers(driver sched.SchedulerDriver, offers 
 		default:
 		}
 
-		if(len(s.tasks) <= 0) {
-			log.Println("Done with scheduling all tasks...")
-			os.Exit(0)
-		}
 
 		tasks := []*mesos.TaskInfo{}
 
@@ -153,17 +149,22 @@ func (s *electronScheduler) ResourceOffers(driver sched.SchedulerDriver, offers 
 				tasks = append(tasks, s.newTask(offer, task))
 				driver.LaunchTasks([]*mesos.OfferID{offer.Id}, tasks, defaultFilter)
 
-				// Delete scheduled task
-				s.tasks[i] = s.tasks[len(s.tasks)-1]
-				s.tasks = s.tasks[:len(s.tasks)-1]
-				taken = true
+				fmt.Println("Inst: ", *task.Instances)
+				*task.Instances--
+
+				if *task.Instances <= 0 {
+					// All instances of task have been scheduled
+					s.tasks[i] = s.tasks[len(s.tasks)-1]
+					s.tasks = s.tasks[:len(s.tasks)-1]
+					taken = true
+				}
 
 			}
 		}
 
 		// If there was no match for the task
 		if !taken {
-			fmt.Println("There is enough resources to launch a task!")
+			fmt.Println("There is not enough resources to launch a task!")
 			driver.DeclineOffer(offer.Id, defaultFilter)
 		}
 
@@ -234,6 +235,11 @@ func main() {
 		os.Exit(1)
 	}
 
+	log.Println("Scheduling the following tasks:")
+	for _, task := range tasks {
+		fmt.Println(task)
+	}
+
 	scheduler := newElectronScheduler(tasks)
 	driver, err := sched.NewMesosSchedulerDriver(sched.DriverConfig{
 		Master: *master,
@@ -250,23 +256,23 @@ func main() {
 
 	// Catch interrupt
 	go func() {
-		c := make(chan os.Signal, 1)
-		signal.Notify(c, os.Interrupt, os.Kill)
-		s := <-c
-		if s != os.Interrupt {
-			return
-		}
 
-		log.Println("Electron is shutting down")
-		close(scheduler.shutdown)
+		for {
+			if (len(scheduler.tasks) <= 0) {
+				log.Println("Done with all tasks, shutting down")
+				close(scheduler.shutdown)
+				break
+			}
+		}
 
 		select {
 		case <-scheduler.done:
-		case <-time.After(shutdownTimeout):
+//			case <-time.After(shutdownTimeout):
 		}
 
 		// Done shutting down
 		driver.Stop(false)
+
 	}()
 
 	log.Printf("Starting...")

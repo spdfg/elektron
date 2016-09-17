@@ -5,7 +5,7 @@
       "watts": 50,
       "image": "gouravr/minife:v5",
       "cmd": "cd src && mpirun -np 1 miniFE.x -nx 100 -ny 100 -nz 100",
-      "inst": 1
+      "inst": 10
    }
 
 ]
