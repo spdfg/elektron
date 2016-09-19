@@ -128,8 +128,10 @@ func (s *electronScheduler) ResourceOffers(driver sched.SchedulerDriver, offers 
 	for _, offer := range offers {
 		select {
 		case <-s.shutdown:
-			log.Println("Shutting down: declining offer on [", offer.Hostname, "]")
+			log.Println("Shutting down: declining offer on [", offer.GetHostname(), "]")
 			driver.DeclineOffer(offer.Id, defaultFilter)
+
+			log.Println("Number of tasks running: ", s.tasksRunning)
 			if s.tasksRunning == 0 {
 				close(s.done)
 			}
@@ -149,15 +151,20 @@ func (s *electronScheduler) ResourceOffers(driver sched.SchedulerDriver, offers 
 				tasks = append(tasks, s.newTask(offer, task))
 				driver.LaunchTasks([]*mesos.OfferID{offer.Id}, tasks, defaultFilter)
 
+				taken = true
+
 				fmt.Println("Inst: ", *task.Instances)
 				*task.Instances--
 
 				if *task.Instances <= 0 {
+					fmt.Println("Tasks left: ", len(s.tasks)-1)
+					fmt.Println("Position: ", i)
 					// All instances of task have been scheduled
 					s.tasks[i] = s.tasks[len(s.tasks)-1]
 					s.tasks = s.tasks[:len(s.tasks)-1]
-					taken = true
 				}
+
+				break
 
 			}
 		}
