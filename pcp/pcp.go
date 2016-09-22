@@ -1,19 +1,19 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"log"
 	"os/exec"
-	"bufio"
 	"strings"
 )
 
 func main() {
 	const pcpCommand string = "pmdumptext -m -l -f '' -t 1.0 -d , -c config" // We always want the most granular
 	cmd := exec.Command("sh", "-c", pcpCommand)
-//	time := time.Now().Format("200601021504")
+	//	time := time.Now().Format("200601021504")
 
-//	stdout, err := os.Create("./"+time+".txt")
+	//	stdout, err := os.Create("./"+time+".txt")
 	pipe, err := cmd.StdoutPipe()
 
 	//cmd.Stdout = stdout
@@ -34,15 +34,20 @@ func main() {
 		// Throw away first set of results
 		scanner.Scan()
 
-
 		seconds := 0
 		for scanner.Scan() {
-			fmt.Println("Second ", seconds , " val: ",  strings.Split(scanner.Text(), ","))
+			fmt.Printf("Second: %d\n", seconds)
+			for i, val := range strings.Split(scanner.Text(), ",") {
+				fmt.Printf("host metric: %s val: %s\n", headers[i], val)
+			}
+
 			seconds++
+
+			fmt.Println("--------------------------------")
 		}
 	}()
 
-    fmt.Println("PCP started: ")
+	fmt.Println("PCP started: ")
 
 	if err != nil {
 		log.Fatal(err)
