@@ -16,7 +16,7 @@ To Do:
 
 How to run:
 
-`./electron -workload <workload.json>`
+`./electron -workload <workload.json> -ignoreWatts <true or false>`
 
 
 Workload schema:
