@@ -3,8 +3,43 @@ Electron: A power budget manager
 
 To Do:
 
- * Define schema for what workload would look like
- * Add queue for jobs to be executed
  * Create metrics for each task launched [Time to schedule, run time, power used]
  * Have calibration phase?
- * Add ability to use constraints
+ * Add ability to use constraints 
+ * Running average calculations https://en.wikipedia.org/wiki/Moving_average#Exponential_moving_average
+
+ 
+
+** Requires Performance-Copilot tool pmdumptext **
+
+
+
+How to run:
+
+`./electron -workload <workload.json>`
+
+
+Workload schema:
+
+```
+[
+   {
+      "name": "minife",
+      "cpu": 3.0,
+      "ram": 4096,
+      "watts": 50,
+      "image": "gouravr/minife:v5",
+      "cmd": "cd src && mpirun -np 1 miniFE.x -nx 100 -ny 100 -nz 100",
+      "inst": 9
+   },
+   {
+      "name": "dgemm",
+      "cpu": 3.0,
+      "ram": 4096,
+      "watts": 50,
+      "image": "gouravr/dgemm:v2",
+      "cmd": "/./mt-dgemm 1024",
+      "inst": 9
+   }
+]
+```
