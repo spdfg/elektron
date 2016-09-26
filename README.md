@@ -10,7 +10,8 @@ To Do:
 
  
 
-** Requires Performance-Copilot tool pmdumptext **
+**Requires Performance-Copilot tool pmdumptext to be installed on the
+machine on which electron is launched for logging to work**
 
 
 
