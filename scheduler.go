@@ -20,6 +20,7 @@ const (
 var (
 	defaultFilter = &mesos.Filters{RefuseSeconds: proto.Float64(1)}
 	longFilter = &mesos.Filters{RefuseSeconds: proto.Float64(1000)}
+	IGNORE_WATTS = false
 )
 
 func CoLocated(tasks map[string]bool) {
@@ -52,6 +53,10 @@ func OfferAgg(offer *mesos.Offer) (float64, float64, float64) {
 func TakeOffer(offer *mesos.Offer, task Task) bool {
 
 	cpus, mem, watts := OfferAgg(offer)
+
+	if(IGNORE_WATTS) {
+		task.Watts = 0.0 // Don't take any watts in the offer
+	}
 
 	//TODO: Insert watts calculation here instead of taking them as a parameter
 
@@ -272,8 +277,10 @@ func (s *electronScheduler) Error(_ sched.SchedulerDriver, err string) {
 func main() {
 	master := flag.String("master", "xavier:5050", "Location of leading Mesos master")
 	tasksFile := flag.String("workload", "", "JSON file containing task definitions")
+	ignoreWatts := flag.Bool("ignoreWatts", false, "Don't use watts from offers")
 	flag.Parse()
 
+	IGNORE_WATTS = *ignoreWatts
 
 	if *tasksFile == "" {
 		fmt.Println("No file containing tasks specifiction provided.")
