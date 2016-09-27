@@ -14,6 +14,7 @@ type Task struct {
 	Image string `json:"image"`
 	CMD string `json:"cmd"`
 	Instances *int `json:"inst"`
+	Host string `json:"host"`
 }
 
 func TasksFromJSON(uri string) ([]Task, error) {
