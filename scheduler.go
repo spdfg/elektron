@@ -285,11 +285,13 @@ func (s *electronScheduler) Error(_ sched.SchedulerDriver, err string) {
 
 var master = flag.String("master", "xavier:5050", "Location of leading Mesos master")
 var tasksFile = flag.String("workload", "", "JSON file containing task definitions")
-var ignoreWatts = flag.Bool("ignoreWatts", false, "Don't use watts from offers")
+var ignoreWatts = flag.Bool("ignoreWatts", false, "Ignore watts in offers")
 
 // Short hand args
 func init(){
-	flag.StringVar(tasksFile, "w", "", "JSON file containing task definitions")
+	flag.StringVar(master, "m", "xavier:5050", "Location of leading Mesos master (shorthand)")
+	flag.StringVar(tasksFile, "w", "", "JSON file containing task definitions (shorthand)")
+	flag.BoolVar(ignoreWatts, "i", false, "Ignore watts in offers (shorthand)")
 }
 
 func main() {
