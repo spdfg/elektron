@@ -286,12 +286,14 @@ func (s *electronScheduler) Error(_ sched.SchedulerDriver, err string) {
 var master = flag.String("master", "xavier:5050", "Location of leading Mesos master")
 var tasksFile = flag.String("workload", "", "JSON file containing task definitions")
 var ignoreWatts = flag.Bool("ignoreWatts", false, "Ignore watts in offers")
+var pcplogPrefix = flag.String("logPrefix", "", "Prefix for pcplog")
 
 // Short hand args
 func init(){
 	flag.StringVar(master, "m", "xavier:5050", "Location of leading Mesos master (shorthand)")
 	flag.StringVar(tasksFile, "w", "", "JSON file containing task definitions (shorthand)")
 	flag.BoolVar(ignoreWatts, "i", false, "Ignore watts in offers (shorthand)")
+	flag.StringVar(pcplogPrefix, "p", "", "Prefix for pcplog")
 }
 
 func main() {
@@ -329,7 +331,7 @@ func main() {
 		return
 	}
 
-	go pcp.Start(scheduler.pcpLog, &scheduler.recordPCP)
+	go pcp.Start(scheduler.pcpLog, &scheduler.recordPCP, *pcplogPrefix)
 	time.Sleep(1 * time.Second)
 
 	// Catch interrupt
