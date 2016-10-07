@@ -2,6 +2,7 @@ package main
 
 import (
 	mesos "github.com/mesos/mesos-go/mesosproto"
+	"fmt"
 )
 
 // NameFor returns the string name for a TaskState.
@@ -21,8 +22,10 @@ func NameFor(state *mesos.TaskState) string {
 		return "TASK_KILLED" // TERMINAL
 	case mesos.TaskState_TASK_LOST:
 		return "TASK_LOST" // TERMINAL
+	case mesos.TaskState_TASK_ERROR:
+		return "TASK_ERROR"
 	default:
-		return "UNKNOWN"
+		return fmt.Sprintf("UNKNOWN: %d", *state)
 	}
 }
 
@@ -33,7 +36,8 @@ func IsTerminal(state *mesos.TaskState) bool {
 	case mesos.TaskState_TASK_FINISHED,
 		mesos.TaskState_TASK_FAILED,
 		mesos.TaskState_TASK_KILLED,
-		mesos.TaskState_TASK_LOST:
+		mesos.TaskState_TASK_LOST,
+		mesos.TaskState_TASK_ERROR:
 		return true
 	default:
 		return false

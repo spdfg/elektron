@@ -8,13 +8,13 @@ import (
 	"os"
 )
 
-func Start(quit chan struct{}, logging *bool) {
+func Start(quit chan struct{}, logging *bool, prefix string) {
 	const pcpCommand string = "pmdumptext -m -l -f '' -t 1.0 -d , -c config"
 	cmd := exec.Command("sh", "-c", pcpCommand)
 	startTime := time.Now().Format("20060102150405")
 
 
-	logFile, err := os.Create("./"+startTime+".pcplog")
+	logFile, err := os.Create("./"+prefix+startTime+".pcplog")
 	if err != nil {
 		log.Fatal(err)
 	}
