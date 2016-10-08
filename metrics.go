@@ -1,1 +1,5 @@
-package electron
+package main
+
+type Metric struct{
+
+}
