@@ -12,6 +12,7 @@ import (
 	"time"
 	"bitbucket.org/bingcloud/electron/pcp"
 	"strings"
+	"os/signal"
 )
 
 const (
@@ -143,6 +144,7 @@ func (s *electronScheduler) newTask(offer *mesos.Offer, task Task) *mesos.TaskIn
 			Type: mesos.ContainerInfo_DOCKER.Enum(),
 			Docker: &mesos.ContainerInfo_DockerInfo{
 			Image: proto.String(task.Image),
+			Network: mesos.ContainerInfo_DockerInfo_BRIDGE.Enum(), // Run everything isolated
 			},
 
 		},
@@ -170,7 +172,7 @@ func (s *electronScheduler) ResourceOffers(driver sched.SchedulerDriver, offers 
 	for _, offer := range offers {
 		select {
 		case <-s.shutdown:
-			log.Println("Shutting down: declining offer on [", offer.GetHostname(), "]")
+			log.Println("Done scheduling tasks: declining offer on [", offer.GetHostname(), "]")
 			driver.DeclineOffer(offer.Id, longFilter)
 
 			log.Println("Number of tasks still running: ", s.tasksRunning)
@@ -214,15 +216,12 @@ func (s *electronScheduler) ResourceOffers(driver sched.SchedulerDriver, offers 
 					s.tasks[i] = s.tasks[len(s.tasks)-1]
 					s.tasks = s.tasks[:len(s.tasks)-1]
 
-
 					if(len(s.tasks) <= 0) {
 						log.Println("Done scheduling all tasks")
 						close(s.shutdown)
 					}
 				}
-
 				break // Offer taken, move on
-
 			}
 		}
 
@@ -332,7 +331,21 @@ func main() {
 	go pcp.Start(scheduler.pcpLog, &scheduler.recordPCP, *pcplogPrefix)
 	time.Sleep(1 * time.Second)
 
+	// Attempt to handle signint to not leave pmdumptext running
 	// Catch interrupt
+	go func() {
+		c := make(chan os.Signal, 1)
+		signal.Notify(c, os.Interrupt, os.Kill)
+		s := <-c
+		if s != os.Interrupt {
+			close(scheduler.pcpLog)
+			return
+		}
+
+		log.Printf("Received SIGINT...stopping")
+		close(scheduler.done)
+	}()
+
 	go func() {
 
 		// Signals we have scheduled every task we have
@@ -341,7 +354,7 @@ func main() {
 		//			case <-time.After(shutdownTimeout):
 		}
 
-		// Signals all tasks have finished
+		// All tasks have finished
 		select {
 		case <-scheduler.done:
 			close(scheduler.pcpLog)
