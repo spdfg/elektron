@@ -6,11 +6,13 @@ import (
 	"os/exec"
 	"time"
 	"os"
+	"syscall"
 )
 
 func Start(quit chan struct{}, logging *bool, prefix string) {
 	const pcpCommand string = "pmdumptext -m -l -f '' -t 1.0 -d , -c config"
 	cmd := exec.Command("sh", "-c", pcpCommand)
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	startTime := time.Now().Format("20060102150405")
 
 
@@ -76,16 +78,16 @@ func Start(quit chan struct{}, logging *bool, prefix string) {
 		log.Fatal(err)
 	}
 
+	pgid, err := syscall.Getpgid(cmd.Process.Pid)
+
 	select{
 	case <- quit:
 		log.Println("Stopping PCP logging in 5 seconds")
 		time.Sleep(5 * time.Second)
-		cmd.Process.Kill()
+
+		// http://stackoverflow.com/questions/22470193/why-wont-go-kill-a-child-process-correctly
+		// kill process and all children processes
+		syscall.Kill(-pgid, 15)
 		return
 	}
-
-		/*
-	if err := cmd.Wait(); err != nil {
-		log.Fatal(err)
-	}*/
 }
