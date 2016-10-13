@@ -1,20 +1,20 @@
-package main
+package def
 
 import (
 	"encoding/json"
-	"os"
 	"github.com/pkg/errors"
+	"os"
 )
 
 type Task struct {
-	Name string `json:"name"`
-	CPU float64 `json:"cpu"`
-	RAM float64 `json:"ram"`
-	Watts float64 `json:"watts"`
-	Image string `json:"image"`
-	CMD string `json:"cmd"`
-	Instances *int `json:"inst"`
-	Host string `json:"host"`
+	Name      string  `json:"name"`
+	CPU       float64 `json:"cpu"`
+	RAM       float64 `json:"ram"`
+	Watts     float64 `json:"watts"`
+	Image     string  `json:"image"`
+	CMD       string  `json:"cmd"`
+	Instances *int    `json:"inst"`
+	Host      string  `json:"host"`
 }
 
 func TasksFromJSON(uri string) ([]Task, error) {

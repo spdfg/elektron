@@ -3,10 +3,10 @@ package pcp
 import (
 	"bufio"
 	"log"
-	"os/exec"
-	"time"
 	"os"
+	"os/exec"
 	"syscall"
+	"time"
 )
 
 func Start(quit chan struct{}, logging *bool, prefix string) {
@@ -15,8 +15,7 @@ func Start(quit chan struct{}, logging *bool, prefix string) {
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	startTime := time.Now().Format("20060102150405")
 
-
-	logFile, err := os.Create("./"+prefix+startTime+".pcplog")
+	logFile, err := os.Create("./" + prefix + startTime + ".pcplog")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -39,12 +38,12 @@ func Start(quit chan struct{}, logging *bool, prefix string) {
 		logFile.WriteString(scanner.Text() + "\n")
 
 		/*
-		headers := strings.Split(scanner.Text(), ",")
+			headers := strings.Split(scanner.Text(), ",")
 
-		for _, hostMetric := range headers {
-			split := strings.Split(hostMetric, ":")
-			fmt.Printf("Host %s: Metric: %s\n", split[0], split[1])
-		}
+			for _, hostMetric := range headers {
+				split := strings.Split(hostMetric, ":")
+				fmt.Printf("Host %s: Metric: %s\n", split[0], split[1])
+			}
 		*/
 
 		// Throw away first set of results
@@ -53,17 +52,16 @@ func Start(quit chan struct{}, logging *bool, prefix string) {
 		seconds := 0
 		for scanner.Scan() {
 
-
-			if(*logging) {
+			if *logging {
 				log.Println("Logging PCP...")
 				logFile.WriteString(scanner.Text() + "\n")
 			}
 
 			/*
-			fmt.Printf("Second: %d\n", seconds)
-			for i, val := range strings.Split(scanner.Text(), ",") {
-				fmt.Printf("host metric: %s val: %s\n", headers[i], val)
-			}*/
+				fmt.Printf("Second: %d\n", seconds)
+				for i, val := range strings.Split(scanner.Text(), ",") {
+					fmt.Printf("host metric: %s val: %s\n", headers[i], val)
+				}*/
 
 			seconds++
 
@@ -73,15 +71,14 @@ func Start(quit chan struct{}, logging *bool, prefix string) {
 
 	log.Println("PCP logging started")
 
-
 	if err := cmd.Start(); err != nil {
 		log.Fatal(err)
 	}
 
 	pgid, err := syscall.Getpgid(cmd.Process.Pid)
 
-	select{
-	case <- quit:
+	select {
+	case <-quit:
 		log.Println("Stopping PCP logging in 5 seconds")
 		time.Sleep(5 * time.Second)
 

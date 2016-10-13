@@ -1,8 +1,8 @@
-package main
+package schedulers
 
 import (
-	mesos "github.com/mesos/mesos-go/mesosproto"
 	"fmt"
+	mesos "github.com/mesos/mesos-go/mesosproto"
 )
 
 // NameFor returns the string name for a TaskState.
