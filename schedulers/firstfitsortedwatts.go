@@ -8,13 +8,13 @@ import (
 	"github.com/mesos/mesos-go/mesosutil"
 	sched "github.com/mesos/mesos-go/scheduler"
 	"log"
-	"sort"
 	"strings"
 	"time"
+	"sort"
 )
 
 // Decides if to take an offer or not
-func (*BinPackWatts) takeOffer(offer *mesos.Offer, task def.Task) bool {
+func (*FirstFitSortedWatts) takeOffer(offer *mesos.Offer, task def.Task) bool {
 
 	cpus, mem, watts := OfferAgg(offer)
 
@@ -27,7 +27,8 @@ func (*BinPackWatts) takeOffer(offer *mesos.Offer, task def.Task) bool {
 	return false
 }
 
-type BinPackWatts struct {
+// electronScheduler implements the Scheduler interface
+type FirstFitSortedWatts struct {
 	tasksCreated int
 	tasksRunning int
 	tasks        []def.Task
@@ -51,10 +52,11 @@ type BinPackWatts struct {
 }
 
 // New electron scheduler
-func NewBinPackWatts(tasks []def.Task, ignoreWatts bool) *BinPackWatts {
+func NewFirstFitSortedWatts(tasks []def.Task, ignoreWatts bool) *FirstFitSortedWatts {
+
 	sort.Sort(def.WattsSorter(tasks))
 
-	s := &BinPackWatts{
+	s := &FirstFitSortedWatts{
 		tasks:       tasks,
 		ignoreWatts: ignoreWatts,
 		Shutdown:    make(chan struct{}),
@@ -66,7 +68,7 @@ func NewBinPackWatts(tasks []def.Task, ignoreWatts bool) *BinPackWatts {
 	return s
 }
 
-func (s *BinPackWatts) newTask(offer *mesos.Offer, task def.Task) *mesos.TaskInfo {
+func (s *FirstFitSortedWatts) newTask(offer *mesos.Offer, task def.Task) *mesos.TaskInfo {
 	taskName := fmt.Sprintf("%s-%d", task.Name, *task.Instances)
 	s.tasksCreated++
 
@@ -113,22 +115,22 @@ func (s *BinPackWatts) newTask(offer *mesos.Offer, task def.Task) *mesos.TaskInf
 	}
 }
 
-func (s *BinPackWatts) Registered(
+func (s *FirstFitSortedWatts) Registered(
 	_ sched.SchedulerDriver,
 	frameworkID *mesos.FrameworkID,
 	masterInfo *mesos.MasterInfo) {
 	log.Printf("Framework %s registered with master %s", frameworkID, masterInfo)
 }
 
-func (s *BinPackWatts) Reregistered(_ sched.SchedulerDriver, masterInfo *mesos.MasterInfo) {
+func (s *FirstFitSortedWatts) Reregistered(_ sched.SchedulerDriver, masterInfo *mesos.MasterInfo) {
 	log.Printf("Framework re-registered with master %s", masterInfo)
 }
 
-func (s *BinPackWatts) Disconnected(sched.SchedulerDriver) {
+func (s *FirstFitSortedWatts) Disconnected(sched.SchedulerDriver) {
 	log.Println("Framework disconnected with master")
 }
 
-func (s *BinPackWatts) ResourceOffers(driver sched.SchedulerDriver, offers []*mesos.Offer) {
+func (s *FirstFitSortedWatts) ResourceOffers(driver sched.SchedulerDriver, offers []*mesos.Offer) {
 	log.Printf("Received %d resource offers", len(offers))
 
 	for _, offer := range offers {
@@ -144,10 +146,9 @@ func (s *BinPackWatts) ResourceOffers(driver sched.SchedulerDriver, offers []*me
 
 		tasks := []*mesos.TaskInfo{}
 
-		_, _, offer_watts := OfferAgg(offer)
+		// First fit strategy
 
 		taken := false
-		totalWatts := 0.0
 		for i, task := range s.tasks {
 
 			// Check host if it exists
@@ -158,50 +159,48 @@ func (s *BinPackWatts) ResourceOffers(driver sched.SchedulerDriver, offers []*me
 				}
 			}
 
-			for *task.Instances > 0 {
-				// Does the task fit
-				if offer_watts >= (totalWatts + task.Watts) {
+			// Decision to take the offer or not
+			if s.takeOffer(offer, task) {
 
-					taken = true
-					totalWatts += task.Watts
-					log.Println("Co-Located with: ")
-					coLocated(s.running[offer.GetSlaveId().GoString()])
-					tasks = append(tasks, s.newTask(offer, task))
+				log.Println("Co-Located with: ")
+				coLocated(s.running[offer.GetSlaveId().GoString()])
 
-					fmt.Println("Inst: ", *task.Instances)
-					*task.Instances--
+				tasks = append(tasks, s.newTask(offer, task))
 
-					if *task.Instances <= 0 {
-						// All instances of task have been scheduled, remove it
-						s.tasks = append(s.tasks[:i], s.tasks[i+1:]...)
+				log.Printf("Starting %s on [%s]\n", task.Name, offer.GetHostname())
+				driver.LaunchTasks([]*mesos.OfferID{offer.Id}, tasks, defaultFilter)
 
-						if len(s.tasks) <= 0 {
-							log.Println("Done scheduling all tasks")
-							close(s.Shutdown)
-						}
+				taken = true
+
+				fmt.Println("Inst: ", *task.Instances)
+				*task.Instances--
+
+				if *task.Instances <= 0 {
+					// All instances of task have been scheduled, remove it
+					s.tasks= append(s.tasks[:i], s.tasks[i+1:]...)
+
+					if len(s.tasks) <= 0 {
+						log.Println("Done scheduling all tasks")
+						close(s.Shutdown)
 					}
-				} else {
-					break // Continue on to next offer
 				}
+				break // Offer taken, move on
 			}
 		}
 
-		if taken {
-			log.Printf("Starting on [%s]\n", offer.GetHostname())
-			driver.LaunchTasks([]*mesos.OfferID{offer.Id}, tasks, defaultFilter)
-		} else {
-
-			// If there was no match for the task
+		// If there was no match for the task
+		if !taken {
 			fmt.Println("There is not enough resources to launch a task:")
 			cpus, mem, watts := OfferAgg(offer)
 
 			log.Printf("<CPU: %f, RAM: %f, Watts: %f>\n", cpus, mem, watts)
 			driver.DeclineOffer(offer.Id, defaultFilter)
 		}
+
 	}
 }
 
-func (s *BinPackWatts) StatusUpdate(driver sched.SchedulerDriver, status *mesos.TaskStatus) {
+func (s *FirstFitSortedWatts) StatusUpdate(driver sched.SchedulerDriver, status *mesos.TaskStatus) {
 	log.Printf("Received task status [%s] for task [%s]", NameFor(status.State), *status.TaskId.Value)
 
 	if *status.State == mesos.TaskState_TASK_RUNNING {
@@ -220,7 +219,7 @@ func (s *BinPackWatts) StatusUpdate(driver sched.SchedulerDriver, status *mesos.
 	log.Printf("DONE: Task status [%s] for task [%s]", NameFor(status.State), *status.TaskId.Value)
 }
 
-func (s *BinPackWatts) FrameworkMessage(
+func (s *FirstFitSortedWatts) FrameworkMessage(
 	driver sched.SchedulerDriver,
 	executorID *mesos.ExecutorID,
 	slaveID *mesos.SlaveID,
@@ -230,16 +229,16 @@ func (s *BinPackWatts) FrameworkMessage(
 	log.Printf("Received a framework message from some unknown source: %s", *executorID.Value)
 }
 
-func (s *BinPackWatts) OfferRescinded(_ sched.SchedulerDriver, offerID *mesos.OfferID) {
+func (s *FirstFitSortedWatts) OfferRescinded(_ sched.SchedulerDriver, offerID *mesos.OfferID) {
 	log.Printf("Offer %s rescinded", offerID)
 }
-func (s *BinPackWatts) SlaveLost(_ sched.SchedulerDriver, slaveID *mesos.SlaveID) {
+func (s *FirstFitSortedWatts) SlaveLost(_ sched.SchedulerDriver, slaveID *mesos.SlaveID) {
 	log.Printf("Slave %s lost", slaveID)
 }
-func (s *BinPackWatts) ExecutorLost(_ sched.SchedulerDriver, executorID *mesos.ExecutorID, slaveID *mesos.SlaveID, status int) {
+func (s *FirstFitSortedWatts) ExecutorLost(_ sched.SchedulerDriver, executorID *mesos.ExecutorID, slaveID *mesos.SlaveID, status int) {
 	log.Printf("Executor %s on slave %s was lost", executorID, slaveID)
 }
 
-func (s *BinPackWatts) Error(_ sched.SchedulerDriver, err string) {
+func (s *FirstFitSortedWatts) Error(_ sched.SchedulerDriver, err string) {
 	log.Printf("Receiving an error: %s", err)
 }
