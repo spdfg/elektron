@@ -33,3 +33,17 @@ func TasksFromJSON(uri string) ([]Task, error) {
 
 	return tasks, nil
 }
+
+type WattsSorter []Task
+
+func (slice WattsSorter) Len() int {
+	return len(slice)
+}
+
+func (slice WattsSorter) Less(i, j int) bool {
+	return slice[i].Watts < slice[j].Watts
+}
+
+func (slice WattsSorter) Swap(i, j int) {
+	slice[i], slice[j] = slice[j], slice[i]
+}
