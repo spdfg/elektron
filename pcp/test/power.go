@@ -109,7 +109,7 @@ func main() {
 				fmt.Println("Index: ", i)
 				powerIndexes = append(powerIndexes, i)
 				indexToHost[i] = split[0]
-				powerAverage[split[0]] = ring.New(10) // Two PKS per node, 10 = 5 seconds tracking
+				powerAverage[split[0]] = ring.New(10) // Two PKGS per node, 10 = 5 seconds tracking
 			}
 		}
 
@@ -152,15 +152,7 @@ func main() {
 				log.Printf("Current Victim %s Avg. Wattage: %f", victims[0].Host, victims[0].Watts * RAPLUnits)
 			}
 
-			/*
-				fmt.Printf("Second: %d\n", seconds)
-				for i, val := range strings.Split(scanner.Text(), ",") {
-					fmt.Printf("host metric: %s val: %s\n", headers[i], val)
-				}*/
-
 			seconds++
-
-			// fmt.Println("--------------------------------")
 		}
 	}(logging)
 
