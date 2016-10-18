@@ -19,6 +19,8 @@ var master = flag.String("master", "xavier:5050", "Location of leading Mesos mas
 var tasksFile = flag.String("workload", "", "JSON file containing task definitions")
 var ignoreWatts = flag.Bool("ignoreWatts", false, "Ignore watts in offers")
 var pcplogPrefix = flag.String("logPrefix", "", "Prefix for pcplog")
+var hiThreshold = flag.Float64("hiThreshold", 0.0, "Upperbound for when we should start capping")
+var loThreshold = flag.Float64("loThreshold", 0.0, "Lowerbound for when we should start uncapping")
 
 // Short hand args
 func init() {
@@ -26,6 +28,8 @@ func init() {
 	flag.StringVar(tasksFile, "w", "", "JSON file containing task definitions (shorthand)")
 	flag.BoolVar(ignoreWatts, "i", false, "Ignore watts in offers (shorthand)")
 	flag.StringVar(pcplogPrefix, "p", "", "Prefix for pcplog (shorthand)")
+	flag.Float64Var(hiThreshold, "ht", 700.0, "Upperbound for when we should start capping (shorthand)")
+	flag.Float64Var(loThreshold, "lt", 400.0, "Lowerbound for when we should start uncapping (shorthand)")
 }
 
 func main() {
@@ -33,6 +37,11 @@ func main() {
 
 	if *tasksFile == "" {
 		fmt.Println("No file containing tasks specifiction provided.")
+		os.Exit(1)
+	}
+
+	if *hiThreshold < *loThreshold {
+		fmt.Println("High threshold is of a lower value than low threhold.")
 		os.Exit(1)
 	}
 
@@ -61,7 +70,8 @@ func main() {
 		return
 	}
 
-	go pcp.Start(scheduler.PCPLog, &scheduler.RecordPCP, *pcplogPrefix)
+	//go pcp.Start(scheduler.PCPLog, &scheduler.RecordPCP, *pcplogPrefix)
+	go pcp.StartLogAndDynamicCap(scheduler.PCPLog, &scheduler.RecordPCP, *pcplogPrefix, *hiThreshold, *loThreshold)
 	time.Sleep(1 * time.Second)
 
 	// Attempt to handle signint to not leave pmdumptext running
