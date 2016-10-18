@@ -1,6 +1,7 @@
 package pcp
 
 import (
+	"bitbucket.org/bingcloud/electron/rapl"
 	"bufio"
 	"container/ring"
 	"log"
@@ -12,7 +13,6 @@ import (
 	"strings"
 	"syscall"
 	"time"
-	"bitbucket.org/bingcloud/electron/rapl"
 )
 
 var RAPLUnits = math.Pow(2, -32)

@@ -8,9 +8,9 @@ import (
 	"github.com/mesos/mesos-go/mesosutil"
 	sched "github.com/mesos/mesos-go/scheduler"
 	"log"
+	"sort"
 	"strings"
 	"time"
-	"sort"
 )
 
 // Decides if to take an offer or not
@@ -177,7 +177,7 @@ func (s *FirstFitSortedWatts) ResourceOffers(driver sched.SchedulerDriver, offer
 
 				if *task.Instances <= 0 {
 					// All instances of task have been scheduled, remove it
-					s.tasks= append(s.tasks[:i], s.tasks[i+1:]...)
+					s.tasks = append(s.tasks[:i], s.tasks[i+1:]...)
 
 					if len(s.tasks) <= 0 {
 						log.Println("Done scheduling all tasks")

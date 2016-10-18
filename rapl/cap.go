@@ -1,12 +1,12 @@
 package rapl
 
 import (
-	"golang.org/x/crypto/ssh"
 	"github.com/pkg/errors"
+	"golang.org/x/crypto/ssh"
 	"strconv"
 )
 
-func Cap(host, username string,  percentage int) (error) {
+func Cap(host, username string, percentage int) error {
 
 	if percentage > 100 || percentage < 0 {
 		return errors.New("Percentage is out of range")

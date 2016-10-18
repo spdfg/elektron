@@ -2,7 +2,7 @@ package pcp
 
 type Victim struct {
 	Watts float64
-	Host string
+	Host  string
 }
 
 type VictimSorter []Victim
