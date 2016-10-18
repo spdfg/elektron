@@ -13,13 +13,13 @@ import (
 )
 
 // Decides if to take an offer or not
-func (*FirstFit) takeOffer(offer *mesos.Offer, task def.Task) bool {
+func (s *FirstFit) takeOffer(offer *mesos.Offer, task def.Task) bool {
 
 	cpus, mem, watts := OfferAgg(offer)
 
 	//TODO: Insert watts calculation here instead of taking them as a parameter
 
-	if cpus >= task.CPU && mem >= task.RAM && watts >= task.Watts {
+	if cpus >= task.CPU && mem >= task.RAM && (s.ignoreWatts || watts >= task.Watts) {
 		return true
 	}
 
