@@ -10,10 +10,10 @@ Offer 2 methods:
 main.go contains a set of test functions for the above algorithm.
 
 #Please run the following commands to install dependencies and run the test code.
-'''
+```
 	go build
 	go run main.go
-'''
+```
 
 #Note
 	The github.com folder contains a library that is required to compute the median of a given set of values.
