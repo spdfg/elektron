@@ -9,7 +9,7 @@ Offer 2 methods:
 
 main.go contains a set of test functions for the above algorithm.
 
-***.go Files***
+###**.go Files**
 
 *main.go*
 ```
