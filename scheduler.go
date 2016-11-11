@@ -1,9 +1,9 @@
 package main
 
 import (
-	"bitbucket.org/bingcloud/electron/def"
-	"bitbucket.org/bingcloud/electron/pcp"
-	"bitbucket.org/bingcloud/electron/schedulers"
+	"bitbucket.org/sunybingcloud/electron/def"
+	"bitbucket.org/sunybingcloud/electron/pcp"
+	"bitbucket.org/sunybingcloud/electron/schedulers"
 	"flag"
 	"fmt"
 	"github.com/golang/protobuf/proto"
@@ -56,7 +56,7 @@ func main() {
 		fmt.Println(task)
 	}
 
-	scheduler := schedulers.NewFirstFit(tasks, *ignoreWatts)
+	scheduler := schedulers.NewProactiveClusterwideCapFCFS(tasks, *ignoreWatts)
 	driver, err := sched.NewMesosSchedulerDriver(sched.DriverConfig{
 		Master: *master,
 		Framework: &mesos.FrameworkInfo{
