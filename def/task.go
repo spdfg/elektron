@@ -42,7 +42,7 @@ func (tsk *Task) UpdateHost(new_host string) bool {
 	// Validation
 	is_correct_host := false
 	for _, existing_host := range constants.Hosts {
-    if host == existing_host {
+    if new_host == existing_host {
       is_correct_host = true
     }
   }
