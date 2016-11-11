@@ -5,10 +5,10 @@ To Do:
 
  * Create metrics for each task launched [Time to schedule, run time, power used]
  * Have calibration phase?
- * Add ability to use constraints 
+ * Add ability to use constraints
  * Running average calculations https://en.wikipedia.org/wiki/Moving_average#Exponential_moving_average
 
- 
+
 
 **Requires Performance-Copilot tool pmdumptext to be installed on the
 machine on which electron is launched for logging to work**
