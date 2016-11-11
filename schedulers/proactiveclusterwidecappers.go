@@ -24,7 +24,7 @@ import (
 // Structure containing utility data structures used to compute cluster-wide dynamic cap.
 type clusterwideCapper struct {
   // window of tasks.
-  window_of_tasks list.list
+  window_of_tasks list.List
   // The current sum of requested powers of the tasks in the window.
   current_sum float64
   // The current number of tasks in the window.
@@ -167,7 +167,7 @@ func (capper clusterwideCapper) taskFinished(taskID string) {
   var task_element_to_remove *list.Element
   for task_element := capper.window_of_tasks.Front(); task_element != nil; task_element = task_element.Next() {
     if tsk, ok := task_element.Value.(*def.Task); ok {
-      if task.TaskID == taskID {
+      if tsk.TaskID == taskID {
         task_element_to_remove = task_element
       }
     }
@@ -183,7 +183,7 @@ func (capper clusterwideCapper) taskFinished(taskID string) {
 
 // Ranked based scheduling.
 func (capper clusterwideCapper) rankedDetermineCap(available_power map[string]float64,
-  tasks_to_schedule []*def.Task) ([]*def.Task, map[string]float64, error) {
+  tasks_to_schedule []*def.Task) ([]*def.Task, map[int]float64, error) {
   // Validation
   if available_power == nil || len(tasks_to_schedule) == 0 {
     return nil, nil, errors.New("Invalid argument: available_power, tasks_to_schedule")
