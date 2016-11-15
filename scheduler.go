@@ -2,8 +2,8 @@ package main
 
 import (
 	"bitbucket.org/sunybingcloud/electron/def"
-	"bitbucket.org/sunybingcloud/electron/pcp"
 	"bitbucket.org/sunybingcloud/electron/schedulers"
+	"bitbucket.org/sunybingcloud/electron/pcp"
 	"flag"
 	"fmt"
 	"github.com/golang/protobuf/proto"
@@ -70,8 +70,8 @@ func main() {
 		return
 	}
 
-	//go pcp.Start(scheduler.PCPLog, &scheduler.RecordPCP, *pcplogPrefix)
-	go pcp.StartLogAndDynamicCap(scheduler.PCPLog, &scheduler.RecordPCP, *pcplogPrefix, *hiThreshold, *loThreshold)
+	go pcp.Start(scheduler.PCPLog, &scheduler.RecordPCP, *pcplogPrefix)
+	//go pcp.StartLogAndDynamicCap(scheduler.PCPLog, &scheduler.RecordPCP, *pcplogPrefix, *hiThreshold, *loThreshold)
 	time.Sleep(1 * time.Second)
 
 	// Attempt to handle signint to not leave pmdumptext running
