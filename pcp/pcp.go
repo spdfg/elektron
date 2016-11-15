@@ -19,6 +19,7 @@ func Start(quit chan struct{}, logging *bool, prefix string) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	log.Println("Writing pcp logs to file: " + logFile.Name())
 
 	defer logFile.Close()
 
