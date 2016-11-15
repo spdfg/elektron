@@ -17,7 +17,7 @@ type Task struct {
 	CMD       string  `json:"cmd"`
 	Instances *int    `json:"inst"`
 	Host      string  `json:"host"`
-	TaskID		string	`json:"taskID"`
+	TaskID    string  `json:"taskID"`
 }
 
 func TasksFromJSON(uri string) ([]Task, error) {
@@ -42,10 +42,10 @@ func (tsk *Task) UpdateHost(new_host string) bool {
 	// Validation
 	is_correct_host := false
 	for _, existing_host := range constants.Hosts {
-    if new_host == existing_host {
-      is_correct_host = true
-    }
-  }
+		if new_host == existing_host {
+			is_correct_host = true
+		}
+	}
 	if !is_correct_host {
 		return false
 	} else {
