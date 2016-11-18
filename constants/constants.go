@@ -34,7 +34,7 @@ var Power_threshold = 0.6 // Right now saying that a task will never be given le
   So, if power required = 10W, the node would be capped to 75%*10W.
   This value can be changed upon convenience.
 */
-var Cap_margin = 0.75
+var Cap_margin = 0.70
 
 // Modify the cap margin.
 func UpdateCapMargin(new_cap_margin float64) bool {
@@ -85,19 +85,3 @@ func UpdateWindowSize(new_window_size int) bool {
     return true
   }
 }
-
-// // Time duration between successive cluster wide capping.
-// var Clusterwide_cap_interval = 10 // Right now capping the cluster at 10 second intervals.
-//
-// // Modify the cluster wide capping interval. We can update the interval depending on the workload.
-// // TODO: If the workload is heavy then we can set a longer interval, while on the other hand,
-// //  if the workload is light then a smaller interval is sufficient.
-// func UpdateClusterwideCapInterval(new_interval int) bool {
-//   // Validation
-//   if new_interval == 0.0 {
-//     return false
-//   } else {
-//     Clusterwide_cap_interval = new_interval
-//     return true
-//   }
-// }
