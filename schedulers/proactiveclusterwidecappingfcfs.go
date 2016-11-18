@@ -12,14 +12,15 @@ import (
 	"log"
 	"math"
 	"strings"
+	"sync"
 	"time"
 )
 
 // Decides if to take an offer or not
 func (_ *ProactiveClusterwideCapFCFS) takeOffer(offer *mesos.Offer, task def.Task) bool {
-	offer_cpu, offer_mem, _ := OfferAgg(offer)
+	offer_cpu, offer_mem, offer_watts := OfferAgg(offer)
 
-	if offer_cpu >= task.CPU && offer_mem >= task.RAM {
+	if offer_cpu >= task.CPU && offer_mem >= task.RAM && offer_watts >= task.Watts {
 		return true
 	}
 	return false
@@ -38,8 +39,9 @@ type ProactiveClusterwideCapFCFS struct {
 	ignoreWatts    bool
 	capper         *clusterwideCapper
 	ticker         *time.Ticker
+	recapTicker    *time.Ticker
 	isCapping      bool // indicate whether we are currently performing cluster wide capping.
-	//lock          *sync.Mutex
+	isRecapping    bool // indicate whether we are currently performing cluster wide re-capping.
 
 	// First set of PCP values are garbage values, signal to logger to start recording when we're
 	// about to schedule the new task.
@@ -71,12 +73,16 @@ func NewProactiveClusterwideCapFCFS(tasks []def.Task, ignoreWatts bool) *Proacti
 		totalPower:     make(map[string]float64),
 		RecordPCP:      false,
 		capper:         getClusterwideCapperInstance(),
-		ticker:         time.NewTicker(5 * time.Second),
+		ticker:         time.NewTicker(10 * time.Second),
+		recapTicker:    time.NewTicker(20 * time.Second),
 		isCapping:      false,
-		//lock:                       new(sync.Mutex),
+		isRecapping:	false,
 	}
 	return s
 }
+
+// mutex
+var mutex sync.Mutex
 
 func (s *ProactiveClusterwideCapFCFS) newTask(offer *mesos.Offer, task def.Task) *mesos.TaskInfo {
 	taskName := fmt.Sprintf("%s-%d", task.Name, *task.Instances)
@@ -95,10 +101,14 @@ func (s *ProactiveClusterwideCapFCFS) newTask(offer *mesos.Offer, task def.Task)
 
 	// Setting the task ID to the task. This is done so that we can consider each task to be different,
 	// even though they have the same parameters.
-	task.SetTaskID(*proto.String(taskName))
+	task.SetTaskID(*proto.String("electron-" + taskName))
 	// Add task to the list of tasks running on the node.
 	s.running[offer.GetSlaveId().GoString()][taskName] = true
-	s.taskMonitor[offer.GetSlaveId().GoString()] = []def.Task{task}
+	if len(s.taskMonitor[offer.GetSlaveId().GoString()]) == 0 {
+		s.taskMonitor[offer.GetSlaveId().GoString()] = []def.Task{task}
+	} else {
+		s.taskMonitor[offer.GetSlaveId().GoString()] = append(s.taskMonitor[offer.GetSlaveId().GoString()], task)
+	}
 
 	resources := []*mesos.Resource{
 		mesosutil.NewScalarResource("cpus", task.CPU),
@@ -143,7 +153,10 @@ func (s *ProactiveClusterwideCapFCFS) Reregistered(_ sched.SchedulerDriver, mast
 func (s *ProactiveClusterwideCapFCFS) Disconnected(sched.SchedulerDriver) {
 	// Need to stop the capping process.
 	s.ticker.Stop()
+	s.recapTicker.Stop()
+	mutex.Lock()
 	s.isCapping = false
+	mutex.Unlock()
 	log.Println("Framework disconnected with master")
 }
 
@@ -155,20 +168,44 @@ func (s *ProactiveClusterwideCapFCFS) startCapping() {
 			select {
 			case <-s.ticker.C:
 				// Need to cap the cluster to the currentCapValue.
+				mutex.Lock()
 				if currentCapValue > 0.0 {
-					//mutex.Lock()
-					//s.lock.Lock()
 					for _, host := range constants.Hosts {
 						// Rounding curreCapValue to the nearest int.
 						if err := rapl.Cap(host, "rapl", int(math.Floor(currentCapValue+0.5))); err != nil {
-							fmt.Println(err)
-						} else {
-							fmt.Printf("Successfully capped %s to %f%\n", host, currentCapValue)
+							log.Println(err)
 						}
 					}
-					//mutex.Unlock()
-					//s.lock.Unlock()
+					log.Printf("Capped the cluster to %d", int(math.Floor(currentCapValue+0.5)))
 				}
+				mutex.Unlock()
+			}
+		}
+	}()
+}
+
+// go routine to cap the entire cluster in regular intervals of time.
+var recapValue = 0.0 // The cluster wide cap value when recapping.
+func (s *ProactiveClusterwideCapFCFS) startRecapping() {
+	go func() {
+		for {
+			select {
+			case <-s.recapTicker.C:
+				mutex.Lock()
+				// If stopped performing cluster wide capping then we need to explicitly cap the entire cluster.
+				//if !s.isCapping && s.isRecapping && recapValue > 0.0 {
+				if s.isRecapping && recapValue > 0.0 {
+					for _, host := range constants.Hosts {
+						// Rounding curreCapValue to the nearest int.
+						if err := rapl.Cap(host, "rapl", int(math.Floor(recapValue+0.5))); err != nil {
+							log.Println(err)
+						}
+					}
+					log.Printf("Recapped the cluster to %d", int(math.Floor(recapValue+0.5)))
+				}
+				// setting recapping to false
+				s.isRecapping = false
+				mutex.Unlock()
 			}
 		}
 	}()
@@ -179,7 +216,22 @@ func (s *ProactiveClusterwideCapFCFS) stopCapping() {
 	if s.isCapping {
 		log.Println("Stopping the cluster wide capping.")
 		s.ticker.Stop()
+		mutex.Lock()
 		s.isCapping = false
+		s.isRecapping = true
+		mutex.Unlock()
+	}
+}
+
+// Stop cluster wide Recapping
+func (s *ProactiveClusterwideCapFCFS) stopRecapping() {
+	// If not capping, then definitely recapping.
+	if !s.isCapping && s.isRecapping {
+		log.Println("Stopping the cluster wide re-capping.")
+		s.recapTicker.Stop()
+		mutex.Lock()
+		s.isRecapping = false
+		mutex.Unlock()
 	}
 }
 
@@ -198,10 +250,7 @@ func (s *ProactiveClusterwideCapFCFS) ResourceOffers(driver sched.SchedulerDrive
 	}
 
 	for host, tpower := range s.totalPower {
-		fmt.Printf("TotalPower[%s] = %f\n", host, tpower)
-	}
-	for host, apower := range s.availablePower {
-		fmt.Printf("AvailablePower[%s] = %f\n", host, apower)
+		log.Printf("TotalPower[%s] = %f", host, tpower)
 	}
 
 	for _, offer := range offers {
@@ -227,10 +276,7 @@ func (s *ProactiveClusterwideCapFCFS) ResourceOffers(driver sched.SchedulerDrive
 		   TODO: We can choose to cap the cluster only if the clusterwide cap varies more than the current clusterwide cap.
 		     Although this sounds like a better approach, it only works when the resource requirements of neighbouring tasks are similar.
 		*/
-		//offer_cpu, offer_ram, _ := OfferAgg(offer)
-
 		taken := false
-		//var mutex sync.Mutex
 
 		for i, task := range s.tasks {
 			// Don't take offer if it doesn't match our task's host requirement.
@@ -242,27 +288,26 @@ func (s *ProactiveClusterwideCapFCFS) ResourceOffers(driver sched.SchedulerDrive
 			if s.takeOffer(offer, task) {
 				// Capping the cluster if haven't yet started,
 				if !s.isCapping {
-					s.startCapping()
+					mutex.Lock()
 					s.isCapping = true
+					mutex.Unlock()
+					s.startCapping()
 				}
 				taken = true
-				//mutex.Lock()
-				//s.lock.Lock()
-				//tempCap, err := s.capper.fcfsDetermineCap(s.availablePower, &task)
 				tempCap, err := s.capper.fcfsDetermineCap(s.totalPower, &task)
 
 				if err == nil {
+					mutex.Lock()
 					currentCapValue = tempCap
+					mutex.Unlock()
 				} else {
-					fmt.Printf("Failed to determine new cluster wide cap: ")
-					fmt.Println(err)
+					log.Printf("Failed to determine new cluster wide cap: ")
+					log.Println(err)
 				}
-				//mutex.Unlock()
-				//s.lock.Unlock()
-				fmt.Printf("Starting on [%s]\n", offer.GetHostname())
+				log.Printf("Starting on [%s]\n", offer.GetHostname())
 				to_schedule := []*mesos.TaskInfo{s.newTask(offer, task)}
 				driver.LaunchTasks([]*mesos.OfferID{offer.Id}, to_schedule, defaultFilter)
-				fmt.Printf("Inst: %d", *task.Instances)
+				log.Printf("Inst: %d", *task.Instances)
 				*task.Instances--
 				if *task.Instances <= 0 {
 					// All instances of the task have been scheduled. Need to remove it from the list of tasks to schedule.
@@ -273,6 +318,7 @@ func (s *ProactiveClusterwideCapFCFS) ResourceOffers(driver sched.SchedulerDrive
 						log.Println("Done scheduling all tasks")
 						// Need to stop the cluster wide capping as there aren't any more tasks to schedule.
 						s.stopCapping()
+						s.startRecapping() // Load changes after every task finishes and hence we need to change the capping of the cluster.
 						close(s.Shutdown)
 					}
 				}
@@ -284,7 +330,7 @@ func (s *ProactiveClusterwideCapFCFS) ResourceOffers(driver sched.SchedulerDrive
 
 		// If no task fit the offer, then declining the offer.
 		if !taken {
-			fmt.Printf("There is not enough resources to launch a task on Host: %s\n", offer.GetHostname())
+			log.Printf("There is not enough resources to launch a task on Host: %s\n", offer.GetHostname())
 			cpus, mem, watts := OfferAgg(offer)
 
 			log.Printf("<CPU: %f, RAM: %f, Watts: %f>\n", cpus, mem, watts)
@@ -294,7 +340,7 @@ func (s *ProactiveClusterwideCapFCFS) ResourceOffers(driver sched.SchedulerDrive
 }
 
 func (s *ProactiveClusterwideCapFCFS) StatusUpdate(driver sched.SchedulerDriver, status *mesos.TaskStatus) {
-	log.Printf("Received task status [%s] for task [%s]", NameFor(status.State), *status.TaskId.Value)
+	log.Printf("Received task status [%s] for task [%s]\n", NameFor(status.State), *status.TaskId.Value)
 
 	if *status.State == mesos.TaskState_TASK_RUNNING {
 		s.tasksRunning++
@@ -302,17 +348,32 @@ func (s *ProactiveClusterwideCapFCFS) StatusUpdate(driver sched.SchedulerDriver,
 		delete(s.running[status.GetSlaveId().GoString()], *status.TaskId.Value)
 		// Need to remove the task from the window of tasks.
 		s.capper.taskFinished(*status.TaskId.Value)
-		//currentCapValue, _ = s.capper.recap(s.availablePower, s.taskMonitor, *status.TaskId.Value)
 		// Determining the new cluster wide cap.
-		currentCapValue, _ = s.capper.recap(s.totalPower, s.taskMonitor, *status.TaskId.Value)
-		log.Printf("Recapping the cluster to %f\n", currentCapValue)
+		tempCap, err := s.capper.recap(s.totalPower, s.taskMonitor, *status.TaskId.Value)
+		if err == nil {
+			// if new determined cap value is different from the current recap value then we need to recap.
+			if int(math.Floor(tempCap+0.5)) != int(math.Floor(recapValue+0.5)) {
+				recapValue = tempCap
+				mutex.Lock()
+				s.isRecapping = true
+				mutex.Unlock()
+				log.Printf("Determined re-cap value: %f\n", recapValue)
+			} else {
+				mutex.Lock()
+				s.isRecapping = false
+				mutex.Unlock()
+			}
+		} else {
+			// Not updating currentCapValue
+			log.Println(err)
+		}
 
 		s.tasksRunning--
 		if s.tasksRunning == 0 {
 			select {
 			case <-s.Shutdown:
 				// Need to stop the capping process.
-				s.stopCapping()
+				s.stopRecapping()
 				close(s.Done)
 			default:
 			}
