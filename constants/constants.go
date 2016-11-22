@@ -34,7 +34,7 @@ var Power_threshold = 0.6 // Right now saying that a task will never be given le
   So, if power required = 10W, the node would be capped to 75%*10W.
   This value can be changed upon convenience.
 */
-var Cap_margin = 0.70
+var Cap_margin = 0.7
 
 // Modify the cap margin.
 func UpdateCapMargin(new_cap_margin float64) bool {
