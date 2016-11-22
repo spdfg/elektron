@@ -5,6 +5,7 @@ Step2. Compute what percentage of total power of each node, is the running avera
 Step3. Compute the median of the percetages and this is the percentage that the cluster needs to be capped at.
 
 1. First fit scheduling -- Perform the above steps for each task that needs to be scheduled.
+2. Ranked based scheduling -- Sort the tasks to be scheduled, in ascending order, and then determine the cluster wide cap.
 
 This is not a scheduler but a scheduling scheme that schedulers can use.
 */
@@ -121,6 +122,9 @@ We would, at this point, have a better knowledge about the state of the cluster.
 	This would give us the load on that node.
 3. Now, compute the average load across all the nodes in the cluster.
 	This would be the cap value.
+
+Note: Although this would ensure lesser power usage, it might increase makespan if there is a heavy workload on just one node.
+TODO: return a map[string]float64 that contains the recap value per node. This way, we can provide the right amount of power per node.
 */
 func (capper clusterwideCapper) cleverRecap(total_power map[string]float64, 
 	task_monitor map[string][]def.Task, finished_taskId string) (float64, error) {
@@ -235,23 +239,23 @@ func (capper clusterwideCapper) recap(total_power map[string]float64,
 }
 
 /* Quick sort algorithm to sort tasks, in place, in ascending order of power.*/
-func (capper clusterwideCapper) quick_sort(low int, high int, tasks_to_sort []*def.Task) {
+func (capper clusterwideCapper) quick_sort(low int, high int, tasks_to_sort *[]def.Task) {
 	i := low
 	j := high
 	// calculating the pivot
 	pivot_index := low + (high-low)/2
-	pivot := tasks_to_sort[pivot_index]
+	pivot := (*tasks_to_sort)[pivot_index]
 	for i <= j {
-		for tasks_to_sort[i].Watts < pivot.Watts {
+		for (*tasks_to_sort)[i].Watts < pivot.Watts {
 			i++
 		}
-		for tasks_to_sort[j].Watts > pivot.Watts {
+		for (*tasks_to_sort)[j].Watts > pivot.Watts {
 			j--
 		}
 		if i <= j {
-			temp := tasks_to_sort[i]
-			tasks_to_sort[i] = tasks_to_sort[j]
-			tasks_to_sort[j] = temp
+			temp := (*tasks_to_sort)[i]
+			(*tasks_to_sort)[i] = (*tasks_to_sort)[j]
+			(*tasks_to_sort)[j] = temp
 			i++
 			j--
 		}
@@ -265,8 +269,8 @@ func (capper clusterwideCapper) quick_sort(low int, high int, tasks_to_sort []*d
 }
 
 // Sorting tasks in ascending order of requested watts.
-func (capper clusterwideCapper) sort_tasks(tasks_to_sort []*def.Task) {
-	capper.quick_sort(0, len(tasks_to_sort)-1, tasks_to_sort)
+func (capper clusterwideCapper) sort_tasks(tasks_to_sort *[]def.Task) {
+	capper.quick_sort(0, len(*tasks_to_sort)-1, tasks_to_sort)
 }
 
 /*
@@ -296,36 +300,6 @@ func (capper clusterwideCapper) taskFinished(taskID string) {
 		capper.window_of_tasks.Remove(task_element_to_remove)
 		capper.number_of_tasks_in_window -= 1
 		capper.current_sum -= float64(task_to_remove.Watts) * constants.Cap_margin
-	}
-}
-
-// Ranked based scheduling.
-func (capper clusterwideCapper) rankedDetermineCap(available_power map[string]float64,
-	tasks_to_schedule []*def.Task) ([]*def.Task, map[int]float64, error) {
-	// Validation
-	if available_power == nil || len(tasks_to_schedule) == 0 {
-		return nil, nil, errors.New("Invalid argument: available_power, tasks_to_schedule")
-	} else {
-		// Need to sort the tasks in ascending order of requested power.
-		capper.sort_tasks(tasks_to_schedule)
-
-		// Now, for each task in the sorted set of tasks, we need to use the Fcfs_determine_cap logic.
-		cluster_wide_cap_values := make(map[int]float64)
-		index := 0
-		for _, tsk := range tasks_to_schedule {
-			/*
-			   Note that even though Fcfs_determine_cap is called, we have sorted the tasks aprior and thus, the tasks are scheduled in the sorted fashion.
-			   Calling Fcfs_determine_cap(...) just to avoid redundant code.
-			*/
-			if cap, err := capper.fcfsDetermineCap(available_power, tsk); err == nil {
-				cluster_wide_cap_values[index] = cap
-			} else {
-				return nil, nil, err
-			}
-			index++
-		}
-		// Now returning the sorted set of tasks and the cluster wide cap values for each task that is launched.
-		return tasks_to_schedule, cluster_wide_cap_values, nil
 	}
 }
 
