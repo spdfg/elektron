@@ -2,6 +2,7 @@ Electron: Scheduling Algorithms
 ================================
 
 To Do:
+
  * Design changes -- Possible to have one scheduler with different scheduling schemes?
 
 Scheduling Algorithms:
