@@ -104,10 +104,10 @@ func (s *ProactiveClusterwideCapFCFS) newTask(offer *mesos.Offer, task def.Task)
 	task.SetTaskID(*proto.String("electron-" + taskName))
 	// Add task to the list of tasks running on the node.
 	s.running[offer.GetSlaveId().GoString()][taskName] = true
-	if len(s.taskMonitor[offer.GetSlaveId().GoString()]) == 0 {
-		s.taskMonitor[offer.GetSlaveId().GoString()] = []def.Task{task}
+	if len(s.taskMonitor[*offer.Hostname]) == 0 {
+		s.taskMonitor[*offer.Hostname] = []def.Task{task}
 	} else {
-		s.taskMonitor[offer.GetSlaveId().GoString()] = append(s.taskMonitor[offer.GetSlaveId().GoString()], task)
+		s.taskMonitor[*offer.Hostname] = append(s.taskMonitor[*offer.Hostname], task)
 	}
 
 	resources := []*mesos.Resource{
@@ -349,8 +349,8 @@ func (s *ProactiveClusterwideCapFCFS) StatusUpdate(driver sched.SchedulerDriver,
 		// Need to remove the task from the window of tasks.
 		s.capper.taskFinished(*status.TaskId.Value)
 		// Determining the new cluster wide cap.
-		tempCap, err := s.capper.recap(s.totalPower, s.taskMonitor, *status.TaskId.Value)
-		//tempCap, err := s.capper.cleverRecap(s.totalPower, s.taskMonitor, *status.TaskId.Value)
+		//tempCap, err := s.capper.recap(s.totalPower, s.taskMonitor, *status.TaskId.Value)
+		tempCap, err := s.capper.cleverRecap(s.totalPower, s.taskMonitor, *status.TaskId.Value)
 		if err == nil {
 			// if new determined cap value is different from the current recap value then we need to recap.
 			if int(math.Floor(tempCap+0.5)) != int(math.Floor(fcfsRecapValue+0.5)) {
