@@ -17,7 +17,7 @@ import (
 	"container/list"
 	"errors"
 	"github.com/montanaflynn/stats"
-  "log"
+	"log"
 	"sort"
 )
 
@@ -118,8 +118,11 @@ A recapping strategy which decides between 2 different recapping schemes.
 2. A scheme based on the average of the loads on each node in the cluster.
 
 The recap value picked the least among the two.
+
+The cleverRecap scheme works well when the cluster is relatively idle and until then,
+	the primitive recapping scheme works better.
 */
-func (capper clusterwideCapper) cleverRecap(total_power map[string]float64, 
+func (capper clusterwideCapper) cleverRecap(total_power map[string]float64,
 	task_monitor map[string][]def.Task, finished_taskId string) (float64, error) {
 	// Validation
 	if total_power == nil || task_monitor == nil {
@@ -136,48 +139,48 @@ func (capper clusterwideCapper) cleverRecap(total_power map[string]float64,
 	// watts usage on each node in the cluster.
 	watts_usages := make(map[string][]float64)
 	host_of_finished_task := ""
-  	index_of_finished_task := -1
+	index_of_finished_task := -1
 	for _, host := range constants.Hosts {
 		watts_usages[host] = []float64{0.0}
 	}
 	for host, tasks := range task_monitor {
 		for i, task := range tasks {
 			if task.TaskID == finished_taskId {
-        		host_of_finished_task = host
-        		index_of_finished_task = i
-        		// Not considering this task for the computation of total_allocated_power and total_running_tasks
-        		continue
-      		}
-			watts_usages[host] = append(watts_usages[host], float64(task.Watts) * constants.Cap_margin)
+				host_of_finished_task = host
+				index_of_finished_task = i
+				// Not considering this task for the computation of total_allocated_power and total_running_tasks
+				continue
+			}
+			watts_usages[host] = append(watts_usages[host], float64(task.Watts)*constants.Cap_margin)
 		}
 	}
 
 	// Updating task monitor. If recap(...) has deleted the finished task from the taskMonitor,
-	// then this will be ignored.
-  	if host_of_finished_task != "" && index_of_finished_task != -1 {
-    	log.Printf("Removing task with task [%s] from the list of running tasks\n",
-     		task_monitor[host_of_finished_task][index_of_finished_task].TaskID)
-    	task_monitor[host_of_finished_task] = append(task_monitor[host_of_finished_task][:index_of_finished_task],
-     		task_monitor[host_of_finished_task][index_of_finished_task+1:]...)
-  	}
+	// then this will be ignored. Else (this is only when an error occured with recap(...)), we remove it here.
+	if host_of_finished_task != "" && index_of_finished_task != -1 {
+		log.Printf("Removing task with task [%s] from the list of running tasks\n",
+			task_monitor[host_of_finished_task][index_of_finished_task].TaskID)
+		task_monitor[host_of_finished_task] = append(task_monitor[host_of_finished_task][:index_of_finished_task],
+			task_monitor[host_of_finished_task][index_of_finished_task+1:]...)
+	}
 
-  	// Need to check whether there are still tasks running on the cluster. If not then we return an error.
-  	clusterIdle := true
-  	for _, tasks := range task_monitor {
-  		if len(tasks) > 0 {
-  			clusterIdle = false
-  		}
-  	}
+	// Need to check whether there are still tasks running on the cluster. If not then we return an error.
+	clusterIdle := true
+	for _, tasks := range task_monitor {
+		if len(tasks) > 0 {
+			clusterIdle = false
+		}
+	}
 
-  	if !clusterIdle {
-  		// load on each node in the cluster.
+	if !clusterIdle {
+		// load on each node in the cluster.
 		loads := []float64{0.0}
 		for host, usages := range watts_usages {
 			total_usage := 0.0
 			for _, usage := range usages {
 				total_usage += usage
 			}
-			loads = append(loads, total_usage / total_power[host])
+			loads = append(loads, total_usage/total_power[host])
 		}
 
 		// Now need to compute the average load.
@@ -219,33 +222,33 @@ func (capper clusterwideCapper) recap(total_power map[string]float64,
 	total_allocated_power := 0.0
 	total_running_tasks := 0
 
-  	host_of_finished_task := ""
-  	index_of_finished_task := -1
-  	for host, tasks := range task_monitor {
-    	for i, task := range tasks {
-      	if task.TaskID == finished_taskId {
-        	host_of_finished_task = host
-        	index_of_finished_task = i
-        	// Not considering this task for the computation of total_allocated_power and total_running_tasks
-        	continue
-      	}
-      	total_allocated_power += (float64(task.Watts) * constants.Cap_margin)
-      	total_running_tasks++
-    	}
-  	}
+	host_of_finished_task := ""
+	index_of_finished_task := -1
+	for host, tasks := range task_monitor {
+		for i, task := range tasks {
+			if task.TaskID == finished_taskId {
+				host_of_finished_task = host
+				index_of_finished_task = i
+				// Not considering this task for the computation of total_allocated_power and total_running_tasks
+				continue
+			}
+			total_allocated_power += (float64(task.Watts) * constants.Cap_margin)
+			total_running_tasks++
+		}
+	}
 
-  	// Updating task monitor
-  	if host_of_finished_task != "" && index_of_finished_task != -1 {
-    	log.Printf("Removing task with task [%s] from the list of running tasks\n",
-     		task_monitor[host_of_finished_task][index_of_finished_task].TaskID)
-    	task_monitor[host_of_finished_task] = append(task_monitor[host_of_finished_task][:index_of_finished_task],
-     		task_monitor[host_of_finished_task][index_of_finished_task+1:]...)
-  	}
+	// Updating task monitor
+	if host_of_finished_task != "" && index_of_finished_task != -1 {
+		log.Printf("Removing task with task [%s] from the list of running tasks\n",
+			task_monitor[host_of_finished_task][index_of_finished_task].TaskID)
+		task_monitor[host_of_finished_task] = append(task_monitor[host_of_finished_task][:index_of_finished_task],
+			task_monitor[host_of_finished_task][index_of_finished_task+1:]...)
+	}
 
-  	// For the last task, total_allocated_power and total_running_tasks would be 0
-  	if total_allocated_power == 0 && total_running_tasks == 0 {
-    	return 100, errors.New("No task running on the cluster.")
-  	}
+	// For the last task, total_allocated_power and total_running_tasks would be 0
+	if total_allocated_power == 0 && total_running_tasks == 0 {
+		return 100, errors.New("No task running on the cluster.")
+	}
 
 	average := total_allocated_power / float64(total_running_tasks)
 	ratios := []float64{}
