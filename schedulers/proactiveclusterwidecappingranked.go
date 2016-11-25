@@ -38,11 +38,11 @@ func (_ *ProactiveClusterwideCapRanked) takeOffer(offer *mesos.Offer, task def.T
 
 // electronScheduler implements the Scheduler interface
 type ProactiveClusterwideCapRanked struct {
-	tasksCreated int
-	tasksRunning int
-	tasks []def.Task
-	metrics map[string]def.Metric
-	running map[string]map[string]bool
+	tasksCreated   int
+	tasksRunning   int
+	tasks          []def.Task
+	metrics        map[string]def.Metric
+	running        map[string]map[string]bool
 	taskMonitor    map[string][]def.Task // store tasks that are currently running.
 	availablePower map[string]float64    // available power for each node in the cluster.
 	totalPower     map[string]float64    // total power for each node in the cluster.
@@ -86,7 +86,7 @@ func NewProactiveClusterwideCapRanked(tasks []def.Task, ignoreWatts bool) *Proac
 		ticker:         time.NewTicker(10 * time.Second),
 		recapTicker:    time.NewTicker(20 * time.Second),
 		isCapping:      false,
-		isRecapping:	false,
+		isRecapping:    false,
 	}
 	return s
 }
@@ -114,10 +114,10 @@ func (s *ProactiveClusterwideCapRanked) newTask(offer *mesos.Offer, task def.Tas
 	task.SetTaskID(*proto.String("electron-" + taskName))
 	// Add task to the list of tasks running on the node.
 	s.running[offer.GetSlaveId().GoString()][taskName] = true
-	if len(s.taskMonitor[offer.GetSlaveId().GoString()]) == 0 {
-		s.taskMonitor[offer.GetSlaveId().GoString()] = []def.Task{task}
+	if len(s.taskMonitor[*offer.Hostname]) == 0 {
+		s.taskMonitor[*offer.Hostname] = []def.Task{task}
 	} else {
-		s.taskMonitor[offer.GetSlaveId().GoString()] = append(s.taskMonitor[offer.GetSlaveId().GoString()], task)
+		s.taskMonitor[*offer.Hostname] = append(s.taskMonitor[*offer.Hostname], task)
 	}
 
 	resources := []*mesos.Resource{
