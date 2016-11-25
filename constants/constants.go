@@ -10,10 +10,10 @@ Also, exposing functions to update or initialize some of the constants.
 */
 package constants
 
-var Hosts = []string{"stratos-001", "stratos-002",
-            "stratos-003", "stratos-004",
-            "stratos-005", "stratos-006",
-            "stratos-007", "stratos-008"}
+var Hosts = []string{"stratos-001.cs.binghamton.edu", "stratos-002.cs.binghamton.edu",
+            "stratos-003.cs.binghamton.edu", "stratos-004.cs.binghamton.edu",
+            "stratos-005.cs.binghamton.edu", "stratos-006.cs.binghamton.edu",
+            "stratos-007.cs.binghamton.edu", "stratos-008.cs.binghamton.edu"}
 
 // Add a new host to the slice of hosts.
 func AddNewHost(new_host string) bool {
@@ -34,7 +34,7 @@ var Power_threshold = 0.6 // Right now saying that a task will never be given le
   So, if power required = 10W, the node would be capped to 75%*10W.
   This value can be changed upon convenience.
 */
-var Cap_margin = 0.7
+var Cap_margin = 0.50
 
 // Modify the cap margin.
 func UpdateCapMargin(new_cap_margin float64) bool {
@@ -73,7 +73,7 @@ func AddTotalPowerForHost(host string, total_power float64) bool {
 }
 
 // Window size for running average
-var Window_size = 10
+var Window_size = 160
 
 // Update the window size.
 func UpdateWindowSize(new_window_size int) bool {
