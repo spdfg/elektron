@@ -2,11 +2,6 @@ package utilities
 
 import "errors"
 
-/*
-The Pair and PairList have been taken from google groups forum,
-https://groups.google.com/forum/#!topic/golang-nuts/FT7cjmcL7gw
-*/
-
 // Utility struct that helps in sorting the available power by value.
 type Pair struct {
 	Key   string
