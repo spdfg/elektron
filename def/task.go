@@ -38,18 +38,18 @@ func TasksFromJSON(uri string) ([]Task, error) {
 }
 
 // Update the host on which the task needs to be scheduled.
-func (tsk *Task) UpdateHost(new_host string) bool {
+func (tsk *Task) UpdateHost(newHost string) bool {
 	// Validation
-	is_correct_host := false
-	for _, existing_host := range constants.Hosts {
-		if new_host == existing_host {
-			is_correct_host = true
+	isCorrectHost := false
+	for _, existingHost := range constants.Hosts {
+		if newHost == existingHost {
+			isCorrectHost = true
 		}
 	}
-	if !is_correct_host {
+	if !isCorrectHost {
 		return false
 	} else {
-		tsk.Host = new_host
+		tsk.Host = newHost
 		return true
 	}
 }

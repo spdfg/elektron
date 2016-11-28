@@ -16,71 +16,71 @@ var Hosts = []string{"stratos-001.cs.binghamton.edu", "stratos-002.cs.binghamton
 	"stratos-007.cs.binghamton.edu", "stratos-008.cs.binghamton.edu"}
 
 // Add a new host to the slice of hosts.
-func AddNewHost(new_host string) bool {
+func AddNewHost(newHost string) bool {
 	// Validation
-	if new_host == "" {
+	if newHost == "" {
 		return false
 	} else {
-		Hosts = append(Hosts, new_host)
+		Hosts = append(Hosts, newHost)
 		return true
 	}
 }
 
 // Lower bound of the percentage of requested power, that can be allocated to a task.
-var Power_threshold = 0.6 // Right now saying that a task will never be given lesser than 60% of the power it requested.
+var PowerThreshold = 0.6 // Right now saying that a task will never be given lesser than 60% of the power it requested.
 
 /*
   Margin with respect to the required power for a job.
   So, if power required = 10W, the node would be capped to 75%*10W.
   This value can be changed upon convenience.
 */
-var Cap_margin = 0.50
+var CapMargin = 0.70
 
 // Modify the cap margin.
-func UpdateCapMargin(new_cap_margin float64) bool {
+func UpdateCapMargin(newCapMargin float64) bool {
 	// Checking if the new_cap_margin is less than the power threshold.
-	if new_cap_margin < Starvation_factor {
+	if newCapMargin < StarvationFactor {
 		return false
 	} else {
-		Cap_margin = new_cap_margin
+		CapMargin = newCapMargin
 		return true
 	}
 }
 
 // Threshold factor that would make (Cap_margin * task.Watts) equal to (60/100 * task.Watts).
-var Starvation_factor = 0.8
+var StarvationFactor = 0.8
 
 // Total power per node.
-var Total_power map[string]float64
+var TotalPower map[string]float64
 
 // Initialize the total power per node. This should be done before accepting any set of tasks for scheduling.
-func AddTotalPowerForHost(host string, total_power float64) bool {
+func AddTotalPowerForHost(host string, totalPower float64) bool {
 	// Validation
-	is_correct_host := false
-	for _, existing_host := range Hosts {
-		if host == existing_host {
-			is_correct_host = true
+	isCorrectHost := false
+	for _, existingHost := range Hosts {
+		if host == existingHost {
+			isCorrectHost = true
 		}
 	}
 
-	if !is_correct_host {
+	if !isCorrectHost {
 		return false
 	} else {
-		Total_power[host] = total_power
+		TotalPower[host] = totalPower
 		return true
 	}
 }
 
 // Window size for running average
-var Window_size = 10
+var WindowSize = 160
 
 // Update the window size.
-func UpdateWindowSize(new_window_size int) bool {
+func UpdateWindowSize(newWindowSize int) bool {
 	// Validation
-	if new_window_size == 0 {
+	if newWindowSize == 0 {
 		return false
 	} else {
-		Window_size = new_window_size
+		WindowSize = newWindowSize
 		return true
 	}
 }
