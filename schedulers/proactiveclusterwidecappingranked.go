@@ -257,7 +257,7 @@ func (s *ProactiveClusterwideCapRanked) ResouceOffers(driver sched.SchedulerDriv
 	}
 
 	// sorting the tasks in ascending order of watts.
-	s.capper.sort_tasks(&s.tasks)
+	s.capper.sortTasks(&s.tasks)
 	// displaying the ranked tasks.
 	log.Println("The ranked tasks are:\n---------------------\n\t[")
 	for rank, task := range s.tasks {

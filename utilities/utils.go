@@ -37,11 +37,11 @@ func OrderedKeys(plist PairList) ([]string, error) {
 	if plist == nil {
 		return nil, errors.New("Invalid argument: plist")
 	}
-	ordered_keys := make([]string, len(plist))
+	orderedKeys := make([]string, len(plist))
 	for _, pair := range plist {
-		ordered_keys = append(ordered_keys, pair.Key)
+		orderedKeys = append(orderedKeys, pair.Key)
 	}
-	return ordered_keys, nil
+	return orderedKeys, nil
 }
 
 // determine the max value

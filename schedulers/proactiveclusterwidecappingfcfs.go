@@ -304,8 +304,8 @@ func (s *ProactiveClusterwideCapFCFS) ResourceOffers(driver sched.SchedulerDrive
 					log.Println(err)
 				}
 				log.Printf("Starting on [%s]\n", offer.GetHostname())
-				to_schedule := []*mesos.TaskInfo{s.newTask(offer, task)}
-				driver.LaunchTasks([]*mesos.OfferID{offer.Id}, to_schedule, defaultFilter)
+				toSchedule := []*mesos.TaskInfo{s.newTask(offer, task)}
+				driver.LaunchTasks([]*mesos.OfferID{offer.Id}, toSchedule, defaultFilter)
 				log.Printf("Inst: %d", *task.Instances)
 				*task.Instances--
 				if *task.Instances <= 0 {
