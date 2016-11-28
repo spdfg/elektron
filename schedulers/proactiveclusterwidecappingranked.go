@@ -203,7 +203,6 @@ func (s *ProactiveClusterwideCapRanked) startRecapping() {
 			case <-s.recapTicker.C:
 				rankedMutex.Lock()
 				// If stopped performing cluster wide capping then we need to explicitly cap the entire cluster.
-				//if !s.isCapping && s.isRecapping && rankedRecapValue > 0.0 {
 				if s.isRecapping && rankedRecapValue > 0.0 {
 					for _, host := range constants.Hosts {
 						// Rounding curreCapValue to the nearest int.

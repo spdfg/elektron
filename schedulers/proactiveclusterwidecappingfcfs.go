@@ -193,7 +193,6 @@ func (s *ProactiveClusterwideCapFCFS) startRecapping() {
 			case <-s.recapTicker.C:
 				fcfsMutex.Lock()
 				// If stopped performing cluster wide capping then we need to explicitly cap the entire cluster.
-				//if !s.isCapping && s.isRecapping && fcfsRecapValue > 0.0 {
 				if s.isRecapping && fcfsRecapValue > 0.0 {
 					for _, host := range constants.Hosts {
 						// Rounding curreCapValue to the nearest int.
