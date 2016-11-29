@@ -8,6 +8,7 @@ To Do:
  * Add ability to use constraints
  * Running average calculations https://en.wikipedia.org/wiki/Moving_average#Exponential_moving_average
  * Make parameters corresponding to each scheduler configurable (possible to have a config template for each scheduler?)
+ * Fix the -p option.
 
 
 
