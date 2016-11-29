@@ -3,7 +3,6 @@ Constants that are used across scripts
 1. The available hosts = stratos-00x (x varies from 1 to 8)
 2. cap_margin = percentage of the requested power to allocate
 3. power_threshold = overloading factor
-4. total_power = total power per node
 5. window_size = number of tasks to consider for computation of the dynamic cap.
 
 Also, exposing functions to update or initialize some of the constants.
