@@ -26,7 +26,11 @@ func AddNewHost(newHost string) bool {
 	}
 }
 
-// Lower bound of the percentage of requested power, that can be allocated to a task.
+/*
+	Lower bound of the percentage of requested power, that can be allocated to a task.
+
+	Note: This constant is not used for the proactive cluster wide capping schemes.
+*/
 var PowerThreshold = 0.6 // Right now saying that a task will never be given lesser than 60% of the power it requested.
 
 /*
@@ -47,29 +51,22 @@ func UpdateCapMargin(newCapMargin float64) bool {
 	}
 }
 
-// Threshold factor that would make (Cap_margin * task.Watts) equal to (60/100 * task.Watts).
-var StarvationFactor = 0.8
+/*
+	The factor, that when multiplied with (task.Watts * CapMargin) results in (task.Watts * PowerThreshold).
+	This is used to check whether available power, for a host in an offer, is not less than (PowerThreshold * task.Watts),
+		which is assumed to result in starvation of the task.
+	Here is an example,
+		Suppose a task requires 100W of power. Assuming CapMargin = 0.75 and PowerThreshold = 0.6.
+		So, the assumed allocated watts is 75W.
+		Now, when we get an offer, we need to check whether the available power, for the host in that offer, is
+			not less than 60% (the PowerTreshold) of the requested power (100W).
+		To put it in other words,
+			availablePower >= 100W * 0.75 * X
+		where X is the StarvationFactor (80% in this case)
 
-// Total power per node.
-var TotalPower map[string]float64
-
-// Initialize the total power per node. This should be done before accepting any set of tasks for scheduling.
-func AddTotalPowerForHost(host string, totalPower float64) bool {
-	// Validation
-	isCorrectHost := false
-	for _, existingHost := range Hosts {
-		if host == existingHost {
-			isCorrectHost = true
-		}
-	}
-
-	if !isCorrectHost {
-		return false
-	} else {
-		TotalPower[host] = totalPower
-		return true
-	}
-}
+	Note: This constant is not used for the proactive cluster wide capping schemes.
+*/
+var StarvationFactor = PowerThreshold / CapMargin
 
 // Window size for running average
 var WindowSize = 160
