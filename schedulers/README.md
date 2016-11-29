@@ -4,6 +4,7 @@ Electron: Scheduling Algorithms
 To Do:
 
  * Design changes -- Possible to have one scheduler with different scheduling schemes?
+ * Make the running average calculation generic, so that schedulers in the future can use it and not implement their own.
 
 Scheduling Algorithms:
 
