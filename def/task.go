@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"github.com/pkg/errors"
 	"os"
-	"reflect"
 )
 
 type Task struct {
@@ -85,15 +84,9 @@ func Compare(task1 *Task, task2 *Task) bool {
 	if task1 == task2 {
 		return true
 	}
-	// Checking member equality
-	if reflect.DeepEqual(*task1, *task2) {
-		// Need to check for the task ID
-		if task1.TaskID == task2.TaskID {
-			return true
-		} else {
-			return false
-		}
-	} else {
+	if task1.TaskID != task2.TaskID {
 		return false
+	} else {
+		return true
 	}
 }
