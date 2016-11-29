@@ -234,7 +234,6 @@ func (s *ProactiveClusterwideCapFCFS) stopRecapping() {
 	}
 }
 
-// TODO: Need to reduce the time complexity: looping over offers twice (Possible to do it just once?).
 func (s *ProactiveClusterwideCapFCFS) ResourceOffers(driver sched.SchedulerDriver, offers []*mesos.Offer) {
 	log.Printf("Received %d resource offers", len(offers))
 
@@ -272,8 +271,6 @@ func (s *ProactiveClusterwideCapFCFS) ResourceOffers(driver sched.SchedulerDrive
 		     3. fcfsCurrentCapValue is updated with the determined cluster wide cap.
 
 		   Cluster wide capping is currently performed at regular intervals of time.
-		   TODO: We can choose to cap the cluster only if the clusterwide cap varies more than the current clusterwide cap.
-		     Although this sounds like a better approach, it only works when the resource requirements of neighbouring tasks are similar.
 		*/
 		taken := false
 
