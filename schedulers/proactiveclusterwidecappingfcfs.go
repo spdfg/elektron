@@ -339,7 +339,9 @@ func (s *ProactiveClusterwideCapFCFS) StatusUpdate(driver sched.SchedulerDriver,
 	log.Printf("Received task status [%s] for task [%s]\n", NameFor(status.State), *status.TaskId.Value)
 
 	if *status.State == mesos.TaskState_TASK_RUNNING {
+		fcfsMutex.Lock()
 		s.tasksRunning++
+		fcfsMutex.Unlock()
 	} else if IsTerminal(status.State) {
 		delete(s.running[status.GetSlaveId().GoString()], *status.TaskId.Value)
 		// Need to remove the task from the window of tasks.
@@ -365,7 +367,9 @@ func (s *ProactiveClusterwideCapFCFS) StatusUpdate(driver sched.SchedulerDriver,
 			log.Println(err)
 		}
 
+		fcfsMutex.Lock()
 		s.tasksRunning--
+		fcfsMutex.Unlock()
 		if s.tasksRunning == 0 {
 			select {
 			case <-s.Shutdown:
