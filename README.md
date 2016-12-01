@@ -8,7 +8,6 @@ To Do:
  * Add ability to use constraints
  * Running average calculations https://en.wikipedia.org/wiki/Moving_average#Exponential_moving_average
  * Make parameters corresponding to each scheduler configurable (possible to have a config template for each scheduler?)
- * Fix the -p option.
 
 
 
@@ -19,7 +18,7 @@ machine on which electron is launched for logging to work**
 
 How to run (Use the --help option to get information about other command-line options):
 
-`./electron -workload <workload.json> -ignoreWatts <true or false>`
+`./electron -workload <workload json>`
 
 
 Workload schema:
