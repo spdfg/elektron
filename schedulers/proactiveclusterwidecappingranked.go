@@ -244,7 +244,7 @@ func (s *ProactiveClusterwideCapRanked) stopRecapping() {
 	}
 }
 
-func (s *ProactiveClusterwideCapRanked) ResouceOffers(driver sched.SchedulerDriver, offers []*mesos.Offer) {
+func (s *ProactiveClusterwideCapRanked) ResourceOffers(driver sched.SchedulerDriver, offers []*mesos.Offer) {
 	log.Printf("Received %d resource offers", len(offers))
 
 	// retrieving the available power for all the hosts in the offers.
@@ -262,14 +262,15 @@ func (s *ProactiveClusterwideCapRanked) ResouceOffers(driver sched.SchedulerDriv
 	}
 
 	// sorting the tasks in ascending order of watts.
-	s.capper.sortTasks(&s.tasks)
-	// displaying the ranked tasks.
-	log.Println("The ranked tasks are:\n---------------------\n\t[")
-	for rank, task := range s.tasks {
-		log.Printf("\t\t%d: %s\n", rank+1, task.TaskID)
+	if (len(s.tasks) > 0) {
+		s.capper.sortTasks(&s.tasks)
+		// calculating the total number of tasks ranked.
+		numberOfRankedTasks := 0
+		for _, task := range s.tasks {
+			numberOfRankedTasks += *task.Instances
+		}
+		log.Printf("Ranked %d tasks in ascending order of tasks.", numberOfRankedTasks)
 	}
-	log.Println("\t]")
-
 	for _, offer := range offers {
 		select {
 		case <-s.Shutdown:
