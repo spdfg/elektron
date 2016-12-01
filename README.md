@@ -20,6 +20,10 @@ How to run (Use the --help option to get information about other command-line op
 
 `./electron -workload <workload json>`
 
+To run electron with ignoreWatts, run the following command,
+
+`./electron -workload <workload json> -ignoreWatts`
+
 
 Workload schema:
 
