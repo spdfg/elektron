@@ -89,17 +89,17 @@ func (capper clusterwideCapper) runningAverageOfWatts(tsk *def.Task) float64 {
 /*
 Calculating cap value.
 
-1. Sorting the values of runningAverageToTotalPowerPercentage in ascending order.
+1. Sorting the values of ratios ((running average/totalPower) per node) in ascending order.
 2. Computing the median of above sorted values.
 3. The median is now the cap.
 */
-func (capper clusterwideCapper) getCap(runningAverageToTotalPowerPercentage map[string]float64) float64 {
+func (capper clusterwideCapper) getCap(ratios map[string]float64) float64 {
 	var values []float64
 	// Validation
-	if runningAverageToTotalPowerPercentage == nil {
+	if ratios == nil {
 		return 100.0
 	}
-	for _, apower := range runningAverageToTotalPowerPercentage {
+	for _, apower := range ratios {
 		values = append(values, apower)
 	}
 	// sorting the values in ascending order.
@@ -339,17 +339,17 @@ func (capper clusterwideCapper) fcfsDetermineCap(totalPower map[string]float64,
 		// Need to calculate the running average
 		runningAverage := capper.runningAverageOfWatts(newTask)
 		// For each node, calculate the percentage of the running average to the total power.
-		runningAverageToTotalPowerPercentage := make(map[string]float64)
+		ratios := make(map[string]float64)
 		for host, tpower := range totalPower {
 			if tpower >= runningAverage {
-				runningAverageToTotalPowerPercentage[host] = (runningAverage / tpower) * 100
+				ratios[host] = (runningAverage / tpower) * 100
 			} else {
 				// We don't consider this host for the computation of the cluster wide cap.
 			}
 		}
 
 		// Determine the cluster wide cap value.
-		capValue := capper.getCap(runningAverageToTotalPowerPercentage)
+		capValue := capper.getCap(ratios)
 		// Need to cap the cluster to this value.
 		return capValue, nil
 	}
