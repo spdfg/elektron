@@ -21,7 +21,8 @@ How to run (Use the --help option to get information about other command-line op
 
 `./electron -workload <workload json>`  
 
-*Here, watts would be considered a hard limit when fitting tasks with offers.*
+*Here, watts would be considered a hard limit when fitting tasks with offers.*  
+
 
 To run electron with ignoreWatts, run the following command,
 
