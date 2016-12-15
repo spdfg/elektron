@@ -196,15 +196,6 @@ func (s *PistonCapper) stopCapping() {
 	}
 }
 
-// Check whether we are overloading the host (from watts perspective)
-func wattsOverload(task def.Task, offerWatts float64, totalPower float64) bool {
-	if offerWatts >= (totalPower + (task.Watts * constants.CapMargin)) {
-		return false
-	} else {
-		return true
-	}
-}
-
 func (s *PistonCapper) ResourceOffers(driver sched.SchedulerDriver, offers []*mesos.Offer) {
 	log.Printf("Received %d resource offers", len(offers))
 
@@ -228,9 +219,6 @@ func (s *PistonCapper) ResourceOffers(driver sched.SchedulerDriver, offers []*me
 	For each set of tasks that are scheduled, compute the new cap values for each host in the cluster.
 	At regular intervals of time, cap each node in the cluster.
 	*/
-	log.Printf("Number of tasks yet to be scheduled: %d", len(s.tasks))
-
-	
 	for _, offer := range offers {
 		select {
 		case <-s.Shutdown:
@@ -262,8 +250,8 @@ func (s *PistonCapper) ResourceOffers(driver sched.SchedulerDriver, offers []*me
 
 			for *task.Instances > 0 {
 				// Does the task fit
-				if (s.ignoreWatts || !wattsOverload(task, offerWatts, totalWatts)) &&
-					(offerCPU >= (totalCPU + task.CPU)) &&
+				if (s.ignoreWatts || (offerWatts >= (totalWatts + task.Watts))) &&
+					(offerCPU >= (totalCPU + task.CPU)) && 
 					(offerRAM >= (totalRAM + task.RAM)) {
 
 					// Start piston capping if haven't started yet
@@ -273,7 +261,7 @@ func (s *PistonCapper) ResourceOffers(driver sched.SchedulerDriver, offers []*me
 					}
 
 					taken = true
-					totalWatts += (task.Watts * constants.CapMargin)
+					totalWatts += task.Watts
 					totalCPU += task.CPU
 					totalRAM += task.RAM
 					log.Println("Co-Located with: ")
