@@ -165,15 +165,17 @@ func (s *PistonCapper) startCapping() {
 						if prevRoundedCap != roundedCapValue {
 							if err := rapl.Cap(host, "rapl", roundedCapValue); err != nil {
 								log.Println(err)
+							} else {
+								log.Printf("Capped [%s] at %d", host, int(math.Floor(capValue + 0.5)))
 							}
-							log.Printf("Capped [%s] at %d", host, int(math.Floor(capValue + 0.5)))
 							previousRoundedCapValues[host] = roundedCapValue
 						}
 					} else {
 						if err := rapl.Cap(host, "rapl", roundedCapValue); err != nil {
 							log.Println(err)
+						} else {
+							log.Printf("Capped [%s] at %d", host, int(math.Floor(capValue + 0.5)))
 						}
-						log.Printf("Capped [%s] at %d", host, int(math.Floor(capValue + 0.5)))
 						previousRoundedCapValues[host] = roundedCapValue
 					}
 				}
