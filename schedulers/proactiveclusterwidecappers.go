@@ -264,41 +264,6 @@ func (capper clusterwideCapper) recap(totalPower map[string]float64,
 	}
 }
 
-/* Quick sort algorithm to sort tasks, in place, in ascending order of power.*/
-func (capper clusterwideCapper) quickSort(low int, high int, tasksToSort *[]def.Task) {
-	i := low
-	j := high
-	// calculating the pivot
-	pivotIndex := low + (high-low)/2
-	pivot := (*tasksToSort)[pivotIndex]
-	for i <= j {
-		for (*tasksToSort)[i].Watts < pivot.Watts {
-			i++
-		}
-		for (*tasksToSort)[j].Watts > pivot.Watts {
-			j--
-		}
-		if i <= j {
-			temp := (*tasksToSort)[i]
-			(*tasksToSort)[i] = (*tasksToSort)[j]
-			(*tasksToSort)[j] = temp
-			i++
-			j--
-		}
-	}
-	if low < j {
-		capper.quickSort(low, j, tasksToSort)
-	}
-	if i < high {
-		capper.quickSort(i, high, tasksToSort)
-	}
-}
-
-// Sorting tasks in ascending order of requested watts.
-func (capper clusterwideCapper) sortTasks(tasksToSort *[]def.Task) {
-	capper.quickSort(0, len(*tasksToSort)-1, tasksToSort)
-}
-
 /*
 Remove entry for finished task.
 This function is called when a task completes.
