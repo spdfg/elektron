@@ -21,6 +21,7 @@ import (
 	sched "github.com/mesos/mesos-go/scheduler"
 	"log"
 	"math"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -263,7 +264,7 @@ func (s *ProactiveClusterwideCapRanked) ResourceOffers(driver sched.SchedulerDri
 
 	// sorting the tasks in ascending order of watts.
 	if (len(s.tasks) > 0) {
-		s.capper.sortTasks(&s.tasks)
+		sort.Sort(def.WattsSorter(s.tasks))
 		// calculating the total number of tasks ranked.
 		numberOfRankedTasks := 0
 		for _, task := range s.tasks {
