@@ -12,7 +12,6 @@ import (
 	sched "github.com/mesos/mesos-go/scheduler"
 	"log"
 	"math"
-	"sort"
 	"strings"
 	"sync"
 	"time"
