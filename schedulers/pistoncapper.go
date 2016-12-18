@@ -69,6 +69,18 @@ func NewPistonCapper(tasks []def.Task, ignoreWatts bool) *PistonCapper {
 	return s
 }
 
+// check whether task fits the offer or not.
+func (s *PistonCapper) takeOffer(offerWatts float64, offerCPU float64, offerRAM float64, totalWatts float64, totalCPU float64, 
+	totalRAM float64, task def.Task) bool {
+	if (s.ignoreWatts || (offerWatts >= (totalWatts + task.Watts))) &&
+		(offerCPU >= (totalCPU + task.CPU)) &&
+		(offerRAM >= (totalRAM + task.RAM)) {
+		return true
+	} else {
+		return false
+	}
+}
+
 // mutex
 var mutex sync.Mutex
 
@@ -248,9 +260,7 @@ func (s *PistonCapper) ResourceOffers(driver sched.SchedulerDriver, offers []*me
 
 			for *task.Instances > 0 {
 				// Does the task fit
-				if (s.ignoreWatts || (offerWatts >= (totalWatts + task.Watts))) &&
-					(offerCPU >= (totalCPU + task.CPU)) &&
-					(offerRAM >= (totalRAM + task.RAM)) {
+				if s.takeOffer(offerWatts, offerCPU, offerRAM, totalWatts, totalCPU, totalRAM, task) {
 
 					// Start piston capping if haven't started yet
 					if !s.isCapping {
