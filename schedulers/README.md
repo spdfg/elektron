@@ -8,8 +8,9 @@ To Do:
 
 Scheduling Algorithms:
 
+ * First Fit
+ * First Fit with sorted watts
  * Bin-packing with sorted watts
  * FCFS Proactive Cluster-wide Capping
  * Ranked Proactive Cluster-wide Capping
- * First Fit
- * First Fit with sorted watts
+ * Piston Capping -- Works when scheduler is run with WAR
