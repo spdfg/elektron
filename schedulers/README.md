@@ -5,7 +5,7 @@ To Do:
 
  * Design changes -- Possible to have one scheduler with different scheduling schemes?
  * Use the generic running average calculator in utilities/runAvg in schedulers/proactiveclusterwidecappers.go
- * Added functionality to the runAvg interface to be able to remove element in the window based on a criteria.
+ * Add functionality to the runAvg interface to be able to remove element in the window based on a criteria.
 
 Scheduling Algorithms:
 
