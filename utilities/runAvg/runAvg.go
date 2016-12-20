@@ -22,19 +22,17 @@ type runningAverageCalculator struct {
 	window list.List
 	windowSize int
 	currentSum float64
-	numberOfElementsInWindow int
 }
 
 // singleton instance
 var racSingleton *runningAverageCalculator
 
 // return single instance
-func getInstance(curSum float64, n int, wSize int) *runningAverageCalculator {
+func getInstance(curSum float64, wSize int) *runningAverageCalculator {
 	if racSingleton == nil {
 		racSingleton = &runningAverageCalculator {
 			windowSize: wSize,
 			currentSum: curSum,
-			numberOfElementsInWindow: n,
 		}
 		return racSingleton
 	} else {
@@ -49,9 +47,8 @@ func getInstance(curSum float64, n int, wSize int) *runningAverageCalculator {
 // Compute the running average by adding 'data' to the window.
 // Updating currentSum to get constant time complexity for every running average computation.
 func (rac *runningAverageCalculator) calculate(data Interface) float64 {
-	if rac.numberOfElementsInWindow < rac.windowSize {
+	if rac.window.Len() < rac.windowSize {
 		rac.window.PushBack(data)
-		rac.numberOfElementsInWindow++
 		rac.currentSum += data.Val()
 	} else {
 		// removing the element at the front of the window.
@@ -75,7 +72,6 @@ func (rac *runningAverageCalculator) removeFromWindow(id string) (interface{}, e
 		if elementToRemove := element.Value.(Interface); elementToRemove.ID() == id {
 			rac.window.Remove(element)
 			rac.currentSum -= elementToRemove.Val()
-			rac.numberOfElementsInWindow--
 			return elementToRemove, nil
 		}
 	}
@@ -84,7 +80,7 @@ func (rac *runningAverageCalculator) removeFromWindow(id string) (interface{}, e
 
 // Taking windowSize as a parameter to allow for sliding window implementation.
 func Calc(data Interface, windowSize int) float64 {
-	rac := getInstance(0.0, 0, windowSize)
+	rac := getInstance(0.0, windowSize)
 	return rac.calculate(data)
 }
 
@@ -102,12 +98,11 @@ func Remove(id string) (interface{}, error) {
 func Init() {
 	// checking to see if racSingleton needs top be instantiated
 	if racSingleton == nil {
-		racSingleton = getInstance(0.0, 0, 0)
+		racSingleton = getInstance(0.0, 0)
 	}
 	// Setting parameters to default values. Could also set racSingleton to nil but this leads to unnecessary overhead of creating
 	// another instance when Calc is called.
 	racSingleton.window.Init()
 	racSingleton.windowSize = 0
 	racSingleton.currentSum = 0.0
-	racSingleton.numberOfElementsInWindow = 0
 }
