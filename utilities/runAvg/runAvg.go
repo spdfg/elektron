@@ -74,6 +74,8 @@ func (rac *runningAverageCalculator) removeFromWindow(id string) (interface{}, e
 	for element := rac.window.Front(); element != nil; element = element.Next() {
 		if elementToRemove := element.Value.(Interface); elementToRemove.ID() == id {
 			rac.window.Remove(element)
+			rac.currentSum -= elementToRemove.Val()
+			rac.numberOfElementsInWindow--
 			return elementToRemove, nil
 		}
 	}
