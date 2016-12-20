@@ -4,8 +4,8 @@ Electron: Scheduling Algorithms
 To Do:
 
  * Design changes -- Possible to have one scheduler with different scheduling schemes?
- * Use the generic running average calculator in utilities/runAvg in schedulers/proactiveclusterwidecappers.go
- * Add functionality to the runAvg interface to be able to remove element in the window based on a criteria.
+ * Fix the race condition on 'tasksRunning' in proactiveclusterwidecappingfcfs.go and proactiveclusterwidecappingranked.go
+ * Separate the capping strategies from the scheduling algorithms and make it possible to use any capping strategy with any scheduler.
 
 Scheduling Algorithms:
 
