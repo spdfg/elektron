@@ -27,7 +27,7 @@ func (tw taskWrapper) ID() string {
 	return tw.task.TaskID
 }
 
-// Cluster wide capper. Contains a type that implements runAvg.Interface
+// Cluster wide capper
 type clusterwideCapper struct {}
 
 // Defining constructor for clusterwideCapper. Please don't call this directly and instead use getClusterwideCapperInstance()
