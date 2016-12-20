@@ -70,8 +70,8 @@ func NewPistonCapper(tasks []def.Task, ignoreWatts bool) *PistonCapper {
 }
 
 // check whether task fits the offer or not.
-func (s *PistonCapper) takeOffer(offerWatts float64, offerCPU float64, offerRAM float64, totalWatts float64, totalCPU float64, 
-	totalRAM float64, task def.Task) bool {
+func (s *PistonCapper) takeOffer(offerWatts float64, offerCPU float64, offerRAM float64,
+	totalWatts float64, totalCPU float64, totalRAM float64, task def.Task) bool {
 	if (s.ignoreWatts || (offerWatts >= (totalWatts + task.Watts))) &&
 		(offerCPU >= (totalCPU + task.CPU)) &&
 		(offerRAM >= (totalRAM + task.RAM)) {
