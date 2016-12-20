@@ -9,12 +9,12 @@ To Do:
  * Running average calculations https://en.wikipedia.org/wiki/Moving_average#Exponential_moving_average
  * Make parameters corresponding to each scheduler configurable (possible to have a config template for each scheduler?)
  * Write test code for each scheduler (This should be after the design change)
-
+ * Some of the constants in constants/constants.go can vary based on the environment.  
+   Possible to setup the constants at runtime based on the environment?
 
 
 **Requires Performance-Copilot tool pmdumptext to be installed on the
 machine on which electron is launched for logging to work**
-
 
 
 How to run (Use the --help option to get information about other command-line options):
