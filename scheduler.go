@@ -56,7 +56,7 @@ func main() {
 		fmt.Println(task)
 	}
 
-	scheduler := schedulers.NewProactiveClusterwideCapRanked(tasks, *ignoreWatts)
+	scheduler := schedulers.NewPistonCapper(tasks, *ignoreWatts)
 	driver, err := sched.NewMesosSchedulerDriver(sched.DriverConfig{
 		Master: *master,
 		Framework: &mesos.FrameworkInfo{

@@ -3,6 +3,7 @@ package schedulers
 import (
 	"bitbucket.org/sunybingcloud/electron/constants"
 	"bitbucket.org/sunybingcloud/electron/def"
+	"bitbucket.org/sunybingcloud/electron/pcp"
 	"bitbucket.org/sunybingcloud/electron/rapl"
 	"fmt"
 	"github.com/golang/protobuf/proto"
@@ -37,7 +38,7 @@ type ProactiveClusterwideCapFCFS struct {
 	availablePower map[string]float64    // available power for each node in the cluster.
 	totalPower     map[string]float64    // total power for each node in the cluster.
 	ignoreWatts    bool
-	capper         *clusterwideCapper
+	capper         *pcp.ClusterwideCapper
 	ticker         *time.Ticker
 	recapTicker    *time.Ticker
 	isCapping      bool // indicate whether we are currently performing cluster wide capping.
@@ -72,7 +73,7 @@ func NewProactiveClusterwideCapFCFS(tasks []def.Task, ignoreWatts bool) *Proacti
 		availablePower: make(map[string]float64),
 		totalPower:     make(map[string]float64),
 		RecordPCP:      false,
-		capper:         getClusterwideCapperInstance(),
+		capper:         pcp.GetClusterwideCapperInstance(),
 		ticker:         time.NewTicker(10 * time.Second),
 		recapTicker:    time.NewTicker(20 * time.Second),
 		isCapping:      false,
@@ -290,7 +291,7 @@ func (s *ProactiveClusterwideCapFCFS) ResourceOffers(driver sched.SchedulerDrive
 					s.startCapping()
 				}
 				taken = true
-				tempCap, err := s.capper.fcfsDetermineCap(s.totalPower, &task)
+				tempCap, err := s.capper.FCFSDeterminedCap(s.totalPower, &task)
 
 				if err == nil {
 					fcfsMutex.Lock()
@@ -345,10 +346,10 @@ func (s *ProactiveClusterwideCapFCFS) StatusUpdate(driver sched.SchedulerDriver,
 	} else if IsTerminal(status.State) {
 		delete(s.running[status.GetSlaveId().GoString()], *status.TaskId.Value)
 		// Need to remove the task from the window of tasks.
-		s.capper.taskFinished(*status.TaskId.Value)
+		s.capper.TaskFinished(*status.TaskId.Value)
 		// Determining the new cluster wide cap.
-		//tempCap, err := s.capper.recap(s.totalPower, s.taskMonitor, *status.TaskId.Value)
-		tempCap, err := s.capper.cleverRecap(s.totalPower, s.taskMonitor, *status.TaskId.Value)
+		//tempCap, err := s.capper.Recap(s.totalPower, s.taskMonitor, *status.TaskId.Value)
+		tempCap, err := s.capper.CleverRecap(s.totalPower, s.taskMonitor, *status.TaskId.Value)
 		if err == nil {
 			// if new determined cap value is different from the current recap value then we need to recap.
 			if int(math.Floor(tempCap+0.5)) != int(math.Floor(fcfsRecapValue+0.5)) {
