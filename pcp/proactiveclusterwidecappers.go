@@ -2,7 +2,7 @@
 Cluster wide dynamic capping
 this is not a scheduler but a scheduling scheme that schedulers can use.
 */
-package schedulers
+package pcp
 
 import (
 	"bitbucket.org/sunybingcloud/electron/constants"
@@ -28,18 +28,18 @@ func (tw taskWrapper) ID() string {
 }
 
 // Cluster wide capper
-type clusterwideCapper struct {}
+type ClusterwideCapper struct {}
 
-// Defining constructor for clusterwideCapper. Please don't call this directly and instead use getClusterwideCapperInstance()
-func newClusterwideCapper() *clusterwideCapper {
-	return &clusterwideCapper{}
+// Defining constructor for clusterwideCapper. Please don't call this directly and instead use GetClusterwideCapperInstance()
+func newClusterwideCapper() *ClusterwideCapper {
+	return &ClusterwideCapper{}
 }
 
 // Singleton instance of clusterwideCapper
-var singletonCapper *clusterwideCapper
+var singletonCapper *ClusterwideCapper
 
 // Retrieve the singleton instance of clusterwideCapper.
-func getClusterwideCapperInstance() *clusterwideCapper {
+func GetClusterwideCapperInstance() *ClusterwideCapper {
 	if singletonCapper == nil {
 		singletonCapper = newClusterwideCapper()
 	} else {
@@ -49,7 +49,7 @@ func getClusterwideCapperInstance() *clusterwideCapper {
 }
 
 // Clear and initialize the runAvg calculator
-func (capper clusterwideCapper) clear() {
+func (capper ClusterwideCapper) clear() {
 	runAvg.Init()
 }
 
@@ -60,7 +60,7 @@ Calculating cap value.
 2. Computing the median of above sorted values.
 3. The median is now the cap.
 */
-func (capper clusterwideCapper) getCap(ratios map[string]float64) float64 {
+func (capper ClusterwideCapper) getCap(ratios map[string]float64) float64 {
 	var values []float64
 	// Validation
 	if ratios == nil {
@@ -80,25 +80,25 @@ func (capper clusterwideCapper) getCap(ratios map[string]float64) float64 {
 }
 
 /*
-A recapping strategy which decides between 2 different recapping schemes.
+A Recapping strategy which decides between 2 different Recapping schemes.
 1. the regular scheme based on the average power usage across the cluster.
 2. A scheme based on the average of the loads on each node in the cluster.
 
-The recap value picked the least among the two.
+The Recap value picked the least among the two.
 
-The cleverRecap scheme works well when the cluster is relatively idle and until then,
-	the primitive recapping scheme works better.
+The CleverRecap scheme works well when the cluster is relatively idle and until then,
+	the primitive Recapping scheme works better.
 */
-func (capper clusterwideCapper) cleverRecap(totalPower map[string]float64,
+func (capper ClusterwideCapper) CleverRecap(totalPower map[string]float64,
 	taskMonitor map[string][]def.Task, finishedTaskId string) (float64, error) {
 	// Validation
 	if totalPower == nil || taskMonitor == nil {
 		return 100.0, errors.New("Invalid argument: totalPower, taskMonitor")
 	}
 
-	// determining the recap value by calling the regular recap(...)
+	// determining the Recap value by calling the regular Recap(...)
 	toggle := false
-	recapValue, err := capper.recap(totalPower, taskMonitor, finishedTaskId)
+	RecapValue, err := capper.Recap(totalPower, taskMonitor, finishedTaskId)
 	if err == nil {
 		toggle = true
 	}
@@ -122,8 +122,8 @@ func (capper clusterwideCapper) cleverRecap(totalPower map[string]float64,
 		}
 	}
 
-	// Updating task monitor. If recap(...) has deleted the finished task from the taskMonitor,
-	// then this will be ignored. Else (this is only when an error occured with recap(...)), we remove it here.
+	// Updating task monitor. If Recap(...) has deleted the finished task from the taskMonitor,
+	// then this will be ignored. Else (this is only when an error occured with Recap(...)), we remove it here.
 	if hostOfFinishedTask != "" && indexOfFinishedTask != -1 {
 		log.Printf("Removing task with task [%s] from the list of running tasks\n",
 			taskMonitor[hostOfFinishedTask][indexOfFinishedTask].TaskID)
@@ -156,12 +156,12 @@ func (capper clusterwideCapper) cleverRecap(totalPower map[string]float64,
 			totalLoad += load
 		}
 		averageLoad := (totalLoad / float64(len(loads)) * 100.0) // this would be the cap value.
-		// If toggle is true, then we need to return the least recap value.
+		// If toggle is true, then we need to return the least Recap value.
 		if toggle {
-			if averageLoad <= recapValue {
+			if averageLoad <= RecapValue {
 				return averageLoad, nil
 			} else {
-				return recapValue, nil
+				return RecapValue, nil
 			}
 		} else {
 			return averageLoad, nil
@@ -180,7 +180,7 @@ Recapping the entire cluster.
 
 This needs to be called whenever a task finishes execution.
 */
-func (capper clusterwideCapper) recap(totalPower map[string]float64,
+func (capper ClusterwideCapper) Recap(totalPower map[string]float64,
 	taskMonitor map[string][]def.Task, finishedTaskId string) (float64, error) {
 	// Validation
 	if totalPower == nil || taskMonitor == nil {
@@ -238,12 +238,12 @@ This  function is called when a task completes.
 This completed task needs to be removed from the window of tasks (if it is still present)
 	so that it doesn't contribute to the computation of the next cap value.
 */
-func (capper clusterwideCapper) taskFinished(taskID string) {
+func (capper ClusterwideCapper) TaskFinished(taskID string) {
 	runAvg.Remove(taskID)
 }
 
 // First come first serve scheduling.
-func (capper clusterwideCapper) fcfsDetermineCap(totalPower map[string]float64,
+func (capper ClusterwideCapper) FCFSDeterminedCap(totalPower map[string]float64,
 	newTask *def.Task) (float64, error) {
 	// Validation
 	if totalPower == nil {
@@ -269,6 +269,6 @@ func (capper clusterwideCapper) fcfsDetermineCap(totalPower map[string]float64,
 }
 
 // Stringer for an instance of clusterwideCapper
-func (capper clusterwideCapper) string() string {
+func (capper ClusterwideCapper) String() string {
 	return "Cluster Capper -- Proactively cap the entire cluster."
 }
