@@ -1,6 +1,7 @@
 /*
 Cluster wide dynamic capping
-this is not a scheduler but a scheduling scheme that schedulers can use.
+
+This is not a scheduler but a scheduling scheme that schedulers can use.
 */
 package pcp
 
