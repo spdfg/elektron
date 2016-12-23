@@ -1,7 +1,7 @@
 package schedulers
 
 import (
-	"bitbucket.org/bingcloud/electron/def"
+	"bitbucket.org/sunybingcloud/electron/def"
 	"fmt"
 	"github.com/golang/protobuf/proto"
 	mesos "github.com/mesos/mesos-go/mesosproto"

@@ -1,6 +1,7 @@
 package def
 
 import (
+	"bitbucket.org/sunybingcloud/electron/constants"
 	"encoding/json"
 	"github.com/pkg/errors"
 	"os"
@@ -15,6 +16,7 @@ type Task struct {
 	CMD       string  `json:"cmd"`
 	Instances *int    `json:"inst"`
 	Host      string  `json:"host"`
+	TaskID    string  `json:"taskID"`
 }
 
 func TasksFromJSON(uri string) ([]Task, error) {
@@ -34,6 +36,34 @@ func TasksFromJSON(uri string) ([]Task, error) {
 	return tasks, nil
 }
 
+// Update the host on which the task needs to be scheduled.
+func (tsk *Task) UpdateHost(newHost string) bool {
+	// Validation
+	isCorrectHost := false
+	for _, existingHost := range constants.Hosts {
+		if newHost == existingHost {
+			isCorrectHost = true
+		}
+	}
+	if !isCorrectHost {
+		return false
+	} else {
+		tsk.Host = newHost
+		return true
+	}
+}
+
+// Set the taskID of the task.
+func (tsk *Task) SetTaskID(taskID string) bool {
+	// Validation
+	if taskID == "" {
+		return false
+	} else {
+		tsk.TaskID = taskID
+		return true
+	}
+}
+
 type WattsSorter []Task
 
 func (slice WattsSorter) Len() int {
@@ -46,4 +76,17 @@ func (slice WattsSorter) Less(i, j int) bool {
 
 func (slice WattsSorter) Swap(i, j int) {
 	slice[i], slice[j] = slice[j], slice[i]
+}
+
+// Compare two tasks.
+func Compare(task1 *Task, task2 *Task) bool {
+	// If comparing the same pointers (checking the addresses).
+	if task1 == task2 {
+		return true
+	}
+	if task1.TaskID != task2.TaskID {
+		return false
+	} else {
+		return true
+	}
 }

@@ -5,19 +5,21 @@ To Do:
 
  * Create metrics for each task launched [Time to schedule, run time, power used]
  * Have calibration phase?
- * Add ability to use constraints 
+ * Add ability to use constraints
  * Running average calculations https://en.wikipedia.org/wiki/Moving_average#Exponential_moving_average
-
- 
+ * Make parameters corresponding to each scheduler configurable (possible to have a config template for each scheduler?)
 
 **Requires Performance-Copilot tool pmdumptext to be installed on the
 machine on which electron is launched for logging to work**
 
 
+How to run (Use the --help option to get information about other command-line options):
 
-How to run:
+`./electron -workload <workload json>`
 
-`./electron -workload <workload.json> -ignoreWatts <true or false>`
+To run electron with ignoreWatts, run the following command,
+
+`./electron -workload <workload json> -ignoreWatts`
 
 
 Workload schema:

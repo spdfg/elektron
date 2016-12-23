@@ -26,6 +26,7 @@ func Cap(host, username string, percentage int) error {
 	}
 
 	session, err := connection.NewSession()
+	defer session.Close()
 	if err != nil {
 		return errors.Wrap(err, "Failed to create session")
 	}
