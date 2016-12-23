@@ -7,7 +7,7 @@ The Pair and PairList have been taken from google groups forum,
 https://groups.google.com/forum/#!topic/golang-nuts/FT7cjmcL7gw
 */
 
-// Utility that helps in sorting a map[string]float64 by value.
+// Utility struct that helps in sorting a map[string]float64 by value.
 type Pair struct {
 	Key   string
 	Value float64

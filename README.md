@@ -19,7 +19,7 @@ machine on which electron is launched for logging to work**
 
 How to run (Use the --help option to get information about other command-line options):
 
-`./electron -workload <workload json>`  
+`./electron -workload <workload json>`
 
 To run electron with ignoreWatts, run the following command,
 
