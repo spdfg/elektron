@@ -1,11 +1,17 @@
 [
    {
+      "name" : "minfe",
       "cpu": 3.0,
       "ram": 4096,
       "watts": 50,
       "image": "gouravr/minife:v5",
       "cmd": "cd src && mpirun -np 1 miniFE.x -nx 100 -ny 100 -nz 100",
-      "inst": 10
+      "inst": 10,
+      "class_to_watts" : {
+         "A": 30.2475289996,
+         "B": 35.6491229228,
+         "C": 24.0476734352
+      }
    }
 
 ]

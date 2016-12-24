@@ -17,6 +17,7 @@ type Task struct {
 	Instances *int    `json:"inst"`
 	Host      string  `json:"host"`
 	TaskID    string  `json:"taskID"`
+	ClassToWatts map[string]float64 `json:"class_to_watts"`
 }
 
 func TasksFromJSON(uri string) ([]Task, error) {
