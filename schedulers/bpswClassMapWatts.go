@@ -144,7 +144,7 @@ func (s *BPSWClassMapWatts) ResourceOffers(driver sched.SchedulerDriver, offers 
 
 		tasks := []*mesos.TaskInfo{}
 
-		offer_cpu, offer_ram, offer_watts := OfferAgg(offer)
+		offerCPU, offerRAM, offerWatts := OfferAgg(offer)
 
 		taken := false
 		totalWatts := 0.0
@@ -168,9 +168,11 @@ func (s *BPSWClassMapWatts) ResourceOffers(driver sched.SchedulerDriver, offers 
 					}
 				}
 				// Does the task fit
-				if (s.ignoreWatts || offer_watts >= (totalWatts+task.ClassToWatts[nodeClass])) &&
-					(offer_cpu >= (totalCPU + task.CPU)) &&
-					(offer_ram >= (totalRAM + task.RAM)) {
+				// OR lazy evaluation. If ignore watts is set to true, second statement won't
+				// be evaluated.
+				if (s.ignoreWatts || (offerWatts >= (totalWatts+task.ClassToWatts[nodeClass]))) &&
+					(offerCPU >= (totalCPU + task.CPU)) &&
+					(offerRAM >= (totalRAM + task.RAM)) {
 
 					fmt.Println("Watts being used: ", task.ClassToWatts[nodeClass])
 					taken = true
@@ -194,7 +196,7 @@ func (s *BPSWClassMapWatts) ResourceOffers(driver sched.SchedulerDriver, offers 
 						}
 					}
 				} else {
-					break // Continue on to next offer
+					break // Continue on to next task
 				}
 			}
 		}

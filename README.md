@@ -13,8 +13,9 @@ To Do:
    Possible to setup the constants at runtime based on the environment?
 
 
-**Requires Performance-Copilot tool pmdumptext to be installed on the
-machine on which electron is launched for logging to work**
+**Requires [Performance Co-Pilot](http://pcp.io/) tool pmdumptext to be installed on the
+machine on which electron is launched for logging to work and PCP collector agents installed
+on the Mesos Agents**
 
 
 How to run (Use the --help option to get information about other command-line options):
@@ -37,7 +38,13 @@ Workload schema:
       "watts": 50,
       "image": "gouravr/minife:v5",
       "cmd": "cd src && mpirun -np 1 miniFE.x -nx 100 -ny 100 -nz 100",
-      "inst": 9
+      "inst": 9,
+      "class_to_watts" : {
+          "A": 30.2475289996,
+          "B": 35.6491229228,
+          "C": 24.0476734352
+       }
+
    },
    {
       "name": "dgemm",
@@ -46,7 +53,12 @@ Workload schema:
       "watts": 50,
       "image": "gouravr/dgemm:v2",
       "cmd": "/./mt-dgemm 1024",
-      "inst": 9
+      "inst": 9,
+      "class_to_watts" : {
+          "A": 35.2475289996,
+          "B": 25.6491229228,
+          "C": 29.0476734352
+       }
    }
 ]
 ```
