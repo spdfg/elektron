@@ -7,8 +7,8 @@ One should implement Val() to be able to use this utility.
 package runAvg
 
 import (
-	"errors"
 	"container/list"
+	"errors"
 )
 
 type Interface interface {
@@ -19,7 +19,7 @@ type Interface interface {
 }
 
 type runningAverageCalculator struct {
-	window list.List
+	window     list.List
 	windowSize int
 	currentSum float64
 }
@@ -30,7 +30,7 @@ var racSingleton *runningAverageCalculator
 // return single instance
 func getInstance(curSum float64, wSize int) *runningAverageCalculator {
 	if racSingleton == nil {
-		racSingleton = &runningAverageCalculator {
+		racSingleton = &runningAverageCalculator{
 			windowSize: wSize,
 			currentSum: curSum,
 		}
@@ -55,7 +55,7 @@ func (rac *runningAverageCalculator) calculate(data Interface) float64 {
 		elementToRemove := rac.window.Front()
 		rac.currentSum -= elementToRemove.Value.(Interface).Val()
 		rac.window.Remove(elementToRemove)
-		
+
 		// adding new element to the window
 		rac.window.PushBack(data)
 		rac.currentSum += data.Val()

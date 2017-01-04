@@ -29,7 +29,7 @@ func (tw taskWrapper) ID() string {
 }
 
 // Cluster wide capper
-type ClusterwideCapper struct {}
+type ClusterwideCapper struct{}
 
 // Defining constructor for clusterwideCapper. Please don't call this directly and instead use GetClusterwideCapperInstance()
 func newClusterwideCapper() *ClusterwideCapper {

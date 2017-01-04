@@ -2,8 +2,8 @@ package main
 
 import (
 	"bitbucket.org/sunybingcloud/electron/def"
-	"bitbucket.org/sunybingcloud/electron/schedulers"
 	"bitbucket.org/sunybingcloud/electron/pcp"
+	"bitbucket.org/sunybingcloud/electron/schedulers"
 	"flag"
 	"fmt"
 	"github.com/golang/protobuf/proto"
