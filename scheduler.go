@@ -55,8 +55,10 @@ func main() {
 	for _, task := range tasks {
 		fmt.Println(task)
 	}
+	startTime := time.Now().Format("20060102150405")
+	logPrefix := *pcplogPrefix + "_" + startTime
 
-	scheduler := schedulers.NewPistonCapper(tasks, *ignoreWatts)
+	scheduler := schedulers.NewBPMaxMinWatts(tasks, *ignoreWatts, logPrefix)
 	driver, err := sched.NewMesosSchedulerDriver(sched.DriverConfig{
 		Master: *master,
 		Framework: &mesos.FrameworkInfo{
@@ -70,9 +72,9 @@ func main() {
 		return
 	}
 
-	go pcp.Start(scheduler.PCPLog, &scheduler.RecordPCP, *pcplogPrefix)
-	//go pcp.StartLogAndDynamicCap(scheduler.PCPLog, &scheduler.RecordPCP, *pcplogPrefix, *hiThreshold, *loThreshold)
-	time.Sleep(1 * time.Second)
+	go pcp.Start(scheduler.PCPLog, &scheduler.RecordPCP, logPrefix)
+	//go pcp.StartLogAndDynamicCap(scheduler.PCPLog, &scheduler.RecordPCP, logPrefix, *hiThreshold, *loThreshold)
+	time.Sleep(1 * time.Second) //Log for a second since the first second is garbage values from PCP
 
 	// Attempt to handle signint to not leave pmdumptext running
 	// Catch interrupt
