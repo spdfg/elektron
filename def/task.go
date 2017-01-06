@@ -8,15 +8,15 @@ import (
 )
 
 type Task struct {
-	Name      string  `json:"name"`
-	CPU       float64 `json:"cpu"`
-	RAM       float64 `json:"ram"`
-	Watts     float64 `json:"watts"`
-	Image     string  `json:"image"`
-	CMD       string  `json:"cmd"`
-	Instances *int    `json:"inst"`
-	Host      string  `json:"host"`
-	TaskID    string  `json:"taskID"`
+	Name         string             `json:"name"`
+	CPU          float64            `json:"cpu"`
+	RAM          float64            `json:"ram"`
+	Watts        float64            `json:"watts"`
+	Image        string             `json:"image"`
+	CMD          string             `json:"cmd"`
+	Instances    *int               `json:"inst"`
+	Host         string             `json:"host"`
+	TaskID       string             `json:"taskID"`
 	ClassToWatts map[string]float64 `json:"class_to_watts"`
 }
 

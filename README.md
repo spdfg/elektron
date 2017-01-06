@@ -11,6 +11,7 @@ To Do:
  * Write test code for each scheduler (This should be after the design change)
  * Some of the constants in constants/constants.go can vary based on the environment.  
    Possible to setup the constants at runtime based on the environment?
+ * Retrofit schedulers for scheduling tracing
 
 
 **Requires [Performance Co-Pilot](http://pcp.io/) tool pmdumptext to be installed on the

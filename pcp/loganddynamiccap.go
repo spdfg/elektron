@@ -61,13 +61,12 @@ func StartLogAndDynamicCap(quit chan struct{}, logging *bool, prefix string, hiT
 	const pcpCommand string = "pmdumptext -m -l -f '' -t 1.0 -d , -c config"
 	cmd := exec.Command("sh", "-c", pcpCommand)
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
-	startTime := time.Now().Format("20060102150405")
 
 	if hiThreshold < loThreshold {
 		log.Println("High threshold is lower than low threshold!")
 	}
 
-	logFile, err := os.Create("./" + prefix + startTime + ".pcplog")
+	logFile, err := os.Create("./" + prefix + ".pcplog")
 	if err != nil {
 		log.Fatal(err)
 	}

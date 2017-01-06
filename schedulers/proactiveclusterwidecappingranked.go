@@ -264,7 +264,7 @@ func (s *ProactiveClusterwideCapRanked) ResourceOffers(driver sched.SchedulerDri
 	}
 
 	// sorting the tasks in ascending order of watts.
-	if (len(s.tasks) > 0) {
+	if len(s.tasks) > 0 {
 		sort.Sort(def.WattsSorter(s.tasks))
 		// calculating the total number of tasks ranked.
 		numberOfRankedTasks := 0
