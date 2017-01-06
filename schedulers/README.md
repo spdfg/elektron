@@ -6,6 +6,7 @@ To Do:
  * Design changes -- Possible to have one scheduler with different scheduling schemes?
  * Fix the race condition on 'tasksRunning' in proactiveclusterwidecappingfcfs.go and proactiveclusterwidecappingranked.go
  * Separate the capping strategies from the scheduling algorithms and make it possible to use any capping strategy with any scheduler.
+ * Make newTask(...) variadic where the newTaskClass argument can either be given or not. If not give, then pick task.Watts as the watts attribute, else pick task.ClassToWatts[newTaskClass].
 
 Scheduling Algorithms:
 
