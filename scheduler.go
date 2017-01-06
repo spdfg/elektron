@@ -56,7 +56,7 @@ func main() {
 		fmt.Println(task)
 	}
 
-	scheduler := schedulers.NewPistonCapper(tasks, *ignoreWatts)
+	scheduler := schedulers.NewBPSWClassMapWatts(tasks, *ignoreWatts)
 	driver, err := sched.NewMesosSchedulerDriver(sched.DriverConfig{
 		Master: *master,
 		Framework: &mesos.FrameworkInfo{
