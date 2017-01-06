@@ -66,7 +66,7 @@ func NewBPSWClassMapWatts(tasks []def.Task, ignoreWatts bool) *BPSWClassMapWatts
 	return s
 }
 
-func (s *BPSWClassMapWatts) newTask(offer *mesos.Offer, task def.Task) *mesos.TaskInfo {
+func (s *BPSWClassMapWatts) newTask(offer *mesos.Offer, task def.Task, newTaskClass string) *mesos.TaskInfo {
 	taskName := fmt.Sprintf("%s-%d", task.Name, *task.Instances)
 	s.tasksCreated++
 
@@ -90,7 +90,7 @@ func (s *BPSWClassMapWatts) newTask(offer *mesos.Offer, task def.Task) *mesos.Ta
 	}
 
 	if !s.ignoreWatts {
-		resources = append(resources, mesosutil.NewScalarResource("watts", task.Watts))
+		resources = append(resources, mesosutil.NewScalarResource("watts", task.ClassToWatts[newTaskClass]))
 	}
 
 	return &mesos.TaskInfo{
@@ -181,7 +181,7 @@ func (s *BPSWClassMapWatts) ResourceOffers(driver sched.SchedulerDriver, offers 
 					totalRAM += task.RAM
 					log.Println("Co-Located with: ")
 					coLocated(s.running[offer.GetSlaveId().GoString()])
-					tasks = append(tasks, s.newTask(offer, task))
+					tasks = append(tasks, s.newTask(offer, task, nodeClass))
 
 					fmt.Println("Inst: ", *task.Instances)
 					*task.Instances--
