@@ -6,8 +6,7 @@ import (
 	"log"
 )
 
-type base struct {
-}
+type base struct{}
 
 func (s *base) OfferRescinded(_ sched.SchedulerDriver, offerID *mesos.OfferID) {
 	log.Printf("Offer %s rescinded", offerID)

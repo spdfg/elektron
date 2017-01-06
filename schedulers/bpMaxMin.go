@@ -124,6 +124,9 @@ func (s *BPMaxMinWatts) newTask(offer *mesos.Offer, task def.Task) *mesos.TaskIn
 	}
 }
 
+
+// Determine if the remaining space inside of the offer is enough for this
+// the task we need to create. If it is, create a TaskInfo and return it.
 func (s *BPMaxMinWatts) CheckFit(i int,
 	task def.Task,
 	offer *mesos.Offer,
@@ -187,7 +190,7 @@ func (s *BPMaxMinWatts) ResourceOffers(driver sched.SchedulerDriver, offers []*m
 		totalCPU := 0.0
 		totalRAM := 0.0
 
-		// Ordered s.tasks is ordered by median Max Peak
+		// Assumes s.tasks is ordered in non-decreasing median max peak order
 
 		// Attempt to schedule a single instance of the heaviest workload available first
 		// Start from the back until one fits
