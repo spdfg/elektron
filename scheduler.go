@@ -2,8 +2,8 @@ package main
 
 import (
 	"bitbucket.org/sunybingcloud/electron/def"
-	"bitbucket.org/sunybingcloud/electron/schedulers"
 	"bitbucket.org/sunybingcloud/electron/pcp"
+	"bitbucket.org/sunybingcloud/electron/schedulers"
 	"flag"
 	"fmt"
 	"github.com/golang/protobuf/proto"
@@ -55,6 +55,8 @@ func main() {
 	for _, task := range tasks {
 		fmt.Println(task)
 	}
+	startTime := time.Now().Format("20060102150405")
+	logPrefix := *pcplogPrefix + "_" + startTime
 
 	scheduler := schedulers.NewBPSWClassMapWatts(tasks, *ignoreWatts)
 	driver, err := sched.NewMesosSchedulerDriver(sched.DriverConfig{
@@ -70,9 +72,9 @@ func main() {
 		return
 	}
 
-	go pcp.Start(scheduler.PCPLog, &scheduler.RecordPCP, *pcplogPrefix)
-	//go pcp.StartLogAndDynamicCap(scheduler.PCPLog, &scheduler.RecordPCP, *pcplogPrefix, *hiThreshold, *loThreshold)
-	time.Sleep(1 * time.Second)
+	go pcp.Start(scheduler.PCPLog, &scheduler.RecordPCP, logPrefix)
+	//go pcp.StartLogAndDynamicCap(scheduler.PCPLog, &scheduler.RecordPCP, logPrefix, *hiThreshold, *loThreshold)
+	time.Sleep(1 * time.Second) // Take a second between starting PCP log and continuing
 
 	// Attempt to handle signint to not leave pmdumptext running
 	// Catch interrupt
