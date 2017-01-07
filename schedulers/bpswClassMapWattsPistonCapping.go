@@ -104,6 +104,9 @@ func (s *BPSWClassMapWattsPistonCapping) newTask(offer *mesos.Offer, task def.Ta
 		s.running[offer.GetSlaveId().GoString()] = make(map[string]bool)
 	}
 
+	// Add task to list of tasks running on node
+	s.running[offer.GetSlaveId().GoString()][taskName] = true
+
 	// Setting the task ID to the task. This is done so that we can consider each task to be different
 	// even though they have the same parameters.
 	task.SetTaskID(*proto.String("electron-" + taskName))
@@ -155,7 +158,7 @@ func (s *BPSWClassMapWattsPistonCapping) Disconnected(sched.SchedulerDriver) {
 // mutex
 var bpswClassMapWattsPistonMutex sync.Mutex
 
-// go routine to cap eahc node in the cluster at regular intervals of time
+// go routine to cap each node in the cluster at regular intervals of time
 var bpswClassMapWattsPistonCapValues = make(map[string]float64)
 
 // Storing the previous cap value for each host so as to not repeatedly cap the nodes to the same value. (reduces overhead)
