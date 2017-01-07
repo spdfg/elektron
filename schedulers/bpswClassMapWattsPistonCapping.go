@@ -12,6 +12,7 @@ import (
 	sched "github.com/mesos/mesos-go/scheduler"
 	"log"
 	"math"
+	"os"
 	"sort"
 	"strings"
 	"sync"
@@ -32,6 +33,7 @@ func (s *BPSWClassMapWattsPistonCapping) takeOffer(offer *mesos.Offer, task def.
 }
 
 type BPSWClassMapWattsPistonCapping struct {
+	base         // Type embedded to inherit common functions
 	tasksCreated int
 	tasksRunning int
 	tasks        []def.Task
@@ -57,11 +59,18 @@ type BPSWClassMapWattsPistonCapping struct {
 
 	// Controls when to shutdown pcp logging
 	PCPLog chan struct{}
+
+	schedTrace *log.Logger
 }
 
 // New electron scheduler
-func NewBPSWClassMapWattsPistonCapping(tasks []def.Task, ignoreWatts bool) *BPSWClassMapWattsPistonCapping {
+func NewBPSWClassMapWattsPistonCapping(tasks []def.Task, ignoreWatts bool, schedTracePrefix string) *BPSWClassMapWattsPistonCapping {
 	sort.Sort(def.WattsSorter(tasks))
+
+	logFile, err := os.Create("./" + schedTracePrefix + "_schedTrace.log")
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	s := &BPSWClassMapWattsPistonCapping{
 		tasks:       tasks,
@@ -75,6 +84,7 @@ func NewBPSWClassMapWattsPistonCapping(tasks []def.Task, ignoreWatts bool) *BPSW
 		RecordPCP:   false,
 		ticker:      time.NewTicker(5 * time.Second),
 		isCapping:   false,
+		schedTrace:  log.New(logFile, "", log.LstdFlags),
 	}
 	return s
 }
@@ -133,18 +143,12 @@ func (s *BPSWClassMapWattsPistonCapping) newTask(offer *mesos.Offer, task def.Ta
 	}
 }
 
-func (s *BPSWClassMapWattsPistonCapping) Registered(
-	_ sched.SchedulerDriver,
-	frameworkID *mesos.FrameworkID,
-	masterInfo *mesos.MasterInfo) {
-	log.Printf("Framework %s registered with master %s", frameworkID, masterInfo)
-}
-
-func (s *BPSWClassMapWattsPistonCapping) Reregistered(_ sched.SchedulerDriver, masterInfo *mesos.MasterInfo) {
-	log.Printf("Framework re-registered with master %s", masterInfo)
-}
-
 func (s *BPSWClassMapWattsPistonCapping) Disconnected(sched.SchedulerDriver) {
+	// Need to stop the capping process
+	s.ticker.Stop()
+	bpswClassMapWattsPistonMutex.Lock()
+	s.isCapping = false
+	bpswClassMapWattsPistonMutex.Unlock()
 	log.Println("Framework disconnected with master")
 }
 
@@ -271,9 +275,11 @@ func (s *BPSWClassMapWattsPistonCapping) ResourceOffers(driver sched.SchedulerDr
 					totalRAM += task.RAM
 					log.Println("Co-Located with: ")
 					coLocated(s.running[offer.GetSlaveId().GoString()])
-					tasks = append(tasks, s.newTask(offer, task, nodeClass))
+					taskToSchedule := s.newTask(offer, task, nodeClass)
+					tasks = append(tasks, taskToSchedule)
 
 					fmt.Println("Inst: ", *task.Instances)
+					s.schedTrace.Print(offer.GetHostname() + ":" + taskToSchedule.GetTaskId().GetValue())
 					*task.Instances--
 					partialLoad += ((task.Watts * constants.CapMargin) / s.totalPower[*offer.Hostname]) * 100
 
@@ -376,28 +382,4 @@ func (s *BPSWClassMapWattsPistonCapping) StatusUpdate(driver sched.SchedulerDriv
 		}
 	}
 	log.Printf("DONE: Task status [%s] for task [%s]", NameFor(status.State), *status.TaskId.Value)
-}
-
-func (s *BPSWClassMapWattsPistonCapping) FrameworkMessage(
-	driver sched.SchedulerDriver,
-	executorID *mesos.ExecutorID,
-	slaveID *mesos.SlaveID,
-	message string) {
-
-	log.Println("Getting a framework message: ", message)
-	log.Printf("Received a framework message from some unknown source: %s", *executorID.Value)
-}
-
-func (s *BPSWClassMapWattsPistonCapping) OfferRescinded(_ sched.SchedulerDriver, offerID *mesos.OfferID) {
-	log.Printf("Offer %s rescinded", offerID)
-}
-func (s *BPSWClassMapWattsPistonCapping) SlaveLost(_ sched.SchedulerDriver, slaveID *mesos.SlaveID) {
-	log.Printf("Slave %s lost", slaveID)
-}
-func (s *BPSWClassMapWattsPistonCapping) ExecutorLost(_ sched.SchedulerDriver, executorID *mesos.ExecutorID, slaveID *mesos.SlaveID, status int) {
-	log.Printf("Executor %s on slave %s was lost", executorID, slaveID)
-}
-
-func (s *BPSWClassMapWattsPistonCapping) Error(_ sched.SchedulerDriver, err string) {
-	log.Printf("Receiving an error: %s", err)
 }
