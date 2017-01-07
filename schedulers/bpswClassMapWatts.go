@@ -8,6 +8,7 @@ import (
 	"github.com/mesos/mesos-go/mesosutil"
 	sched "github.com/mesos/mesos-go/scheduler"
 	"log"
+	"os"
 	"sort"
 	"strings"
 	"time"
@@ -28,6 +29,7 @@ func (*BPSWClassMapWatts) takeOffer(offer *mesos.Offer, task def.Task) bool {
 }
 
 type BPSWClassMapWatts struct {
+	base         // Type embedded to inherit common functions
 	tasksCreated int
 	tasksRunning int
 	tasks        []def.Task
@@ -48,11 +50,18 @@ type BPSWClassMapWatts struct {
 
 	// Controls when to shutdown pcp logging
 	PCPLog chan struct{}
+
+	schedTrace *log.Logger
 }
 
 // New electron scheduler
-func NewBPSWClassMapWatts(tasks []def.Task, ignoreWatts bool) *BPSWClassMapWatts {
+func NewBPSWClassMapWatts(tasks []def.Task, ignoreWatts bool, schedTracePrefix string) *BPSWClassMapWatts {
 	sort.Sort(def.WattsSorter(tasks))
+
+	logFile, err := os.Create("./" + schedTracePrefix + "_schedTrace.log")
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	s := &BPSWClassMapWatts{
 		tasks:       tasks,
@@ -62,6 +71,7 @@ func NewBPSWClassMapWatts(tasks []def.Task, ignoreWatts bool) *BPSWClassMapWatts
 		PCPLog:      make(chan struct{}),
 		running:     make(map[string]map[string]bool),
 		RecordPCP:   false,
+		schedTrace:  log.New(logFile, "", log.LstdFlags),
 	}
 	return s
 }
@@ -111,21 +121,6 @@ func (s *BPSWClassMapWatts) newTask(offer *mesos.Offer, task def.Task, newTaskCl
 			},
 		},
 	}
-}
-
-func (s *BPSWClassMapWatts) Registered(
-	_ sched.SchedulerDriver,
-	frameworkID *mesos.FrameworkID,
-	masterInfo *mesos.MasterInfo) {
-	log.Printf("Framework %s registered with master %s", frameworkID, masterInfo)
-}
-
-func (s *BPSWClassMapWatts) Reregistered(_ sched.SchedulerDriver, masterInfo *mesos.MasterInfo) {
-	log.Printf("Framework re-registered with master %s", masterInfo)
-}
-
-func (s *BPSWClassMapWatts) Disconnected(sched.SchedulerDriver) {
-	log.Println("Framework disconnected with master")
 }
 
 func (s *BPSWClassMapWatts) ResourceOffers(driver sched.SchedulerDriver, offers []*mesos.Offer) {
@@ -181,9 +176,11 @@ func (s *BPSWClassMapWatts) ResourceOffers(driver sched.SchedulerDriver, offers 
 					totalRAM += task.RAM
 					log.Println("Co-Located with: ")
 					coLocated(s.running[offer.GetSlaveId().GoString()])
-					tasks = append(tasks, s.newTask(offer, task, nodeClass))
+					taskToSchedule := s.newTask(offer, task, nodeClass)
+					tasks = append(tasks, taskToSchedule)
 
 					fmt.Println("Inst: ", *task.Instances)
+					s.schedTrace.Print(offer.GetHostname() + ":" + taskToSchedule.GetTaskId().GetValue())
 					*task.Instances--
 
 					if *task.Instances <= 0 {
@@ -233,28 +230,4 @@ func (s *BPSWClassMapWatts) StatusUpdate(driver sched.SchedulerDriver, status *m
 		}
 	}
 	log.Printf("DONE: Task status [%s] for task [%s]", NameFor(status.State), *status.TaskId.Value)
-}
-
-func (s *BPSWClassMapWatts) FrameworkMessage(
-	driver sched.SchedulerDriver,
-	executorID *mesos.ExecutorID,
-	slaveID *mesos.SlaveID,
-	message string) {
-
-	log.Println("Getting a framework message: ", message)
-	log.Printf("Received a framework message from some unknown source: %s", *executorID.Value)
-}
-
-func (s *BPSWClassMapWatts) OfferRescinded(_ sched.SchedulerDriver, offerID *mesos.OfferID) {
-	log.Printf("Offer %s rescinded", offerID)
-}
-func (s *BPSWClassMapWatts) SlaveLost(_ sched.SchedulerDriver, slaveID *mesos.SlaveID) {
-	log.Printf("Slave %s lost", slaveID)
-}
-func (s *BPSWClassMapWatts) ExecutorLost(_ sched.SchedulerDriver, executorID *mesos.ExecutorID, slaveID *mesos.SlaveID, status int) {
-	log.Printf("Executor %s on slave %s was lost", executorID, slaveID)
-}
-
-func (s *BPSWClassMapWatts) Error(_ sched.SchedulerDriver, err string) {
-	log.Printf("Receiving an error: %s", err)
 }
