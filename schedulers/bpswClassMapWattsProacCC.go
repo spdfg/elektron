@@ -165,22 +165,52 @@ func (s *BPSWClassMapWattsProacCC) Disconnected(sched.SchedulerDriver) {
 }
 
 // go routine to cap the entire cluster in regular intervals of time.
-var bpswClassMapWattsCapValue = 0.0 // initial value to indicate that we haven't capped the cluster yet.
+var bpswClassMapWattsProacCCCapValue = 0.0 // initial value to indicate that we haven't capped the cluster yet.
+var bpswClassMapWattsProacCCNewCapValue = 0.0 // newly computed cap value
+//func (s *BPSWClassMapWattsProacCC) startCapping() {
+//	go func() {
+//		for {
+//			select {
+//			case <-s.ticker.C:
+//				// Need to cap the cluster to the bpswClassMapWattsCapValue.
+//				bpswClassMapWattsProacCCMutex.Lock()
+//				if s.isCapping && bpswClassMapWattsProacCCCapValue > 0.0 {
+//					for _, host := range constants.Hosts {
+//						// Rounding capValue to nearest int.
+//						if err := rapl.Cap(host, "rapl", int(math.Floor(bpswClassMapWattsProacCCCapValue +0.5))); err != nil {
+//							log.Println(err)
+//						}
+//					}
+//					log.Printf("Capped the cluster to %d", int(math.Floor(bpswClassMapWattsProacCCCapValue +0.5)))
+//				}
+//				bpswClassMapWattsProacCCMutex.Unlock()
+//			}
+//		}
+//	}()
+//}
+
 func (s *BPSWClassMapWattsProacCC) startCapping() {
 	go func() {
 		for {
 			select {
 			case <-s.ticker.C:
-				// Need to cap the cluster to the bpswClassMapWattsCapValue.
+				// Need to cap the cluster only if new cap value different from old cap value.
+				// This way we don't unnecessarily cap the cluster.
 				bpswClassMapWattsProacCCMutex.Lock()
-				if bpswClassMapWattsCapValue > 0.0 {
-					for _, host := range constants.Hosts {
-						// Rounding capValue to nearest int.
-						if err := rapl.Cap(host, "rapl", int(math.Floor(bpswClassMapWattsCapValue+0.5))); err != nil {
-							log.Println(err)
+				if s.isCapping {
+					if int(math.Floor(bpswClassMapWattsProacCCNewCapValue +0.5)) != int(math.Floor(bpswClassMapWattsProacCCCapValue +0.5)) {
+						// updating cap value
+						bpswClassMapWattsProacCCCapValue = bpswClassMapWattsProacCCNewCapValue
+						if bpswClassMapWattsProacCCCapValue > 0.0 {
+							for _, host := range constants.Hosts {
+								// Rounding cap value to nearest int
+								if err := rapl.Cap(host, "rapl", int(math.Floor(bpswClassMapWattsProacCCCapValue+0.5))); err != nil {
+									log.Println(err)
+								}
+							}
+							log.Printf("Capped the cluster to %d", int(math.Floor(bpswClassMapWattsProacCCCapValue+0.5)))
 						}
 					}
-					log.Printf("Capped the cluster to %d", int(math.Floor(bpswClassMapWattsCapValue+0.5)))
 				}
 				bpswClassMapWattsProacCCMutex.Unlock()
 			}
@@ -189,7 +219,7 @@ func (s *BPSWClassMapWattsProacCC) startCapping() {
 }
 
 // go routine to recap the entire cluster in regular intervals of time.
-var bpswClassMapWattsRecapValue = 0.0 // The cluster-wide cap value when recapping
+var bpswClassMapWattsProacCCRecapValue = 0.0 // The cluster-wide cap value when recapping
 func (s *BPSWClassMapWattsProacCC) startRecapping() {
 	go func() {
 		for {
@@ -197,14 +227,14 @@ func (s *BPSWClassMapWattsProacCC) startRecapping() {
 			case <-s.recapTicker.C:
 				bpswClassMapWattsProacCCMutex.Lock()
 				// If stopped performing cluster wide capping, then we need to recap
-				if s.isRecapping && bpswClassMapWattsRecapValue > 0.0 {
+				if s.isRecapping && bpswClassMapWattsProacCCRecapValue > 0.0 {
 					for _, host := range constants.Hosts {
 						// Rounding capValue to the nearest int
-						if err := rapl.Cap(host, "rapl", int(math.Floor(bpswClassMapWattsRecapValue+0.5))); err != nil {
+						if err := rapl.Cap(host, "rapl", int(math.Floor(bpswClassMapWattsProacCCRecapValue +0.5))); err != nil {
 							log.Println(err)
 						}
 					}
-					log.Printf("Recapping the cluster to %d", int(math.Floor(bpswClassMapWattsRecapValue+0.5)))
+					log.Printf("Recapping the cluster to %d", int(math.Floor(bpswClassMapWattsProacCCRecapValue +0.5)))
 				}
 				// Setting recapping to false
 				s.isRecapping = false
@@ -309,7 +339,7 @@ func (s *BPSWClassMapWattsProacCC) ResourceOffers(driver sched.SchedulerDriver, 
 					tempCap, err := s.capper.FCFSDeterminedCap(s.totalPower, &task)
 					if err == nil {
 						bpswClassMapWattsProacCCMutex.Lock()
-						bpswClassMapWattsCapValue = tempCap
+						bpswClassMapWattsProacCCNewCapValue = tempCap
 						bpswClassMapWattsProacCCMutex.Unlock()
 					} else {
 						log.Println("Failed to determine new cluster-wide cap:")
@@ -370,16 +400,16 @@ func (s *BPSWClassMapWattsProacCC) StatusUpdate(driver sched.SchedulerDriver, st
 		// Need to remove the task from the window
 		s.capper.TaskFinished(*status.TaskId.Value)
 		// Determining the new cluster wide recap value
+		//tempCap, err := s.capper.Recap(s.totalPower, s.taskMonitor, *status.TaskId.Value)
 		tempCap, err := s.capper.CleverRecap(s.totalPower, s.taskMonitor, *status.TaskId.Value)
-		//tempCap, err := s.capper.CleverRecap(s.totalPower, s.taskMonitor, *status.TaskId.Value)
 		if err == nil {
 			// If new determined cap value is different from the current recap value, then we need to recap
-			if int(math.Floor(tempCap+0.5)) != int(math.Floor(bpswClassMapWattsRecapValue+0.5)) {
-				bpswClassMapWattsRecapValue = tempCap
+			if int(math.Floor(tempCap+0.5)) != int(math.Floor(bpswClassMapWattsProacCCRecapValue +0.5)) {
+				bpswClassMapWattsProacCCRecapValue = tempCap
 				bpswClassMapWattsProacCCMutex.Lock()
 				s.isRecapping = true
 				bpswClassMapWattsProacCCMutex.Unlock()
-				log.Printf("Determined re-cap value: %f\n", bpswClassMapWattsRecapValue)
+				log.Printf("Determined re-cap value: %f\n", bpswClassMapWattsProacCCRecapValue)
 			} else {
 				bpswClassMapWattsProacCCMutex.Lock()
 				s.isRecapping = false
