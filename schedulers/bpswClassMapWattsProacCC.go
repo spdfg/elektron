@@ -378,7 +378,7 @@ func (s *BPSWClassMapWattsProacCC) StatusUpdate(driver sched.SchedulerDriver, st
 		// Need to remove the task from the window
 		s.capper.TaskFinished(*status.TaskId.Value)
 		// Determining the new cluster wide recap value
-		//tempCap, err := s.capper.Recap(s.totalPower, s.taskMonitor, *status.TaskId.Value)
+		//tempCap, err := s.capper.NaiveRecap(s.totalPower, s.taskMonitor, *status.TaskId.Value)
 		tempCap, err := s.capper.CleverRecap(s.totalPower, s.taskMonitor, *status.TaskId.Value)
 		if err == nil {
 			// If new determined cap value is different from the current recap value, then we need to recap

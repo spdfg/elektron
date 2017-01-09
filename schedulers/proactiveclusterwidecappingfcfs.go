@@ -348,7 +348,7 @@ func (s *ProactiveClusterwideCapFCFS) StatusUpdate(driver sched.SchedulerDriver,
 		// Need to remove the task from the window of tasks.
 		s.capper.TaskFinished(*status.TaskId.Value)
 		// Determining the new cluster wide cap.
-		//tempCap, err := s.capper.Recap(s.totalPower, s.taskMonitor, *status.TaskId.Value)
+		//tempCap, err := s.capper.NaiveRecap(s.totalPower, s.taskMonitor, *status.TaskId.Value)
 		tempCap, err := s.capper.CleverRecap(s.totalPower, s.taskMonitor, *status.TaskId.Value)
 		if err == nil {
 			// if new determined cap value is different from the current recap value then we need to recap.
