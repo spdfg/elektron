@@ -167,28 +167,6 @@ func (s *BPSWClassMapWattsProacCC) Disconnected(sched.SchedulerDriver) {
 // go routine to cap the entire cluster in regular intervals of time.
 var bpswClassMapWattsProacCCCapValue = 0.0 // initial value to indicate that we haven't capped the cluster yet.
 var bpswClassMapWattsProacCCNewCapValue = 0.0 // newly computed cap value
-//func (s *BPSWClassMapWattsProacCC) startCapping() {
-//	go func() {
-//		for {
-//			select {
-//			case <-s.ticker.C:
-//				// Need to cap the cluster to the bpswClassMapWattsCapValue.
-//				bpswClassMapWattsProacCCMutex.Lock()
-//				if s.isCapping && bpswClassMapWattsProacCCCapValue > 0.0 {
-//					for _, host := range constants.Hosts {
-//						// Rounding capValue to nearest int.
-//						if err := rapl.Cap(host, "rapl", int(math.Floor(bpswClassMapWattsProacCCCapValue +0.5))); err != nil {
-//							log.Println(err)
-//						}
-//					}
-//					log.Printf("Capped the cluster to %d", int(math.Floor(bpswClassMapWattsProacCCCapValue +0.5)))
-//				}
-//				bpswClassMapWattsProacCCMutex.Unlock()
-//			}
-//		}
-//	}()
-//}
-
 func (s *BPSWClassMapWattsProacCC) startCapping() {
 	go func() {
 		for {
