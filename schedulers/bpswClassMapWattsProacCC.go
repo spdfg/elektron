@@ -176,7 +176,7 @@ func (s *BPSWClassMapWattsProacCC) startCapping() {
 				// This way we don't unnecessarily cap the cluster.
 				bpswClassMapWattsProacCCMutex.Lock()
 				if s.isCapping {
-					if int(math.Floor(bpswClassMapWattsProacCCNewCapValue +0.5)) != int(math.Floor(bpswClassMapWattsProacCCCapValue +0.5)) {
+					if int(math.Floor(bpswClassMapWattsProacCCNewCapValue+0.5)) != int(math.Floor(bpswClassMapWattsProacCCCapValue+0.5)) {
 						// updating cap value
 						bpswClassMapWattsProacCCCapValue = bpswClassMapWattsProacCCNewCapValue
 						if bpswClassMapWattsProacCCCapValue > 0.0 {
