@@ -271,6 +271,12 @@ func (s *BPSWClassMapWattsPistonCapping) ResourceOffers(driver sched.SchedulerDr
 					(offerCPU >= (totalCPU + task.CPU)) &&
 					(offerRAM >= (totalRAM + task.RAM)) {
 
+					// Start piston capping if haven't started yet
+					if !s.isCapping {
+						s.isCapping = true
+						s.startCapping()
+					}
+
 					fmt.Println("Watts being used: ", task.ClassToWatts[nodeClass])
 					taken = true
 					totalWatts += task.ClassToWatts[nodeClass]

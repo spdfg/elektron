@@ -229,6 +229,12 @@ func (s *BPMaxMinPistonCapping) CheckFit(i int,
 		(offerCPU >= (*totalCPU + task.CPU)) &&
 		(offerRAM >= (*totalRAM + task.RAM)) {
 
+		// Start piston capping if haven't started yet
+		if !s.isCapping {
+			s.isCapping = true
+			s.startCapping()
+		}
+
 		*totalWatts += task.Watts
 		*totalCPU += task.CPU
 		*totalRAM += task.RAM
