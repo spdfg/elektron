@@ -20,10 +20,10 @@ import (
 )
 
 // Decides if to take an offer or not
-func (*BPSWClassMapWattsProacCC) takeOffer(offer *mesos.Offer, task def.Task) bool {
+func (s *BPMaxMinProacCC) takeOffer(offer *mesos.Offer, task def.Task) bool {
 	cpus, mem, watts := OfferAgg(offer)
 
-	// TODO: Insert watts calculation here instead of taking them as parameter
+	//TODO: Insert watts calculation here instead of taking them as a parameter
 
 	if cpus >= task.CPU && mem >= task.RAM && watts >= task.Watts {
 		return true
@@ -32,7 +32,7 @@ func (*BPSWClassMapWattsProacCC) takeOffer(offer *mesos.Offer, task def.Task) bo
 	return false
 }
 
-type BPSWClassMapWattsProacCC struct {
+type BPMaxMinProacCC struct {
 	base           // Type embedding to inherit common functions
 	tasksCreated   int
 	tasksRunning   int
@@ -67,7 +67,7 @@ type BPSWClassMapWattsProacCC struct {
 }
 
 // New electron scheduler
-func NewBPSWClassMapWattsProacCC(tasks []def.Task, ignoreWatts bool, schedTracePrefix string) *BPSWClassMapWattsProacCC {
+func NewBPMaxMinProacCC(tasks []def.Task, ignoreWatts bool, schedTracePrefix string) *BPMaxMinProacCC {
 	sort.Sort(def.WattsSorter(tasks))
 
 	logFile, err := os.Create("./" + schedTracePrefix + "_schedTrace.log")
@@ -75,7 +75,7 @@ func NewBPSWClassMapWattsProacCC(tasks []def.Task, ignoreWatts bool, schedTraceP
 		log.Fatal(err)
 	}
 
-	s := &BPSWClassMapWattsProacCC{
+	s := &BPMaxMinProacCC{
 		tasks:          tasks,
 		ignoreWatts:    ignoreWatts,
 		Shutdown:       make(chan struct{}),
@@ -97,9 +97,9 @@ func NewBPSWClassMapWattsProacCC(tasks []def.Task, ignoreWatts bool, schedTraceP
 }
 
 // mutex
-var bpswClassMapWattsProacCCMutex sync.Mutex
+var bpMaxMinProacCCMutex sync.Mutex
 
-func (s *BPSWClassMapWattsProacCC) newTask(offer *mesos.Offer, task def.Task, newTaskClass string) *mesos.TaskInfo {
+func (s *BPMaxMinProacCC) newTask(offer *mesos.Offer, task def.Task) *mesos.TaskInfo {
 	taskName := fmt.Sprintf("%s-%d", task.Name, *task.Instances)
 	s.tasksCreated++
 
@@ -131,7 +131,7 @@ func (s *BPSWClassMapWattsProacCC) newTask(offer *mesos.Offer, task def.Task, ne
 	}
 
 	if !s.ignoreWatts {
-		resources = append(resources, mesosutil.NewScalarResource("watts", task.ClassToWatts[newTaskClass]))
+		resources = append(resources, mesosutil.NewScalarResource("watts", task.Watts))
 	}
 
 	return &mesos.TaskInfo{
@@ -154,99 +154,156 @@ func (s *BPSWClassMapWattsProacCC) newTask(offer *mesos.Offer, task def.Task, ne
 	}
 }
 
-func (s *BPSWClassMapWattsProacCC) Disconnected(sched.SchedulerDriver) {
-	// Need to stop the capping process
-	s.ticker.Stop()
-	s.recapTicker.Stop()
-	bpswClassMapWattsProacCCMutex.Lock()
-	s.isCapping = false
-	bpswClassMapWattsProacCCMutex.Unlock()
-	log.Println("Framework disconnected with master")
-}
-
 // go routine to cap the entire cluster in regular intervals of time.
-var bpswClassMapWattsProacCCCapValue = 0.0 // initial value to indicate that we haven't capped the cluster yet.
-var bpswClassMapWattsProacCCNewCapValue = 0.0 // newly computed cap value
-func (s *BPSWClassMapWattsProacCC) startCapping() {
+var bpMaxMinProacCCCapValue = 0.0 // initial value to indicate that we haven't capped the cluster yet.
+var bpMaxMinProacCCNewCapValue = 0.0 // newly computed cap value
+func (s *BPMaxMinProacCC) startCapping() {
 	go func() {
 		for {
 			select {
 			case <-s.ticker.C:
 				// Need to cap the cluster only if new cap value different from old cap value.
 				// This way we don't unnecessarily cap the cluster.
-				bpswClassMapWattsProacCCMutex.Lock()
+				bpMaxMinProacCCMutex.Lock()
 				if s.isCapping {
-					if int(math.Floor(bpswClassMapWattsProacCCNewCapValue+0.5)) != int(math.Floor(bpswClassMapWattsProacCCCapValue+0.5)) {
+					if int(math.Floor(bpMaxMinProacCCNewCapValue+0.5)) != int(math.Floor(bpMaxMinProacCCCapValue+0.5)) {
 						// updating cap value
-						bpswClassMapWattsProacCCCapValue = bpswClassMapWattsProacCCNewCapValue
-						if bpswClassMapWattsProacCCCapValue > 0.0 {
+						bpMaxMinProacCCCapValue = bpMaxMinProacCCNewCapValue
+						if bpMaxMinProacCCCapValue > 0.0 {
 							for _, host := range constants.Hosts {
 								// Rounding cap value to nearest int
-								if err := rapl.Cap(host, "rapl", int(math.Floor(bpswClassMapWattsProacCCCapValue+0.5))); err != nil {
+								if err := rapl.Cap(host, "rapl", int(math.Floor(bpMaxMinProacCCCapValue+0.5))); err != nil {
 									log.Println(err)
 								}
 							}
-							log.Printf("Capped the cluster to %d", int(math.Floor(bpswClassMapWattsProacCCCapValue+0.5)))
+							log.Printf("Capped the cluster to %d", int(math.Floor(bpMaxMinProacCCCapValue+0.5)))
 						}
 					}
 				}
-				bpswClassMapWattsProacCCMutex.Unlock()
+				bpMaxMinProacCCMutex.Unlock()
 			}
 		}
 	}()
 }
 
 // go routine to recap the entire cluster in regular intervals of time.
-var bpswClassMapWattsProacCCRecapValue = 0.0 // The cluster-wide cap value when recapping
-func (s *BPSWClassMapWattsProacCC) startRecapping() {
+var bpMaxMinProacCCRecapValue = 0.0 // The cluster-wide cap value when recapping.
+func (s *BPMaxMinProacCC) startRecapping() {
 	go func() {
 		for {
 			select {
 			case <-s.recapTicker.C:
-				bpswClassMapWattsProacCCMutex.Lock()
-				// If stopped performing cluster wide capping, then we need to recap
-				if s.isRecapping && bpswClassMapWattsProacCCRecapValue > 0.0 {
+				bpMaxMinProacCCMutex.Lock()
+				// If stopped performing cluster-wide capping, then we need to recap.
+				if s.isRecapping && bpMaxMinProacCCRecapValue > 0.0 {
 					for _, host := range constants.Hosts {
-						// Rounding capValue to the nearest int
-						if err := rapl.Cap(host, "rapl", int(math.Floor(bpswClassMapWattsProacCCRecapValue +0.5))); err != nil {
+						// Rounding the recap value to the nearest int
+						if err := rapl.Cap(host, "rapl", int(math.Floor(bpMaxMinProacCCRecapValue+0.5))); err != nil {
 							log.Println(err)
 						}
 					}
-					log.Printf("Recapping the cluster to %d", int(math.Floor(bpswClassMapWattsProacCCRecapValue +0.5)))
+					log.Printf("Capped the cluster to %d", int(math.Floor(bpMaxMinProacCCRecapValue+0.5)))
 				}
-				// Setting recapping to false
+				// Setting the recapping to false
 				s.isRecapping = false
-				bpswClassMapWattsProacCCMutex.Unlock()
+				bpMaxMinProacCCMutex.Unlock()
 			}
 		}
 	}()
+
 }
 
-// Stop cluster wide capping
-func (s *BPSWClassMapWattsProacCC) stopCapping() {
+// Stop cluster-wide capping
+func (s *BPMaxMinProacCC) stopCapping() {
 	if s.isCapping {
 		log.Println("Stopping the cluster-wide capping.")
 		s.ticker.Stop()
-		bpswClassMapWattsProacCCMutex.Lock()
+		bpMaxMinProacCCMutex.Lock()
 		s.isCapping = false
 		s.isRecapping = true
-		bpswClassMapWattsProacCCMutex.Unlock()
+		bpMaxMinProacCCMutex.Unlock()
 	}
 }
 
-// Stop the cluster wide recapping
-func (s *BPSWClassMapWattsProacCC) stopRecapping() {
+// Stop the cluster-wide recapping
+func (s *BPMaxMinProacCC) stopRecapping() {
 	// If not capping, then definitely recapping.
 	if !s.isCapping && s.isRecapping {
 		log.Println("Stopping the cluster-wide re-capping.")
 		s.recapTicker.Stop()
-		bpswClassMapWattsProacCCMutex.Lock()
+		bpMaxMinProacCCMutex.Lock()
 		s.isRecapping = false
-		bpswClassMapWattsProacCCMutex.Unlock()
+		bpMaxMinProacCCMutex.Unlock()
 	}
 }
 
-func (s *BPSWClassMapWattsProacCC) ResourceOffers(driver sched.SchedulerDriver, offers []*mesos.Offer) {
+// Determine if the remaining space inside of the offer is enough for
+// the task we need to create. If it is, create TaskInfo and return it.
+func (s *BPMaxMinProacCC) CheckFit(i int,
+	task def.Task,
+	offer *mesos.Offer,
+	totalCPU *float64,
+	totalRAM *float64,
+	totalWatts *float64) (bool, *mesos.TaskInfo) {
+
+	offerCPU, offerRAM, offerWatts := OfferAgg(offer)
+
+	// Does the task fit
+	if (s.ignoreWatts || (offerWatts >= (*totalWatts + task.Watts))) &&
+		(offerCPU >= (*totalCPU + task.CPU)) &&
+		(offerRAM >= (*totalRAM + task.RAM)) {
+
+		// Capping the cluster if haven't yet started
+		if !s.isCapping {
+			bpMaxMinProacCCMutex.Lock()
+			s.isCapping = true
+			bpMaxMinProacCCMutex.Unlock()
+			s.startCapping()
+		}
+
+		tempCap, err := s.capper.FCFSDeterminedCap(s.totalPower, &task)
+		if err == nil {
+			bpMaxMinProacCCMutex.Lock()
+			bpMaxMinProacCCNewCapValue = tempCap
+			bpMaxMinProacCCMutex.Unlock()
+		} else {
+			log.Println("Failed to determine new cluster-wide cap:")
+			log.Println(err)
+		}
+
+		*totalWatts += task.Watts
+		*totalCPU += task.CPU
+		*totalRAM += task.RAM
+		log.Println("Co-Located with: ")
+		coLocated(s.running[offer.GetSlaveId().GoString()])
+
+		taskToSchedule := s.newTask(offer, task)
+
+		fmt.Println("Inst: ", *task.Instances)
+		s.schedTrace.Print(offer.GetHostname() + ":" + taskToSchedule.GetTaskId().GetValue())
+		*task.Instances--
+
+		if *task.Instances <= 0 {
+			// All instances of task have been scheduled, remove it
+			s.tasks = append(s.tasks[:i], s.tasks[i+1:]...)
+
+			if len(s.tasks) <= 0 {
+				log.Println("Done scheduling all tasks")
+				// Need to stop the cluster wide capping
+				s.stopCapping()
+				s.startRecapping() // Load changes after every task finishes and hence, we need to change the capping of the cluster.
+				close(s.Shutdown)
+			}
+		}
+
+		return true, taskToSchedule
+	}
+
+	return false, nil
+
+}
+
+func (s *BPMaxMinProacCC) ResourceOffers(driver sched.SchedulerDriver, offers []*mesos.Offer) {
 	log.Printf("Received %d resource offers", len(offers))
 
 	// retrieving the available power for all the hosts in the offers.
@@ -276,88 +333,65 @@ func (s *BPSWClassMapWattsProacCC) ResourceOffers(driver sched.SchedulerDriver, 
 
 		tasks := []*mesos.TaskInfo{}
 
-		offerCPU, offerRAM, offerWatts := OfferAgg(offer)
-
-		taken := false
+		offerTaken := false
 		totalWatts := 0.0
 		totalCPU := 0.0
 		totalRAM := 0.0
-		for i, task := range s.tasks {
+
+		// Assumes s.tasks is ordered in non-decreasing median max peak order
+
+		// Attempt to schedule a single instance of the heaviest workload available first
+		// Start from the back until one fits
+		for i := len(s.tasks) - 1; i >= 0; i-- {
+
+			task := s.tasks[i]
 			// Check host if it exists
 			if task.Host != "" {
-				// Don't take offer it it doesn't match our task's host requirement.
-				if strings.HasPrefix(*offer.Hostname, task.Host) {
+				// Don't take offer if it doesn't match our task's host requirement
+				if !strings.HasPrefix(*offer.Hostname, task.Host) {
+					continue
+				}
+			}
+
+			// TODO: Fix this so index doesn't need to be passed
+			taken, taskToSchedule := s.CheckFit(i, task, offer, &totalCPU, &totalRAM, &totalWatts)
+
+			if taken {
+				offerTaken = true
+				tasks = append(tasks, taskToSchedule)
+				break
+			}
+		}
+
+		// Pack the rest of the offer with the smallest tasks
+		for i, task := range s.tasks {
+
+			// Check host if it exists
+			if task.Host != "" {
+				// Don't take offer if it doesn't match our task's host requirement
+				if !strings.HasPrefix(*offer.Hostname, task.Host) {
 					continue
 				}
 			}
 
 			for *task.Instances > 0 {
-				var nodeClass string
-				for _, attr := range offer.GetAttributes() {
-					if attr.GetName() == "class" {
-						nodeClass = attr.GetText().GetValue()
-					}
-				}
-				// Does the task fit
-				// OR Lazy evaluation. If ignore watts is set to true, second statement won't
-				// be evaluated.
-				if (s.ignoreWatts || (offerWatts >= (totalWatts + task.ClassToWatts[nodeClass]))) &&
-					(offerCPU >= (totalCPU + task.CPU)) &&
-					(offerRAM >= (totalRAM + task.RAM)) {
+				// TODO: Fix this so index doesn't need to be passed
+				taken, taskToSchedule := s.CheckFit(i, task, offer, &totalCPU, &totalRAM, &totalWatts)
 
-					// Capping the cluster if haven't yet started
-					if !s.isCapping {
-						bpswClassMapWattsProacCCMutex.Lock()
-						s.isCapping = true
-						bpswClassMapWattsProacCCMutex.Unlock()
-						s.startCapping()
-					}
-
-					fmt.Println("Watts being used: ", task.ClassToWatts[nodeClass])
-					tempCap, err := s.capper.FCFSDeterminedCap(s.totalPower, &task)
-					if err == nil {
-						bpswClassMapWattsProacCCMutex.Lock()
-						bpswClassMapWattsProacCCNewCapValue = tempCap
-						bpswClassMapWattsProacCCMutex.Unlock()
-					} else {
-						log.Println("Failed to determine new cluster-wide cap:")
-						log.Println(err)
-					}
-					taken = true
-					totalWatts += task.ClassToWatts[nodeClass]
-					totalCPU += task.CPU
-					totalRAM += task.RAM
-					log.Println("Co-Located with: ")
-					coLocated(s.running[offer.GetSlaveId().GoString()])
-					taskToSchedule := s.newTask(offer, task, nodeClass)
+				if taken {
+					offerTaken = true
 					tasks = append(tasks, taskToSchedule)
-
-					fmt.Println("Inst: ", *task.Instances)
-					s.schedTrace.Print(offer.GetHostname() + ":" + taskToSchedule.GetTaskId().GetValue())
-					*task.Instances--
-
-					if *task.Instances <= 0 {
-						// All instances of task have been scheduled, remove it
-						s.tasks = append(s.tasks[:i], s.tasks[i+1:]...)
-
-						if len(s.tasks) == 0 {
-							log.Println("Done scheduling all tasks.")
-							// Need to stop the cluster wide capping as there aren't any more tasks to schedule.
-							s.stopCapping()
-							s.startRecapping() // Load changes after every task finishes and hence, we need to change the capping of the cluster.
-							close(s.Shutdown)
-						}
-					}
 				} else {
-					break // Continue on to the next task
+					break // Continue on to next task
 				}
 			}
 		}
 
-		if taken {
+		if offerTaken {
 			log.Printf("Starting on [%s]\n", offer.GetHostname())
 			driver.LaunchTasks([]*mesos.OfferID{offer.Id}, tasks, defaultFilter)
 		} else {
+
 			// If there was no match for the task
 			fmt.Println("There is not enough resources to launch a task:")
 			cpus, mem, watts := OfferAgg(offer)
@@ -368,7 +402,7 @@ func (s *BPSWClassMapWattsProacCC) ResourceOffers(driver sched.SchedulerDriver, 
 	}
 }
 
-func (s *BPSWClassMapWattsProacCC) StatusUpdate(driver sched.SchedulerDriver, status *mesos.TaskStatus) {
+func (s *BPMaxMinProacCC) StatusUpdate(driver sched.SchedulerDriver, status *mesos.TaskStatus) {
 	log.Printf("Received task status [%s] for task [%s]", NameFor(status.State), *status.TaskId.Value)
 
 	if *status.State == mesos.TaskState_TASK_RUNNING {
@@ -378,20 +412,20 @@ func (s *BPSWClassMapWattsProacCC) StatusUpdate(driver sched.SchedulerDriver, st
 		// Need to remove the task from the window
 		s.capper.TaskFinished(*status.TaskId.Value)
 		// Determining the new cluster wide recap value
-		//tempCap, err := s.capper.NaiveRecap(s.totalPower, s.taskMonitor, *status.TaskId.Value)
-		tempCap, err := s.capper.CleverRecap(s.totalPower, s.taskMonitor, *status.TaskId.Value)
+		tempCap, err := s.capper.NaiveRecap(s.totalPower, s.taskMonitor, *status.TaskId.Value)
+		//tempCap, err := s.capper.CleverRecap(s.totalPower, s.taskMonitor, *status.TaskId.Value)
 		if err == nil {
-			// If new determined cap value is different from the current recap value, then we need to recap
-			if int(math.Floor(tempCap+0.5)) != int(math.Floor(bpswClassMapWattsProacCCRecapValue +0.5)) {
-				bpswClassMapWattsProacCCRecapValue = tempCap
-				bpswClassMapWattsProacCCMutex.Lock()
+			// If new determined recap value is different from the current recap value, then we need to recap.
+			if int(math.Floor(tempCap+0.5)) != int(math.Floor(bpMaxMinProacCCRecapValue+0.5)) {
+				bpMaxMinProacCCRecapValue = tempCap
+				bpMaxMinProacCCMutex.Lock()
 				s.isRecapping = true
-				bpswClassMapWattsProacCCMutex.Unlock()
-				log.Printf("Determined re-cap value: %f\n", bpswClassMapWattsProacCCRecapValue)
+				bpMaxMinProacCCMutex.Unlock()
+				log.Printf("Determined re-cap value: %f\n", bpMaxMinProacCCRecapValue)
 			} else {
-				bpswClassMapWattsProacCCMutex.Lock()
+				bpMaxMinProacCCMutex.Lock()
 				s.isRecapping = false
-				bpswClassMapWattsProacCCMutex.Unlock()
+				bpMaxMinProacCCMutex.Unlock()
 			}
 		} else {
 			log.Println(err)
@@ -408,5 +442,6 @@ func (s *BPSWClassMapWattsProacCC) StatusUpdate(driver sched.SchedulerDriver, st
 			}
 		}
 	}
-	log.Printf("DONE: Task status [%s] for task[%s]", NameFor(status.State), *status.TaskId.Value)
+	log.Printf("DONE: Task status [%s] for task [%s]", NameFor(status.State), *status.TaskId.Value)
+
 }

@@ -19,8 +19,9 @@ import (
 	"time"
 )
 
-// Decides if to take offer or not
-func (s *BPSWClassMapWattsPistonCapping) takeOffer(offer *mesos.Offer, task def.Task) bool {
+// Decides if to take an offer or not
+func (s *BPMaxMinPistonCapping) takeOffer(offer *mesos.Offer, task def.Task) bool {
+
 	cpus, mem, watts := OfferAgg(offer)
 
 	//TODO: Insert watts calculation here instead of taking them as a parameter
@@ -32,8 +33,8 @@ func (s *BPSWClassMapWattsPistonCapping) takeOffer(offer *mesos.Offer, task def.
 	return false
 }
 
-type BPSWClassMapWattsPistonCapping struct {
-	base         // Type embedded to inherit common functions
+type BPMaxMinPistonCapping struct {
+	base         //Type embedding to inherit common functions
 	tasksCreated int
 	tasksRunning int
 	tasks        []def.Task
@@ -46,13 +47,12 @@ type BPSWClassMapWattsPistonCapping struct {
 	isCapping    bool
 
 	// First set of PCP values are garbage values, signal to logger to start recording when we're
-	// about to schedule the new task
+	// about to schedule a new task
 	RecordPCP bool
 
 	// This channel is closed when the program receives an interrupt,
-	// signalling that program should shutdown
+	// signalling that the program should shut down.
 	Shutdown chan struct{}
-
 	// This channel is closed after shutdown is closed, and only when all
 	// outstanding tasks have been cleaned up
 	Done chan struct{}
@@ -64,7 +64,7 @@ type BPSWClassMapWattsPistonCapping struct {
 }
 
 // New electron scheduler
-func NewBPSWClassMapWattsPistonCapping(tasks []def.Task, ignoreWatts bool, schedTracePrefix string) *BPSWClassMapWattsPistonCapping {
+func NewBPMaxMinPistonCapping(tasks []def.Task, ignoreWatts bool, schedTracePrefix string) *BPMaxMinPistonCapping {
 	sort.Sort(def.WattsSorter(tasks))
 
 	logFile, err := os.Create("./" + schedTracePrefix + "_schedTrace.log")
@@ -72,7 +72,7 @@ func NewBPSWClassMapWattsPistonCapping(tasks []def.Task, ignoreWatts bool, sched
 		log.Fatal(err)
 	}
 
-	s := &BPSWClassMapWattsPistonCapping{
+	s := &BPMaxMinPistonCapping{
 		tasks:       tasks,
 		ignoreWatts: ignoreWatts,
 		Shutdown:    make(chan struct{}),
@@ -87,12 +87,14 @@ func NewBPSWClassMapWattsPistonCapping(tasks []def.Task, ignoreWatts bool, sched
 		schedTrace:  log.New(logFile, "", log.LstdFlags),
 	}
 	return s
+
 }
 
-func (s *BPSWClassMapWattsPistonCapping) newTask(offer *mesos.Offer, task def.Task, newTaskClass string) *mesos.TaskInfo {
+func (s *BPMaxMinPistonCapping) newTask(offer *mesos.Offer, task def.Task) *mesos.TaskInfo {
 	taskName := fmt.Sprintf("%s-%d", task.Name, *task.Instances)
 	s.tasksCreated++
 
+	// Start recording only when we're creating the first task
 	if !s.RecordPCP {
 		// Turn on logging
 		s.RecordPCP = true
@@ -123,7 +125,7 @@ func (s *BPSWClassMapWattsPistonCapping) newTask(offer *mesos.Offer, task def.Ta
 	}
 
 	if !s.ignoreWatts {
-		resources = append(resources, mesosutil.NewScalarResource("watts", task.ClassToWatts[newTaskClass]))
+		resources = append(resources, mesosutil.NewScalarResource("watts", task.Watts))
 	}
 
 	return &mesos.TaskInfo{
@@ -146,42 +148,42 @@ func (s *BPSWClassMapWattsPistonCapping) newTask(offer *mesos.Offer, task def.Ta
 	}
 }
 
-func (s *BPSWClassMapWattsPistonCapping) Disconnected(sched.SchedulerDriver) {
+func (s *BPMaxMinPistonCapping) Disconnected(sched.SchedulerDriver) {
 	// Need to stop the capping process
 	s.ticker.Stop()
-	bpswClassMapWattsPistonMutex.Lock()
+	bpMaxMinPistonCappingMutex.Lock()
 	s.isCapping = false
-	bpswClassMapWattsPistonMutex.Unlock()
+	bpMaxMinPistonCappingMutex.Unlock()
 	log.Println("Framework disconnected with master")
 }
 
 // mutex
-var bpswClassMapWattsPistonMutex sync.Mutex
+var bpMaxMinPistonCappingMutex sync.Mutex
 
 // go routine to cap each node in the cluster at regular intervals of time
-var bpswClassMapWattsPistonCapValues = make(map[string]float64)
+var bpMaxMinPistonCappingCapValues = make(map[string]float64)
 
 // Storing the previous cap value for each host so as to not repeatedly cap the nodes to the same value. (reduces overhead)
-var bpswClassMapWattsPistonPreviousRoundedCapValues = make(map[string]int)
+var bpMaxMinPistonCappingPreviousRoundedCapValues = make(map[string]int)
 
-func (s *BPSWClassMapWattsPistonCapping) startCapping() {
+func (s *BPMaxMinPistonCapping) startCapping() {
 	go func() {
 		for {
 			select {
 			case <-s.ticker.C:
 				// Need to cap each node
-				bpswClassMapWattsPistonMutex.Lock()
-				for host, capValue := range bpswClassMapWattsPistonCapValues {
+				bpMaxMinPistonCappingMutex.Lock()
+				for host, capValue := range bpMaxMinPistonCappingCapValues {
 					roundedCapValue := int(math.Floor(capValue + 0.5))
 					// has the cap value changed
-					if previousRoundedCap, ok := bpswClassMapWattsPistonPreviousRoundedCapValues[host]; ok {
+					if previousRoundedCap, ok := bpMaxMinPistonCappingPreviousRoundedCapValues[host]; ok {
 						if previousRoundedCap != roundedCapValue {
 							if err := rapl.Cap(host, "rapl", roundedCapValue); err != nil {
 								log.Println(err)
 							} else {
 								log.Printf("Capped [%s] at %d", host, int(math.Floor(capValue)))
 							}
-							bpswClassMapWattsPistonPreviousRoundedCapValues[host] = roundedCapValue
+							bpMaxMinPistonCappingPreviousRoundedCapValues[host] = roundedCapValue
 						}
 					} else {
 						if err := rapl.Cap(host, "rapl", roundedCapValue); err != nil {
@@ -189,41 +191,81 @@ func (s *BPSWClassMapWattsPistonCapping) startCapping() {
 						} else {
 							log.Printf("Capped [%s] at %d", host, int(math.Floor(capValue+0.5)))
 						}
-						bpswClassMapWattsPistonPreviousRoundedCapValues[host] = roundedCapValue
+						bpMaxMinPistonCappingPreviousRoundedCapValues[host] = roundedCapValue
 					}
 				}
-				bpswClassMapWattsPistonMutex.Unlock()
+				bpMaxMinPistonCappingMutex.Unlock()
 			}
 		}
 	}()
+
 }
 
 // Stop the capping
-func (s *BPSWClassMapWattsPistonCapping) stopCapping() {
+func (s *BPMaxMinPistonCapping) stopCapping() {
 	if s.isCapping {
 		log.Println("Stopping the capping.")
 		s.ticker.Stop()
-		bpswClassMapWattsPistonMutex.Lock()
+		bpMaxMinPistonCappingMutex.Lock()
 		s.isCapping = false
-		bpswClassMapWattsPistonMutex.Unlock()
+		bpMaxMinPistonCappingMutex.Unlock()
 	}
 }
 
-func (s *BPSWClassMapWattsPistonCapping) ResourceOffers(driver sched.SchedulerDriver, offers []*mesos.Offer) {
-	log.Printf("Received %d resource offers", len(offers))
+// Determine if the remaining sapce inside of the offer is enough for
+// the task we need to create. If it is, create a TaskInfo and return it.
+func (s *BPMaxMinPistonCapping) CheckFit(i int,
+	task def.Task,
+	offer *mesos.Offer,
+	totalCPU *float64,
+	totalRAM *float64,
+	totalWatts *float64,
+	partialLoad *float64) (bool, *mesos.TaskInfo) {
 
-	// retrieving the total power for each host in the offers.
-	for _, offer := range offers {
-		if _, ok := s.totalPower[*offer.Hostname]; !ok {
-			_, _, offerWatts := OfferAgg(offer)
-			s.totalPower[*offer.Hostname] = offerWatts
+	offerCPU, offerRAM, offerWatts := OfferAgg(offer)
+
+	// Does the task fit
+	if (s.ignoreWatts || (offerWatts >= (*totalWatts + task.Watts))) &&
+		(offerCPU >= (*totalCPU + task.CPU)) &&
+		(offerRAM >= (*totalRAM + task.RAM)) {
+
+		// Start piston capping if haven't started yet
+		if !s.isCapping {
+			s.isCapping = true
+			s.startCapping()
 		}
+
+		*totalWatts += task.Watts
+		*totalCPU += task.CPU
+		*totalRAM += task.RAM
+		log.Println("Co-Located with: ")
+		coLocated(s.running[offer.GetSlaveId().GoString()])
+
+		taskToSchedule := s.newTask(offer, task)
+
+		fmt.Println("Inst: ", *task.Instances)
+		s.schedTrace.Print(offer.GetHostname() + ":" + taskToSchedule.GetTaskId().GetValue())
+		*task.Instances--
+		*partialLoad += ((task.Watts * constants.CapMargin) / s.totalPower[*offer.Hostname]) * 100
+
+		if *task.Instances <= 0 {
+			// All instances of task have been scheduled, remove it
+			s.tasks = append(s.tasks[:i], s.tasks[i+1:]...)
+
+			if len(s.tasks) <= 0 {
+				log.Println("Done scheduling all tasks")
+				close(s.Shutdown)
+			}
+		}
+
+		return true, taskToSchedule
 	}
 
-	// Displaying the totalPower
-	for host, tpower := range s.totalPower {
-		log.Printf("TotalPower[%s] = %f", host, tpower)
-	}
+	return false, nil
+}
+
+func (s *BPMaxMinPistonCapping) ResourceOffers(driver sched.SchedulerDriver, offers []*mesos.Offer) {
+	log.Printf("Received %d resource offers", len(offers))
 
 	for _, offer := range offers {
 		select {
@@ -238,15 +280,40 @@ func (s *BPSWClassMapWattsPistonCapping) ResourceOffers(driver sched.SchedulerDr
 
 		tasks := []*mesos.TaskInfo{}
 
-		offerCPU, offerRAM, offerWatts := OfferAgg(offer)
-
-		taken := false
+		offerTaken := false
 		totalWatts := 0.0
 		totalCPU := 0.0
 		totalRAM := 0.0
 		// Store the partialLoad for host corresponding to this offer
-		// Once we can't fit any more tasks, we update the capValue for this host with partialLoad and then launch the fitted tasks.
+		// Once we can't fit any more tasks, we update the capValue for this host using partialLoad and then launch the fit tasks.
 		partialLoad := 0.0
+
+		// Assumes s.tasks is ordered in non-decreasing median max peak order
+
+		// Attempt to schedule a single instance of the heaviest workload available first
+		// Start from the back until one fits
+		for i := len(s.tasks) - 1; i >= 0; i-- {
+
+			task := s.tasks[i]
+			// Check host if it exists
+			if task.Host != "" {
+				// Don't take offer if it doesn't match our task's host requirement
+				if !strings.HasPrefix(*offer.Hostname, task.Host) {
+					continue
+				}
+			}
+
+			// TODO: Fix this so index doesn't need to be passed
+			taken, taskToSchedule := s.CheckFit(i, task, offer, &totalCPU, &totalRAM, &totalWatts, &partialLoad)
+
+			if taken {
+				offerTaken = true
+				tasks = append(tasks, taskToSchedule)
+				break
+			}
+		}
+
+		// Pack the rest of the offer with the smallest tasks
 		for i, task := range s.tasks {
 
 			// Check host if it exists
@@ -258,64 +325,29 @@ func (s *BPSWClassMapWattsPistonCapping) ResourceOffers(driver sched.SchedulerDr
 			}
 
 			for *task.Instances > 0 {
-				var nodeClass string
-				for _, attr := range offer.GetAttributes() {
-					if attr.GetName() == "class" {
-						nodeClass = attr.GetText().GetValue()
-					}
-				}
-				// Does the task fit
-				// OR lazy evaluation. If ignoreWatts is set to true, second statement won't
-				// be evaluated
-				if (s.ignoreWatts || (offerWatts >= (totalWatts + task.ClassToWatts[nodeClass]))) &&
-					(offerCPU >= (totalCPU + task.CPU)) &&
-					(offerRAM >= (totalRAM + task.RAM)) {
+				// TODO: Fix this so index doesn't need to be passed
+				taken, taskToSchedule := s.CheckFit(i, task, offer, &totalCPU, &totalRAM, &totalWatts, &partialLoad)
 
-					// Start piston capping if haven't started yet
-					if !s.isCapping {
-						s.isCapping = true
-						s.startCapping()
-					}
-
-					fmt.Println("Watts being used: ", task.ClassToWatts[nodeClass])
-					taken = true
-					totalWatts += task.ClassToWatts[nodeClass]
-					totalCPU += task.CPU
-					totalRAM += task.RAM
-					log.Println("Co-Located with: ")
-					coLocated(s.running[offer.GetSlaveId().GoString()])
-					taskToSchedule := s.newTask(offer, task, nodeClass)
+				if taken {
+					offerTaken = true
 					tasks = append(tasks, taskToSchedule)
-
-					fmt.Println("Inst: ", *task.Instances)
-					s.schedTrace.Print(offer.GetHostname() + ":" + taskToSchedule.GetTaskId().GetValue())
-					*task.Instances--
-					partialLoad += ((task.Watts * constants.CapMargin) / s.totalPower[*offer.Hostname]) * 100
-
-					if *task.Instances <= 0 {
-						// All instances of task have been scheduled. Remove it
-						s.tasks = append(s.tasks[:i], s.tasks[i+1:]...)
-						if len(s.tasks) <= 0 {
-							log.Println("Done scheduling all tasks")
-							close(s.Shutdown)
-						}
-					}
 				} else {
-					break // Continue on to the next task
+					break // Continue on to next task
 				}
 			}
 		}
 
-		if taken {
+		if offerTaken {
 			// Updating the cap value for offer.Hostname
-			bpswClassMapWattsPistonMutex.Lock()
-			bpswClassMapWattsPistonCapValues[*offer.Hostname] += partialLoad
-			bpswClassMapWattsPistonMutex.Unlock()
+			bpMaxMinPistonCappingMutex.Lock()
+			bpMaxMinPistonCappingCapValues[*offer.Hostname] += partialLoad
+			bpMaxMinPistonCappingMutex.Unlock()
 			log.Printf("Starting on [%s]\n", offer.GetHostname())
 			driver.LaunchTasks([]*mesos.OfferID{offer.Id}, tasks, defaultFilter)
 		} else {
-			// If there was no match for task
-			log.Println("There is not enough resources to launch task: ")
+
+			// If there was no match for the task
+			fmt.Println("There is not enough resources to launch a task:")
 			cpus, mem, watts := OfferAgg(offer)
 
 			log.Printf("<CPU: %f, RAM: %f, Watts: %f>\n", cpus, mem, watts)
@@ -325,7 +357,7 @@ func (s *BPSWClassMapWattsPistonCapping) ResourceOffers(driver sched.SchedulerDr
 }
 
 // Remove finished task from the taskMonitor
-func (s *BPSWClassMapWattsPistonCapping) deleteFromTaskMonitor(finishedTaskID string) (def.Task, string, error) {
+func (s *BPMaxMinPistonCapping) deleteFromTaskMonitor(finishedTaskID string) (def.Task, string, error) {
 	hostOfFinishedTask := ""
 	indexOfFinishedTask := -1
 	found := false
@@ -356,13 +388,13 @@ func (s *BPSWClassMapWattsPistonCapping) deleteFromTaskMonitor(finishedTaskID st
 	return finishedTask, hostOfFinishedTask, nil
 }
 
-func (s *BPSWClassMapWattsPistonCapping) StatusUpdate(driver sched.SchedulerDriver, status *mesos.TaskStatus) {
-	log.Printf("Received task status [%s] for task [%s]\n", NameFor(status.State), *status.TaskId.Value)
+func (s *BPMaxMinPistonCapping) StatusUpdate(driver sched.SchedulerDriver, status *mesos.TaskStatus) {
+	log.Printf("Received task status [%s] for task [%s]", NameFor(status.State), *status.TaskId.Value)
 
 	if *status.State == mesos.TaskState_TASK_RUNNING {
-		bpswClassMapWattsPistonMutex.Lock()
+		bpMaxMinPistonCappingMutex.Lock()
 		s.tasksRunning++
-		bpswClassMapWattsPistonMutex.Unlock()
+		bpMaxMinPistonCappingMutex.Unlock()
 	} else if IsTerminal(status.State) {
 		delete(s.running[status.GetSlaveId().GoString()], *status.TaskId.Value)
 		// Deleting the task from the taskMonitor
@@ -372,14 +404,14 @@ func (s *BPSWClassMapWattsPistonCapping) StatusUpdate(driver sched.SchedulerDriv
 		}
 
 		// Need to update the cap values for host of the finishedTask
-		bpswClassMapWattsPistonMutex.Lock()
-		bpswClassMapWattsPistonCapValues[hostOfFinishedTask] -= ((finishedTask.Watts * constants.CapMargin) / s.totalPower[hostOfFinishedTask]) * 100
+		bpMaxMinPistonCappingMutex.Lock()
+		bpMaxMinPistonCappingCapValues[hostOfFinishedTask] -= ((finishedTask.Watts * constants.CapMargin) / s.totalPower[hostOfFinishedTask]) * 100
 		// Checking to see if the cap value has become 0, in which case we uncap the host.
-		if int(math.Floor(bpswClassMapWattsPistonCapValues[hostOfFinishedTask]+0.5)) == 0 {
-			bpswClassMapWattsPistonCapValues[hostOfFinishedTask] = 100
+		if int(math.Floor(bpMaxMinPistonCappingCapValues[hostOfFinishedTask]+0.5)) == 0 {
+			bpMaxMinPistonCappingCapValues[hostOfFinishedTask] = 100
 		}
 		s.tasksRunning--
-		bpswClassMapWattsPistonMutex.Unlock()
+		bpMaxMinPistonCappingMutex.Unlock()
 
 		if s.tasksRunning == 0 {
 			select {
@@ -391,4 +423,5 @@ func (s *BPSWClassMapWattsPistonCapping) StatusUpdate(driver sched.SchedulerDriv
 		}
 	}
 	log.Printf("DONE: Task status [%s] for task [%s]", NameFor(status.State), *status.TaskId.Value)
+
 }

@@ -99,7 +99,7 @@ func (capper ClusterwideCapper) CleverRecap(totalPower map[string]float64,
 
 	// determining the Recap value by calling the regular Recap(...)
 	toggle := false
-	RecapValue, err := capper.Recap(totalPower, taskMonitor, finishedTaskId)
+	RecapValue, err := capper.NaiveRecap(totalPower, taskMonitor, finishedTaskId)
 	if err == nil {
 		toggle = true
 	}
@@ -181,7 +181,7 @@ Recapping the entire cluster.
 
 This needs to be called whenever a task finishes execution.
 */
-func (capper ClusterwideCapper) Recap(totalPower map[string]float64,
+func (capper ClusterwideCapper) NaiveRecap(totalPower map[string]float64,
 	taskMonitor map[string][]def.Task, finishedTaskId string) (float64, error) {
 	// Validation
 	if totalPower == nil || taskMonitor == nil {

@@ -7,6 +7,7 @@ To Do:
  * Fix the race condition on 'tasksRunning' in proactiveclusterwidecappingfcfs.go and proactiveclusterwidecappingranked.go
  * Separate the capping strategies from the scheduling algorithms and make it possible to use any capping strategy with any scheduler.
  * Make newTask(...) variadic where the newTaskClass argument can either be given or not. If not give, then pick task.Watts as the watts attribute, else pick task.ClassToWatts[newTaskClass].
+ * Retrofit pcp/proactiveclusterwidecappers.go to include the power capping go routines and to cap only when necessary.
 
 Scheduling Algorithms:
 
