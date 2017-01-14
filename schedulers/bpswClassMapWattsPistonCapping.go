@@ -179,7 +179,7 @@ func (s *BPSWClassMapWattsPistonCapping) startCapping() {
 							if err := rapl.Cap(host, "rapl", roundedCapValue); err != nil {
 								log.Println(err)
 							} else {
-								log.Printf("Capped [%s] at %d", host, int(math.Floor(capValue)))
+								log.Printf("Capped [%s] at %d", host, roundedCapValue)
 							}
 							bpswClassMapWattsPistonPreviousRoundedCapValues[host] = roundedCapValue
 						}
@@ -187,7 +187,7 @@ func (s *BPSWClassMapWattsPistonCapping) startCapping() {
 						if err := rapl.Cap(host, "rapl", roundedCapValue); err != nil {
 							log.Println(err)
 						} else {
-							log.Printf("Capped [%s] at %d", host, int(math.Floor(capValue+0.5)))
+							log.Printf("Capped [%s] at %d", host, roundedCapValue)
 						}
 						bpswClassMapWattsPistonPreviousRoundedCapValues[host] = roundedCapValue
 					}
