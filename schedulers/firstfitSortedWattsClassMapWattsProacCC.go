@@ -1,36 +1,36 @@
 package schedulers
 
 import (
+	"bitbucket.org/sunybingcloud/electron/constants"
 	"bitbucket.org/sunybingcloud/electron/def"
+	"bitbucket.org/sunybingcloud/electron/pcp"
+	"bitbucket.org/sunybingcloud/electron/rapl"
 	"fmt"
 	"github.com/golang/protobuf/proto"
 	mesos "github.com/mesos/mesos-go/mesosproto"
 	"github.com/mesos/mesos-go/mesosutil"
 	sched "github.com/mesos/mesos-go/scheduler"
 	"log"
-	"strings"
-	"time"
-	"sort"
-	"os"
-	"bitbucket.org/sunybingcloud/electron/pcp"
-	"sync"
 	"math"
-	"bitbucket.org/sunybingcloud/electron/constants"
-	"bitbucket.org/sunybingcloud/electron/rapl"
+	"os"
+	"sort"
+	"strings"
+	"sync"
+	"time"
 )
 
 // electron scheduler implements the Scheduler interface
 type FirstFitSortedWattsClassMapWattsProacCC struct {
-	base // Type embedded to inherit common features.
-	tasksCreated int
-	tasksRunning int
-	tasks []def.Task
-	metrics map[string]def.Metric
-	running map[string]map[string]bool
+	base           // Type embedded to inherit common features.
+	tasksCreated   int
+	tasksRunning   int
+	tasks          []def.Task
+	metrics        map[string]def.Metric
+	running        map[string]map[string]bool
 	taskMonitor    map[string][]def.Task
 	availablePower map[string]float64
 	totalPower     map[string]float64
-	ignoreWatts bool
+	ignoreWatts    bool
 	capper         *pcp.ClusterwideCapper
 	ticker         *time.Ticker
 	recapTicker    *time.Ticker
@@ -80,7 +80,6 @@ func NewFirstFitSortedWattsClassMapWattsProacCC(tasks []def.Task, ignoreWatts bo
 		isCapping:      false,
 		isRecapping:    false,
 		schedTrace:     log.New(logFile, "", log.LstdFlags),
-
 	}
 	return s
 }
@@ -88,7 +87,7 @@ func NewFirstFitSortedWattsClassMapWattsProacCC(tasks []def.Task, ignoreWatts bo
 // mutex
 var ffswClassMapWattsProacCCMutex sync.Mutex
 
-func (s *FirstFitSortedWattsClassMapWattsProacCC) newTask(offer *mesos.Offer, task def.Task,  newTaskClass string) *mesos.TaskInfo {
+func (s *FirstFitSortedWattsClassMapWattsProacCC) newTask(offer *mesos.Offer, task def.Task, newTaskClass string) *mesos.TaskInfo {
 	taskName := fmt.Sprintf("%s-%d", task.Name, *task.Instances)
 	s.tasksCreated++
 
@@ -154,7 +153,7 @@ func (s *FirstFitSortedWattsClassMapWattsProacCC) Disconnected(sched.SchedulerDr
 }
 
 // go routine to cap the entire cluster in regular intervals of time
-var ffswClassMapWattsProacCCCapValue = 0.0 // initial value to indicate that we haven't capped the cluster yet.
+var ffswClassMapWattsProacCCCapValue = 0.0    // initial value to indicate that we haven't capped the cluster yet.
 var ffswClassMapWattsProacCCNewCapValue = 0.0 // newly computed cap value
 func (s *FirstFitSortedWattsClassMapWattsProacCC) startCapping() {
 	go func() {
@@ -378,7 +377,7 @@ func (s *FirstFitSortedWattsClassMapWattsProacCC) StatusUpdate(driver sched.Sche
 		if s.tasksRunning == 0 {
 			select {
 			case <-s.Shutdown:
-			// Need to stop the cluster-wide recapping
+				// Need to stop the cluster-wide recapping
 				s.stopRecapping()
 				close(s.Done)
 			default:

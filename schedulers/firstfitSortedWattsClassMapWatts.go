@@ -8,10 +8,10 @@ import (
 	"github.com/mesos/mesos-go/mesosutil"
 	sched "github.com/mesos/mesos-go/scheduler"
 	"log"
+	"os"
+	"sort"
 	"strings"
 	"time"
-	"sort"
-	"os"
 )
 
 // electron scheduler implements the Scheduler interface
@@ -58,7 +58,7 @@ func NewFirstFitSortedWattsClassMapWatts(tasks []def.Task, ignoreWatts bool, sch
 		PCPLog:      make(chan struct{}),
 		running:     make(map[string]map[string]bool),
 		RecordPCP:   false,
-		schedTrace: log.New(logFile, "", log.LstdFlags),
+		schedTrace:  log.New(logFile, "", log.LstdFlags),
 	}
 	return s
 }
