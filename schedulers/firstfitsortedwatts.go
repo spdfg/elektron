@@ -8,10 +8,10 @@ import (
 	"github.com/mesos/mesos-go/mesosutil"
 	sched "github.com/mesos/mesos-go/scheduler"
 	"log"
+	"os"
 	"sort"
 	"strings"
 	"time"
-	"os"
 )
 
 // Decides if to take an offer or not
@@ -216,4 +216,3 @@ func (s *FirstFitSortedWatts) StatusUpdate(driver sched.SchedulerDriver, status 
 	}
 	log.Printf("DONE: Task status [%s] for task [%s]", NameFor(status.State), *status.TaskId.Value)
 }
-

@@ -12,10 +12,10 @@ import (
 	sched "github.com/mesos/mesos-go/scheduler"
 	"log"
 	"math"
+	"os"
 	"strings"
 	"sync"
 	"time"
-	"os"
 )
 
 // Decides if to take an offer or not
@@ -30,7 +30,7 @@ func (_ *ProactiveClusterwideCapFCFS) takeOffer(offer *mesos.Offer, task def.Tas
 
 // electronScheduler implements the Scheduler interface.
 type ProactiveClusterwideCapFCFS struct {
-	base         // Type embedded to inherit common functions
+	base           // Type embedded to inherit common functions
 	tasksCreated   int
 	tasksRunning   int
 	tasks          []def.Task
@@ -386,4 +386,3 @@ func (s *ProactiveClusterwideCapFCFS) StatusUpdate(driver sched.SchedulerDriver,
 	}
 	log.Printf("DONE: Task status [%s] for task [%s]", NameFor(status.State), *status.TaskId.Value)
 }
-

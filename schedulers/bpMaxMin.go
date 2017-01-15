@@ -124,7 +124,6 @@ func (s *BPMaxMinWatts) newTask(offer *mesos.Offer, task def.Task) *mesos.TaskIn
 	}
 }
 
-
 // Determine if the remaining space inside of the offer is enough for this
 // the task we need to create. If it is, create a TaskInfo and return it.
 func (s *BPMaxMinWatts) CheckFit(i int,
@@ -194,7 +193,7 @@ func (s *BPMaxMinWatts) ResourceOffers(driver sched.SchedulerDriver, offers []*m
 
 		// Attempt to schedule a single instance of the heaviest workload available first
 		// Start from the back until one fits
-		for i:= len(s.tasks)-1; i >= 0; i-- {
+		for i := len(s.tasks) - 1; i >= 0; i-- {
 
 			task := s.tasks[i]
 			// Check host if it exists
@@ -238,7 +237,6 @@ func (s *BPMaxMinWatts) ResourceOffers(driver sched.SchedulerDriver, offers []*m
 				}
 			}
 		}
-
 
 		if offerTaken {
 			log.Printf("Starting on [%s]\n", offer.GetHostname())

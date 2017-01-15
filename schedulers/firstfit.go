@@ -8,9 +8,9 @@ import (
 	"github.com/mesos/mesos-go/mesosutil"
 	sched "github.com/mesos/mesos-go/scheduler"
 	"log"
+	"os"
 	"strings"
 	"time"
-	"os"
 )
 
 // Decides if to take an offer or not
