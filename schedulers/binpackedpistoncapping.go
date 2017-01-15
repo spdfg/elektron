@@ -12,6 +12,7 @@ import (
 	sched "github.com/mesos/mesos-go/scheduler"
 	"log"
 	"math"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -23,7 +24,8 @@ import (
  This is basically extending the BinPacking algorithm to also cap each node at a different values,
   corresponding to the load on that node.
 */
-type PistonCapper struct {
+type BinPackedPistonCapper struct {
+	base         // Type embedded to inherit common functions
 	tasksCreated int
 	tasksRunning int
 	tasks        []def.Task
@@ -49,11 +51,19 @@ type PistonCapper struct {
 
 	// Controls when to shutdown pcp logging.
 	PCPLog chan struct{}
+
+	schedTrace *log.Logger
 }
 
 // New electron scheduler.
-func NewPistonCapper(tasks []def.Task, ignoreWatts bool) *PistonCapper {
-	s := &PistonCapper{
+func NewBinPackedPistonCapper(tasks []def.Task, ignoreWatts bool, schedTracePrefix string) *BinPackedPistonCapper {
+
+	logFile, err := os.Create("./" + schedTracePrefix + "_schedTrace.log")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	s := &BinPackedPistonCapper{
 		tasks:       tasks,
 		ignoreWatts: ignoreWatts,
 		Shutdown:    make(chan struct{}),
@@ -65,12 +75,13 @@ func NewPistonCapper(tasks []def.Task, ignoreWatts bool) *PistonCapper {
 		RecordPCP:   false,
 		ticker:      time.NewTicker(5 * time.Second),
 		isCapping:   false,
+		schedTrace:  log.New(logFile, "", log.LstdFlags),
 	}
 	return s
 }
 
 // check whether task fits the offer or not.
-func (s *PistonCapper) takeOffer(offerWatts float64, offerCPU float64, offerRAM float64,
+func (s *BinPackedPistonCapper) takeOffer(offerWatts float64, offerCPU float64, offerRAM float64,
 	totalWatts float64, totalCPU float64, totalRAM float64, task def.Task) bool {
 	if (s.ignoreWatts || (offerWatts >= (totalWatts + task.Watts))) &&
 		(offerCPU >= (totalCPU + task.CPU)) &&
@@ -82,9 +93,9 @@ func (s *PistonCapper) takeOffer(offerWatts float64, offerCPU float64, offerRAM 
 }
 
 // mutex
-var mutex sync.Mutex
+var bpPistonMutex sync.Mutex
 
-func (s *PistonCapper) newTask(offer *mesos.Offer, task def.Task) *mesos.TaskInfo {
+func (s *BinPackedPistonCapper) newTask(offer *mesos.Offer, task def.Task) *mesos.TaskInfo {
 	taskName := fmt.Sprintf("%s-%d", task.Name, *task.Instances)
 	s.tasksCreated++
 
@@ -140,45 +151,39 @@ func (s *PistonCapper) newTask(offer *mesos.Offer, task def.Task) *mesos.TaskInf
 	}
 }
 
-func (s *PistonCapper) Registered(
-	_ sched.SchedulerDriver,
-	frameworkID *mesos.FrameworkID,
-	masterInfo *mesos.MasterInfo) {
-	log.Printf("Framework %s registered with master %s", frameworkID, masterInfo)
-}
-
-func (s *PistonCapper) Reregistered(_ sched.SchedulerDriver, masterInfo *mesos.MasterInfo) {
-	log.Printf("Framework re-registered with master %s", masterInfo)
-}
-
-func (s *PistonCapper) Disconnected(sched.SchedulerDriver) {
+func (s *BinPackedPistonCapper) Disconnected(sched.SchedulerDriver) {
+	// Need to stop the capping process
+	s.ticker.Stop()
+	bpPistonMutex.Lock()
+	s.isCapping = false
+	bpPistonMutex.Unlock()
 	log.Println("Framework disconnected with master")
 }
 
 // go routine to cap the each node in the cluster at regular intervals of time.
-var capValues = make(map[string]float64)
+var bpPistonCapValues = make(map[string]float64)
 
 // Storing the previous cap value for each host so as to not repeatedly cap the nodes to the same value. (reduces overhead)
-var previousRoundedCapValues = make(map[string]int)
+var bpPistonPreviousRoundedCapValues = make(map[string]int)
 
-func (s *PistonCapper) startCapping() {
+func (s *BinPackedPistonCapper) startCapping() {
 	go func() {
 		for {
 			select {
 			case <-s.ticker.C:
 				// Need to cap each node
-				mutex.Lock()
-				for host, capValue := range capValues {
+				bpPistonMutex.Lock()
+				for host, capValue := range bpPistonCapValues {
 					roundedCapValue := int(math.Floor(capValue + 0.5))
 					// has the cap value changed
-					if prevRoundedCap, ok := previousRoundedCapValues[host]; ok {
+					if prevRoundedCap, ok := bpPistonPreviousRoundedCapValues[host]; ok {
 						if prevRoundedCap != roundedCapValue {
 							if err := rapl.Cap(host, "rapl", roundedCapValue); err != nil {
 								log.Println(err)
 							} else {
 								log.Printf("Capped [%s] at %d", host, int(math.Floor(capValue+0.5)))
 							}
-							previousRoundedCapValues[host] = roundedCapValue
+							bpPistonPreviousRoundedCapValues[host] = roundedCapValue
 						}
 					} else {
 						if err := rapl.Cap(host, "rapl", roundedCapValue); err != nil {
@@ -186,27 +191,27 @@ func (s *PistonCapper) startCapping() {
 						} else {
 							log.Printf("Capped [%s] at %d", host, int(math.Floor(capValue+0.5)))
 						}
-						previousRoundedCapValues[host] = roundedCapValue
+						bpPistonPreviousRoundedCapValues[host] = roundedCapValue
 					}
 				}
-				mutex.Unlock()
+				bpPistonMutex.Unlock()
 			}
 		}
 	}()
 }
 
 // Stop the capping
-func (s *PistonCapper) stopCapping() {
+func (s *BinPackedPistonCapper) stopCapping() {
 	if s.isCapping {
 		log.Println("Stopping the capping.")
 		s.ticker.Stop()
-		mutex.Lock()
+		bpPistonMutex.Lock()
 		s.isCapping = false
-		mutex.Unlock()
+		bpPistonMutex.Unlock()
 	}
 }
 
-func (s *PistonCapper) ResourceOffers(driver sched.SchedulerDriver, offers []*mesos.Offer) {
+func (s *BinPackedPistonCapper) ResourceOffers(driver sched.SchedulerDriver, offers []*mesos.Offer) {
 	log.Printf("Received %d resource offers", len(offers))
 
 	// retrieving the total power for each host in the offers
@@ -249,7 +254,8 @@ func (s *PistonCapper) ResourceOffers(driver sched.SchedulerDriver, offers []*me
 		// Store the partialLoad for host corresponding to this offer.
 		// Once we can't fit any more tasks, we update capValue for this host with partialLoad and then launch the fit tasks.
 		partialLoad := 0.0
-		for i, task := range s.tasks {
+		for i := 0; i < len(s.tasks); i++ {
+			task := s.tasks[i]
 			// Check host if it exists
 			if task.Host != "" {
 				// Don't take offer if it doens't match our task's host requirement.
@@ -274,9 +280,11 @@ func (s *PistonCapper) ResourceOffers(driver sched.SchedulerDriver, offers []*me
 					totalRAM += task.RAM
 					log.Println("Co-Located with: ")
 					coLocated(s.running[offer.GetSlaveId().GoString()])
-					fitTasks = append(fitTasks, s.newTask(offer, task))
+					taskToSchedule := s.newTask(offer, task)
+					fitTasks = append(fitTasks, taskToSchedule)
 
 					log.Println("Inst: ", *task.Instances)
+					s.schedTrace.Print(offer.GetHostname() + ":" + taskToSchedule.GetTaskId().GetValue())
 					*task.Instances--
 					// updating the cap value for offer.Hostname
 					partialLoad += ((task.Watts * constants.CapMargin) / s.totalPower[*offer.Hostname]) * 100
@@ -297,9 +305,9 @@ func (s *PistonCapper) ResourceOffers(driver sched.SchedulerDriver, offers []*me
 
 		if taken {
 			// Updating the cap value for offer.Hostname
-			mutex.Lock()
-			capValues[*offer.Hostname] += partialLoad
-			mutex.Unlock()
+			bpPistonMutex.Lock()
+			bpPistonCapValues[*offer.Hostname] += partialLoad
+			bpPistonMutex.Unlock()
 			log.Printf("Starting on [%s]\n", offer.GetHostname())
 			driver.LaunchTasks([]*mesos.OfferID{offer.Id}, fitTasks, defaultFilter)
 		} else {
@@ -314,7 +322,7 @@ func (s *PistonCapper) ResourceOffers(driver sched.SchedulerDriver, offers []*me
 }
 
 // Remove finished task from the taskMonitor
-func (s *PistonCapper) deleteFromTaskMonitor(finishedTaskID string) (def.Task, string, error) {
+func (s *BinPackedPistonCapper) deleteFromTaskMonitor(finishedTaskID string) (def.Task, string, error) {
 	hostOfFinishedTask := ""
 	indexOfFinishedTask := -1
 	found := false
@@ -345,13 +353,13 @@ func (s *PistonCapper) deleteFromTaskMonitor(finishedTaskID string) (def.Task, s
 	return finishedTask, hostOfFinishedTask, nil
 }
 
-func (s *PistonCapper) StatusUpdate(driver sched.SchedulerDriver, status *mesos.TaskStatus) {
+func (s *BinPackedPistonCapper) StatusUpdate(driver sched.SchedulerDriver, status *mesos.TaskStatus) {
 	log.Printf("Received task status [%s] for task [%s]\n", NameFor(status.State), *status.TaskId.Value)
 
 	if *status.State == mesos.TaskState_TASK_RUNNING {
-		mutex.Lock()
+		bpPistonMutex.Lock()
 		s.tasksRunning++
-		mutex.Unlock()
+		bpPistonMutex.Unlock()
 	} else if IsTerminal(status.State) {
 		delete(s.running[status.GetSlaveId().GoString()], *status.TaskId.Value)
 		// Deleting the task from the taskMonitor
@@ -361,14 +369,14 @@ func (s *PistonCapper) StatusUpdate(driver sched.SchedulerDriver, status *mesos.
 		}
 
 		// Need to update the cap values for host of the finishedTask
-		mutex.Lock()
-		capValues[hostOfFinishedTask] -= ((finishedTask.Watts * constants.CapMargin) / s.totalPower[hostOfFinishedTask]) * 100
+		bpPistonMutex.Lock()
+		bpPistonCapValues[hostOfFinishedTask] -= ((finishedTask.Watts * constants.CapMargin) / s.totalPower[hostOfFinishedTask]) * 100
 		// Checking to see if the cap value has become 0, in which case we uncap the host.
-		if int(math.Floor(capValues[hostOfFinishedTask]+0.5)) == 0 {
-			capValues[hostOfFinishedTask] = 100
+		if int(math.Floor(bpPistonCapValues[hostOfFinishedTask]+0.5)) == 0 {
+			bpPistonCapValues[hostOfFinishedTask] = 100
 		}
 		s.tasksRunning--
-		mutex.Unlock()
+		bpPistonMutex.Unlock()
 
 		if s.tasksRunning == 0 {
 			select {
@@ -380,28 +388,4 @@ func (s *PistonCapper) StatusUpdate(driver sched.SchedulerDriver, status *mesos.
 		}
 	}
 	log.Printf("DONE: Task status [%s] for task [%s]", NameFor(status.State), *status.TaskId.Value)
-}
-
-func (s *PistonCapper) FrameworkMessage(
-	driver sched.SchedulerDriver,
-	executorID *mesos.ExecutorID,
-	slaveID *mesos.SlaveID,
-	message string) {
-
-	log.Println("Getting a framework message: ", message)
-	log.Printf("Received a framework message from some unknown source: %s", *executorID.Value)
-}
-
-func (s *PistonCapper) OfferRescinded(_ sched.SchedulerDriver, offerID *mesos.OfferID) {
-	log.Printf("Offer %s rescinded", offerID)
-}
-func (s *PistonCapper) SlaveLost(_ sched.SchedulerDriver, slaveID *mesos.SlaveID) {
-	log.Printf("Slave %s lost", slaveID)
-}
-func (s *PistonCapper) ExecutorLost(_ sched.SchedulerDriver, executorID *mesos.ExecutorID, slaveID *mesos.SlaveID, status int) {
-	log.Printf("Executor %s on slave %s was lost", executorID, slaveID)
-}
-
-func (s *PistonCapper) Error(_ sched.SchedulerDriver, err string) {
-	log.Printf("Receiving an error: %s", err)
 }

@@ -128,7 +128,8 @@ func (s *FirstFitSortedWattsClassMapWatts) ResourceOffers(driver sched.Scheduler
 
 		// First fit strategy
 		taken := false
-		for i, task := range s.tasks {
+		for i := 0; i < len(s.tasks); i++ {
+			task := s.tasks[i]
 			// Check host if it exists
 			if task.Host != "" {
 				// Don't take offer if it doens't match our task's host requirement.

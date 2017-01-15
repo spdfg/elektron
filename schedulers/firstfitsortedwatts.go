@@ -11,6 +11,7 @@ import (
 	"sort"
 	"strings"
 	"time"
+	"os"
 )
 
 // Decides if to take an offer or not
@@ -29,6 +30,7 @@ func (s *FirstFitSortedWatts) takeOffer(offer *mesos.Offer, task def.Task) bool 
 
 // electronScheduler implements the Scheduler interface
 type FirstFitSortedWatts struct {
+	base         // Type embedded to inherit common functions
 	tasksCreated int
 	tasksRunning int
 	tasks        []def.Task
@@ -49,12 +51,19 @@ type FirstFitSortedWatts struct {
 
 	// Controls when to shutdown pcp logging
 	PCPLog chan struct{}
+
+	schedTrace *log.Logger
 }
 
 // New electron scheduler
-func NewFirstFitSortedWatts(tasks []def.Task, ignoreWatts bool) *FirstFitSortedWatts {
+func NewFirstFitSortedWatts(tasks []def.Task, ignoreWatts bool, schedTracePrefix string) *FirstFitSortedWatts {
 
 	sort.Sort(def.WattsSorter(tasks))
+
+	logFile, err := os.Create("./" + schedTracePrefix + "_schedTrace.log")
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	s := &FirstFitSortedWatts{
 		tasks:       tasks,
@@ -64,6 +73,7 @@ func NewFirstFitSortedWatts(tasks []def.Task, ignoreWatts bool) *FirstFitSortedW
 		PCPLog:      make(chan struct{}),
 		running:     make(map[string]map[string]bool),
 		RecordPCP:   false,
+		schedTrace:  log.New(logFile, "", log.LstdFlags),
 	}
 	return s
 }
@@ -115,21 +125,6 @@ func (s *FirstFitSortedWatts) newTask(offer *mesos.Offer, task def.Task) *mesos.
 	}
 }
 
-func (s *FirstFitSortedWatts) Registered(
-	_ sched.SchedulerDriver,
-	frameworkID *mesos.FrameworkID,
-	masterInfo *mesos.MasterInfo) {
-	log.Printf("Framework %s registered with master %s", frameworkID, masterInfo)
-}
-
-func (s *FirstFitSortedWatts) Reregistered(_ sched.SchedulerDriver, masterInfo *mesos.MasterInfo) {
-	log.Printf("Framework re-registered with master %s", masterInfo)
-}
-
-func (s *FirstFitSortedWatts) Disconnected(sched.SchedulerDriver) {
-	log.Println("Framework disconnected with master")
-}
-
 func (s *FirstFitSortedWatts) ResourceOffers(driver sched.SchedulerDriver, offers []*mesos.Offer) {
 	log.Printf("Received %d resource offers", len(offers))
 
@@ -149,7 +144,8 @@ func (s *FirstFitSortedWatts) ResourceOffers(driver sched.SchedulerDriver, offer
 		// First fit strategy
 
 		taken := false
-		for i, task := range s.tasks {
+		for i := 0; i < len(s.tasks); i++ {
+			task := s.tasks[i]
 
 			// Check host if it exists
 			if task.Host != "" {
@@ -165,7 +161,8 @@ func (s *FirstFitSortedWatts) ResourceOffers(driver sched.SchedulerDriver, offer
 				log.Println("Co-Located with: ")
 				coLocated(s.running[offer.GetSlaveId().GoString()])
 
-				tasks = append(tasks, s.newTask(offer, task))
+				taskToSchedule := s.newTask(offer, task)
+				tasks = append(tasks, taskToSchedule)
 
 				log.Printf("Starting %s on [%s]\n", task.Name, offer.GetHostname())
 				driver.LaunchTasks([]*mesos.OfferID{offer.Id}, tasks, defaultFilter)
@@ -173,6 +170,7 @@ func (s *FirstFitSortedWatts) ResourceOffers(driver sched.SchedulerDriver, offer
 				taken = true
 
 				fmt.Println("Inst: ", *task.Instances)
+				s.schedTrace.Print(offer.GetHostname() + ":" + taskToSchedule.GetTaskId().GetValue())
 				*task.Instances--
 
 				if *task.Instances <= 0 {
@@ -219,26 +217,3 @@ func (s *FirstFitSortedWatts) StatusUpdate(driver sched.SchedulerDriver, status 
 	log.Printf("DONE: Task status [%s] for task [%s]", NameFor(status.State), *status.TaskId.Value)
 }
 
-func (s *FirstFitSortedWatts) FrameworkMessage(
-	driver sched.SchedulerDriver,
-	executorID *mesos.ExecutorID,
-	slaveID *mesos.SlaveID,
-	message string) {
-
-	log.Println("Getting a framework message: ", message)
-	log.Printf("Received a framework message from some unknown source: %s", *executorID.Value)
-}
-
-func (s *FirstFitSortedWatts) OfferRescinded(_ sched.SchedulerDriver, offerID *mesos.OfferID) {
-	log.Printf("Offer %s rescinded", offerID)
-}
-func (s *FirstFitSortedWatts) SlaveLost(_ sched.SchedulerDriver, slaveID *mesos.SlaveID) {
-	log.Printf("Slave %s lost", slaveID)
-}
-func (s *FirstFitSortedWatts) ExecutorLost(_ sched.SchedulerDriver, executorID *mesos.ExecutorID, slaveID *mesos.SlaveID, status int) {
-	log.Printf("Executor %s on slave %s was lost", executorID, slaveID)
-}
-
-func (s *FirstFitSortedWatts) Error(_ sched.SchedulerDriver, err string) {
-	log.Printf("Receiving an error: %s", err)
-}

@@ -145,7 +145,8 @@ func (s *BPSWClassMapWatts) ResourceOffers(driver sched.SchedulerDriver, offers 
 		totalWatts := 0.0
 		totalCPU := 0.0
 		totalRAM := 0.0
-		for i, task := range s.tasks {
+		for i := 0; i < len(s.tasks); i++ {
+			task := s.tasks[i]
 
 			// Check host if it exists
 			if task.Host != "" {

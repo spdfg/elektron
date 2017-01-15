@@ -247,8 +247,8 @@ func (s *BPSWClassMapWattsPistonCapping) ResourceOffers(driver sched.SchedulerDr
 		// Store the partialLoad for host corresponding to this offer
 		// Once we can't fit any more tasks, we update the capValue for this host with partialLoad and then launch the fitted tasks.
 		partialLoad := 0.0
-		for i, task := range s.tasks {
-
+		for i := 0; i < len(s.tasks); i++ {
+			task := s.tasks[i]
 			// Check host if it exists
 			if task.Host != "" {
 				// Don't take offer if it doesn't match our task's host requirement
