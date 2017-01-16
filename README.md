@@ -11,6 +11,8 @@ To Do:
  * Write test code for each scheduler (This should be after the design change)
  * Some of the constants in constants/constants.go can vary based on the environment.  
    Possible to setup the constants at runtime based on the environment?
+ * Log fix for declining offer -- different reason when insufficient resources as compared to when there are no
+    longer any tasks to schedule.
 
 
 **Requires [Performance Co-Pilot](http://pcp.io/) tool pmdumptext to be installed on the
