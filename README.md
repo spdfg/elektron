@@ -13,6 +13,7 @@ To Do:
    Possible to setup the constants at runtime based on the environment?
  * Log fix for declining offer -- different reason when insufficient resources as compared to when there are no
     longer any tasks to schedule.
+ * Have a centralised logFile that can be filtered by identifier. All electron logs should go into this file.
 
 
 **Requires [Performance Co-Pilot](http://pcp.io/) tool pmdumptext to be installed on the
