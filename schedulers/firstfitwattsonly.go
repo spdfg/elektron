@@ -8,6 +8,7 @@ import (
 	"github.com/mesos/mesos-go/mesosutil"
 	sched "github.com/mesos/mesos-go/scheduler"
 	"log"
+	"os"
 	"strings"
 	"time"
 )
@@ -27,6 +28,7 @@ func (*FirstFitWattsOnly) takeOffer(offer *mesos.Offer, task def.Task) bool {
 }
 
 type FirstFitWattsOnly struct {
+	base         // Type embedded to inherit common functions
 	tasksCreated int
 	tasksRunning int
 	tasks        []def.Task
@@ -47,10 +49,17 @@ type FirstFitWattsOnly struct {
 
 	// Controls when to shutdown pcp logging
 	PCPLog chan struct{}
+
+	schedTrace *log.Logger
 }
 
 // New electron scheduler
-func NewFirstFitWattsOnly(tasks []def.Task, ignoreWatts bool) *FirstFitWattsOnly {
+func NewFirstFitWattsOnly(tasks []def.Task, ignoreWatts bool, schedTracePrefix string) *FirstFitWattsOnly {
+
+	logFile, err := os.Create("./" + schedTracePrefix + "_schedTrace.log")
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	s := &FirstFitWattsOnly{
 		tasks:       tasks,
@@ -60,6 +69,7 @@ func NewFirstFitWattsOnly(tasks []def.Task, ignoreWatts bool) *FirstFitWattsOnly
 		PCPLog:      make(chan struct{}),
 		running:     make(map[string]map[string]bool),
 		RecordPCP:   false,
+		schedTrace:  log.New(logFile, "", log.LstdFlags),
 	}
 	return s
 }
@@ -106,21 +116,6 @@ func (s *FirstFitWattsOnly) newTask(offer *mesos.Offer, task def.Task) *mesos.Ta
 	}
 }
 
-func (s *FirstFitWattsOnly) Registered(
-	_ sched.SchedulerDriver,
-	frameworkID *mesos.FrameworkID,
-	masterInfo *mesos.MasterInfo) {
-	log.Printf("Framework %s registered with master %s", frameworkID, masterInfo)
-}
-
-func (s *FirstFitWattsOnly) Reregistered(_ sched.SchedulerDriver, masterInfo *mesos.MasterInfo) {
-	log.Printf("Framework re-registered with master %s", masterInfo)
-}
-
-func (s *FirstFitWattsOnly) Disconnected(sched.SchedulerDriver) {
-	log.Println("Framework disconnected with master")
-}
-
 func (s *FirstFitWattsOnly) ResourceOffers(driver sched.SchedulerDriver, offers []*mesos.Offer) {
 	log.Printf("Received %d resource offers", len(offers))
 
@@ -140,7 +135,8 @@ func (s *FirstFitWattsOnly) ResourceOffers(driver sched.SchedulerDriver, offers 
 		// First fit strategy
 
 		taken := false
-		for i, task := range s.tasks {
+		for i := 0; i < len(s.tasks); i++ {
+			task := s.tasks[i]
 
 			// Check host if it exists
 			if task.Host != "" {
@@ -156,7 +152,8 @@ func (s *FirstFitWattsOnly) ResourceOffers(driver sched.SchedulerDriver, offers 
 				log.Println("Co-Located with: ")
 				coLocated(s.running[offer.GetSlaveId().GoString()])
 
-				tasks = append(tasks, s.newTask(offer, task))
+				taskToSchedule := s.newTask(offer, task)
+				tasks = append(tasks, taskToSchedule)
 
 				log.Printf("Starting %s on [%s]\n", task.Name, offer.GetHostname())
 				driver.LaunchTasks([]*mesos.OfferID{offer.Id}, tasks, defaultFilter)
@@ -164,6 +161,7 @@ func (s *FirstFitWattsOnly) ResourceOffers(driver sched.SchedulerDriver, offers 
 				taken = true
 
 				fmt.Println("Inst: ", *task.Instances)
+				s.schedTrace.Print(offer.GetHostname() + ":" + taskToSchedule.GetTaskId().GetValue())
 				*task.Instances--
 
 				if *task.Instances <= 0 {
@@ -209,28 +207,4 @@ func (s *FirstFitWattsOnly) StatusUpdate(driver sched.SchedulerDriver, status *m
 		}
 	}
 	log.Printf("DONE: Task status [%s] for task [%s]", NameFor(status.State), *status.TaskId.Value)
-}
-
-func (s *FirstFitWattsOnly) FrameworkMessage(
-	driver sched.SchedulerDriver,
-	executorID *mesos.ExecutorID,
-	slaveID *mesos.SlaveID,
-	message string) {
-
-	log.Println("Getting a framework message: ", message)
-	log.Printf("Received a framework message from some unknown source: %s", *executorID.Value)
-}
-
-func (s *FirstFitWattsOnly) OfferRescinded(_ sched.SchedulerDriver, offerID *mesos.OfferID) {
-	log.Printf("Offer %s rescinded", offerID)
-}
-func (s *FirstFitWattsOnly) SlaveLost(_ sched.SchedulerDriver, slaveID *mesos.SlaveID) {
-	log.Printf("Slave %s lost", slaveID)
-}
-func (s *FirstFitWattsOnly) ExecutorLost(_ sched.SchedulerDriver, executorID *mesos.ExecutorID, slaveID *mesos.SlaveID, status int) {
-	log.Printf("Executor %s on slave %s was lost", executorID, slaveID)
-}
-
-func (s *FirstFitWattsOnly) Error(_ sched.SchedulerDriver, err string) {
-	log.Printf("Receiving an error: %s", err)
 }

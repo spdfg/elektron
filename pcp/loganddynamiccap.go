@@ -57,7 +57,7 @@ func meanCluster(history *ring.Ring) float64 {
 	return (total / count)
 }
 
-func StartLogAndDynamicCap(quit chan struct{}, logging *bool, prefix string, hiThreshold, loThreshold float64) {
+func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, prefix string, hiThreshold, loThreshold float64) {
 	const pcpCommand string = "pmdumptext -m -l -f '' -t 1.0 -d , -c config"
 	cmd := exec.Command("sh", "-c", pcpCommand)
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}

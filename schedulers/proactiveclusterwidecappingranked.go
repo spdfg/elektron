@@ -22,6 +22,7 @@ import (
 	sched "github.com/mesos/mesos-go/scheduler"
 	"log"
 	"math"
+	"os"
 	"sort"
 	"strings"
 	"sync"
@@ -40,6 +41,7 @@ func (_ *ProactiveClusterwideCapRanked) takeOffer(offer *mesos.Offer, task def.T
 
 // electronScheduler implements the Scheduler interface
 type ProactiveClusterwideCapRanked struct {
+	base           // Type embedded to inherit common functions
 	tasksCreated   int
 	tasksRunning   int
 	tasks          []def.Task
@@ -69,10 +71,18 @@ type ProactiveClusterwideCapRanked struct {
 
 	// Controls when to shutdown pcp logging.
 	PCPLog chan struct{}
+
+	schedTrace *log.Logger
 }
 
 // New electron scheduler.
-func NewProactiveClusterwideCapRanked(tasks []def.Task, ignoreWatts bool) *ProactiveClusterwideCapRanked {
+func NewProactiveClusterwideCapRanked(tasks []def.Task, ignoreWatts bool, schedTracePrefix string) *ProactiveClusterwideCapRanked {
+
+	logFile, err := os.Create("./" + schedTracePrefix + "_schedTrace.log")
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	s := &ProactiveClusterwideCapRanked{
 		tasks:          tasks,
 		ignoreWatts:    ignoreWatts,
@@ -89,6 +99,7 @@ func NewProactiveClusterwideCapRanked(tasks []def.Task, ignoreWatts bool) *Proac
 		recapTicker:    time.NewTicker(20 * time.Second),
 		isCapping:      false,
 		isRecapping:    false,
+		schedTrace:     log.New(logFile, "", log.LstdFlags),
 	}
 	return s
 }
@@ -149,17 +160,6 @@ func (s *ProactiveClusterwideCapRanked) newTask(offer *mesos.Offer, task def.Tas
 			},
 		},
 	}
-}
-
-func (s *ProactiveClusterwideCapRanked) Registered(
-	_ sched.SchedulerDriver,
-	frameworkID *mesos.FrameworkID,
-	masterInfo *mesos.MasterInfo) {
-	log.Printf("Framework %s registered with master %s", frameworkID, masterInfo)
-}
-
-func (s *ProactiveClusterwideCapRanked) Reregistered(_ sched.SchedulerDriver, masterInfo *mesos.MasterInfo) {
-	log.Printf("Framework re-registered with master %s", masterInfo)
 }
 
 func (s *ProactiveClusterwideCapRanked) Disconnected(sched.SchedulerDriver) {
@@ -299,7 +299,8 @@ func (s *ProactiveClusterwideCapRanked) ResourceOffers(driver sched.SchedulerDri
 		*/
 		taken := false
 
-		for i, task := range s.tasks {
+		for i := 0; i < len(s.tasks); i++ {
+			task := s.tasks[i]
 			// Don't take offer if it doesn't match our task's host requirement.
 			if !strings.HasPrefix(*offer.Hostname, task.Host) {
 				continue
@@ -325,9 +326,11 @@ func (s *ProactiveClusterwideCapRanked) ResourceOffers(driver sched.SchedulerDri
 					log.Println("Failed to determine the new cluster wide cap: ", err)
 				}
 				log.Printf("Starting on [%s]\n", offer.GetHostname())
-				to_schedule := []*mesos.TaskInfo{s.newTask(offer, task)}
+				taskToSchedule := s.newTask(offer, task)
+				to_schedule := []*mesos.TaskInfo{taskToSchedule}
 				driver.LaunchTasks([]*mesos.OfferID{offer.Id}, to_schedule, defaultFilter)
 				log.Printf("Inst: %d", *task.Instances)
+				s.schedTrace.Print(offer.GetHostname() + ":" + taskToSchedule.GetTaskId().GetValue())
 				*task.Instances--
 				if *task.Instances <= 0 {
 					// All instances of the task have been scheduled. Need to remove it from the list of tasks to schedule.
@@ -406,29 +409,4 @@ func (s *ProactiveClusterwideCapRanked) StatusUpdate(driver sched.SchedulerDrive
 		}
 	}
 	log.Printf("DONE: Task status [%s] for task [%s]", NameFor(status.State), *status.TaskId.Value)
-}
-
-func (s *ProactiveClusterwideCapRanked) FrameworkMessage(driver sched.SchedulerDriver,
-	executorID *mesos.ExecutorID,
-	slaveID *mesos.SlaveID,
-	message string) {
-
-	log.Println("Getting a framework message: ", message)
-	log.Printf("Received a framework message from some unknown source: %s", *executorID.Value)
-}
-
-func (s *ProactiveClusterwideCapRanked) OfferRescinded(_ sched.SchedulerDriver, offerID *mesos.OfferID) {
-	log.Printf("Offer %s rescinded", offerID)
-}
-
-func (s *ProactiveClusterwideCapRanked) SlaveLost(_ sched.SchedulerDriver, slaveID *mesos.SlaveID) {
-	log.Printf("Slave %s lost", slaveID)
-}
-
-func (s *ProactiveClusterwideCapRanked) ExecutorLost(_ sched.SchedulerDriver, executorID *mesos.ExecutorID, slaveID *mesos.SlaveID, status int) {
-	log.Printf("Executor %s on slave %s was lost", executorID, slaveID)
-}
-
-func (s *ProactiveClusterwideCapRanked) Error(_ sched.SchedulerDriver, err string) {
-	log.Printf("Receiving an error: %s", err)
 }

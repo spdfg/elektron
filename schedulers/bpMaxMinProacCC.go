@@ -155,7 +155,7 @@ func (s *BPMaxMinProacCC) newTask(offer *mesos.Offer, task def.Task) *mesos.Task
 }
 
 // go routine to cap the entire cluster in regular intervals of time.
-var bpMaxMinProacCCCapValue = 0.0 // initial value to indicate that we haven't capped the cluster yet.
+var bpMaxMinProacCCCapValue = 0.0    // initial value to indicate that we haven't capped the cluster yet.
 var bpMaxMinProacCCNewCapValue = 0.0 // newly computed cap value
 func (s *BPMaxMinProacCC) startCapping() {
 	go func() {
