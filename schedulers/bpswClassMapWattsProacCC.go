@@ -165,7 +165,7 @@ func (s *BPSWClassMapWattsProacCC) Disconnected(sched.SchedulerDriver) {
 }
 
 // go routine to cap the entire cluster in regular intervals of time.
-var bpswClassMapWattsProacCCCapValue = 0.0    // initial value to indicate that we haven't capped the cluster yet.
+var bpswClassMapWattsProacCCCapValue = 0.0 // initial value to indicate that we haven't capped the cluster yet.
 var bpswClassMapWattsProacCCNewCapValue = 0.0 // newly computed cap value
 func (s *BPSWClassMapWattsProacCC) startCapping() {
 	go func() {
