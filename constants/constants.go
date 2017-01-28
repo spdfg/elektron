@@ -14,6 +14,24 @@ var Hosts = []string{"stratos-001.cs.binghamton.edu", "stratos-002.cs.binghamton
 	"stratos-005.cs.binghamton.edu", "stratos-006.cs.binghamton.edu",
 	"stratos-007.cs.binghamton.edu", "stratos-008.cs.binghamton.edu"}
 
+// Classification of the nodes in the cluster based on their power consumption.
+var PowerClasses = map[string]map[string]bool{
+	"ClassA": map[string]bool{
+		"stratos-005.cs.binghamton.edu": true,
+		"stratos-006.cs.binghamton.edu": true,
+	},
+	"ClassB": map[string]bool{
+		"stratos-007.cs.binghamton.edu": true,
+		"stratos-008.cs.binghamton.edu": true,
+	},
+	"ClassC": map[string]bool{
+		"stratos-001.cs.binghamton.edu": true,
+		"stratos-002.cs.binghamton.edu": true,
+		"stratos-003.cs.binghamton.edu": true,
+		"stratos-004.cs.binghamton.edu": true,
+	},
+}
+
 // Add a new host to the slice of hosts.
 func AddNewHost(newHost string) bool {
 	// Validation
