@@ -86,7 +86,7 @@ func UpdateCapMargin(newCapMargin float64) bool {
 var StarvationFactor = PowerThreshold / CapMargin
 
 // Window size for running average
-var WindowSize = 20
+var ConsiderationWindowSize = 20
 
 // Update the window size.
 func UpdateWindowSize(newWindowSize int) bool {
@@ -94,7 +94,7 @@ func UpdateWindowSize(newWindowSize int) bool {
 	if newWindowSize == 0 {
 		return false
 	} else {
-		WindowSize = newWindowSize
+		ConsiderationWindowSize = newWindowSize
 		return true
 	}
 }

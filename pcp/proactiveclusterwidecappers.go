@@ -251,7 +251,7 @@ func (capper ClusterwideCapper) FCFSDeterminedCap(totalPower map[string]float64,
 		return 100, errors.New("Invalid argument: totalPower")
 	} else {
 		// Need to calculate the running average
-		runningAverage := runAvg.Calc(taskWrapper{task: *newTask}, constants.WindowSize)
+		runningAverage := runAvg.Calc(taskWrapper{task: *newTask}, constants.ConsiderationWindowSize)
 		// For each node, calculate the percentage of the running average to the total power.
 		ratios := make(map[string]float64)
 		for host, tpower := range totalPower {
