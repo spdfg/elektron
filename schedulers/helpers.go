@@ -29,6 +29,24 @@ func OfferAgg(offer *mesos.Offer) (float64, float64, float64) {
 	return cpus, mem, watts
 }
 
+type OffersSorter []*mesos.Offer
+
+func (offersSorter OffersSorter) Len() int {
+	return len(offersSorter)
+}
+
+func (offersSorter OffersSorter) Swap(i, j int) {
+	offersSorter[i], offersSorter[j] = offersSorter[j], offersSorter[i]
+}
+
+func (offersSorter OffersSorter) Less(i, j int) bool {
+	// getting CPU resource availability of offersSorter[i]
+	cpu1, _, _ := OfferAgg(offersSorter[i])
+	// getting CPU resource availability of offersSorter[j]
+	cpu2, _, _ := OfferAgg(offersSorter[j])
+	return cpu1 <= cpu2
+}
+
 func coLocated(tasks map[string]bool) {
 
 	for task := range tasks {
