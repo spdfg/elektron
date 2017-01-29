@@ -17,11 +17,13 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"bitbucket.org/sunybingcloud/electron/utilities/offerUtils"
+	"bitbucket.org/sunybingcloud/electron/utilities/mesosUtils"
 )
 
 // Decides if to take an offer or not
 func (s *BPMaxMinProacCC) takeOffer(offer *mesos.Offer, task def.Task) bool {
-	cpus, mem, watts := OfferAgg(offer)
+	cpus, mem, watts := offerUtils.OfferAgg(offer)
 
 	//TODO: Insert watts calculation here instead of taking them as a parameter
 
@@ -246,7 +248,7 @@ func (s *BPMaxMinProacCC) CheckFit(i int,
 	totalRAM *float64,
 	totalWatts *float64) (bool, *mesos.TaskInfo) {
 
-	offerCPU, offerRAM, offerWatts := OfferAgg(offer)
+	offerCPU, offerRAM, offerWatts := offerUtils.OfferAgg(offer)
 
 	// Does the task fit
 	if (s.ignoreWatts || (offerWatts >= (*totalWatts + task.Watts))) &&
@@ -308,7 +310,7 @@ func (s *BPMaxMinProacCC) ResourceOffers(driver sched.SchedulerDriver, offers []
 
 	// retrieving the available power for all the hosts in the offers.
 	for _, offer := range offers {
-		_, _, offerWatts := OfferAgg(offer)
+		_, _, offerWatts := offerUtils.OfferAgg(offer)
 		s.availablePower[*offer.Hostname] = offerWatts
 		// setting total power if the first time
 		if _, ok := s.totalPower[*offer.Hostname]; !ok {
@@ -324,7 +326,7 @@ func (s *BPMaxMinProacCC) ResourceOffers(driver sched.SchedulerDriver, offers []
 		select {
 		case <-s.Shutdown:
 			log.Println("Done scheduling tasks: declining offer on [", offer.GetHostname(), "]")
-			driver.DeclineOffer(offer.Id, longFilter)
+			driver.DeclineOffer(offer.Id, mesosUtils.LongFilter)
 
 			log.Println("Number of tasks still running: ", s.tasksRunning)
 			continue
@@ -389,15 +391,15 @@ func (s *BPMaxMinProacCC) ResourceOffers(driver sched.SchedulerDriver, offers []
 
 		if offerTaken {
 			log.Printf("Starting on [%s]\n", offer.GetHostname())
-			driver.LaunchTasks([]*mesos.OfferID{offer.Id}, tasks, defaultFilter)
+			driver.LaunchTasks([]*mesos.OfferID{offer.Id}, tasks, mesosUtils.DefaultFilter)
 		} else {
 
 			// If there was no match for the task
 			fmt.Println("There is not enough resources to launch a task:")
-			cpus, mem, watts := OfferAgg(offer)
+			cpus, mem, watts := offerUtils.OfferAgg(offer)
 
 			log.Printf("<CPU: %f, RAM: %f, Watts: %f>\n", cpus, mem, watts)
-			driver.DeclineOffer(offer.Id, defaultFilter)
+			driver.DeclineOffer(offer.Id, mesosUtils.DefaultFilter)
 		}
 	}
 }

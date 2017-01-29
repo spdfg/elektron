@@ -3,6 +3,8 @@ package schedulers
 import (
 	"bitbucket.org/sunybingcloud/electron/constants"
 	"bitbucket.org/sunybingcloud/electron/def"
+	"bitbucket.org/sunybingcloud/electron/utilities/mesosUtils"
+	"bitbucket.org/sunybingcloud/electron/utilities/offerUtils"
 	"fmt"
 	"github.com/golang/protobuf/proto"
 	mesos "github.com/mesos/mesos-go/mesosproto"
@@ -163,7 +165,7 @@ func (s *TopHeavy) pack(offers []*mesos.Offer, driver sched.SchedulerDriver) {
 		select {
 		case <-s.Shutdown:
 			log.Println("Done scheduling tasks: declining offer on [", offer.GetHostname(), "]")
-			driver.DeclineOffer(offer.Id, longFilter)
+			driver.DeclineOffer(offer.Id, mesosUtils.LongFilter)
 
 			log.Println("Number of tasks still running: ", s.tasksRunning)
 			continue
@@ -171,7 +173,7 @@ func (s *TopHeavy) pack(offers []*mesos.Offer, driver sched.SchedulerDriver) {
 		}
 
 		tasks := []*mesos.TaskInfo{}
-		offerCPU, offerRAM, offerWatts := OfferAgg(offer)
+		offerCPU, offerRAM, offerWatts := offerUtils.OfferAgg(offer)
 		totalWatts := 0.0
 		totalCPU := 0.0
 		totalRAM := 0.0
@@ -210,14 +212,14 @@ func (s *TopHeavy) pack(offers []*mesos.Offer, driver sched.SchedulerDriver) {
 
 		if taken {
 			log.Printf("Starting on [%s]\n", offer.GetHostname())
-			driver.LaunchTasks([]*mesos.OfferID{offer.Id}, tasks, defaultFilter)
+			driver.LaunchTasks([]*mesos.OfferID{offer.Id}, tasks, mesosUtils.DefaultFilter)
 		} else {
 			// If there was no match for the task
 			fmt.Println("There is not enough resources to launch a task:")
-			cpus, mem, watts := OfferAgg(offer)
+			cpus, mem, watts := offerUtils.OfferAgg(offer)
 
 			log.Printf("<CPU: %f, RAM: %f, Watts: %f>\n", cpus, mem, watts)
-			driver.DeclineOffer(offer.Id, defaultFilter)
+			driver.DeclineOffer(offer.Id, mesosUtils.DefaultFilter)
 		}
 	}
 }
@@ -228,7 +230,7 @@ func (s *TopHeavy) spread(offers []*mesos.Offer, driver sched.SchedulerDriver) {
 		select {
 		case <-s.Shutdown:
 			log.Println("Done scheduling tasks: declining offer on [", offer.GetHostname(), "]")
-			driver.DeclineOffer(offer.Id, longFilter)
+			driver.DeclineOffer(offer.Id, mesosUtils.LongFilter)
 
 			log.Println("Number of tasks still running: ", s.tasksRunning)
 			continue
@@ -236,7 +238,7 @@ func (s *TopHeavy) spread(offers []*mesos.Offer, driver sched.SchedulerDriver) {
 		}
 
 		tasks := []*mesos.TaskInfo{}
-		offerCPU, offerRAM, offerWatts := OfferAgg(offer)
+		offerCPU, offerRAM, offerWatts := offerUtils.OfferAgg(offer)
 		taken := false
 		for i := 0; i < len(s.largeTasks); i++ {
 			task := s.largeTasks[i]
@@ -252,7 +254,7 @@ func (s *TopHeavy) spread(offers []*mesos.Offer, driver sched.SchedulerDriver) {
 				taken = true
 				tasks = append(tasks, s.createTaskInfoAndLogSchedTrace(offer, powerClass, task))
 				log.Printf("Starting %s on [%s]\n", task.Name, offer.GetHostname())
-				driver.LaunchTasks([]*mesos.OfferID{offer.Id}, tasks, defaultFilter)
+				driver.LaunchTasks([]*mesos.OfferID{offer.Id}, tasks, mesosUtils.DefaultFilter)
 
 				if *task.Instances <= 0 {
 					// All instances of task have been scheduled, remove it
@@ -266,10 +268,10 @@ func (s *TopHeavy) spread(offers []*mesos.Offer, driver sched.SchedulerDriver) {
 		if !taken {
 			// If there was no match for the task
 			fmt.Println("There is not enough resources to launch a task:")
-			cpus, mem, watts := OfferAgg(offer)
+			cpus, mem, watts := offerUtils.OfferAgg(offer)
 
 			log.Printf("<CPU: %f, RAM: %f, Watts: %f>\n", cpus, mem, watts)
-			driver.DeclineOffer(offer.Id, defaultFilter)
+			driver.DeclineOffer(offer.Id, mesosUtils.DefaultFilter)
 		}
 	}
 }
@@ -288,7 +290,7 @@ func (s *TopHeavy) ResourceOffers(driver sched.SchedulerDriver, offers []*mesos.
 		select {
 		case <-s.Shutdown:
 			log.Println("Done scheduling tasks: declining offer on [", offer.GetHostname(), "]")
-			driver.DeclineOffer(offer.Id, longFilter)
+			driver.DeclineOffer(offer.Id, mesosUtils.LongFilter)
 
 			log.Println("Number of tasks still running: ", s.tasksRunning)
 			continue

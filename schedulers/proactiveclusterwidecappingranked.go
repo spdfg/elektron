@@ -15,6 +15,8 @@ import (
 	"bitbucket.org/sunybingcloud/electron/def"
 	"bitbucket.org/sunybingcloud/electron/pcp"
 	"bitbucket.org/sunybingcloud/electron/rapl"
+	"bitbucket.org/sunybingcloud/electron/utilities/mesosUtils"
+	"bitbucket.org/sunybingcloud/electron/utilities/offerUtils"
 	"fmt"
 	"github.com/golang/protobuf/proto"
 	mesos "github.com/mesos/mesos-go/mesosproto"
@@ -31,7 +33,7 @@ import (
 
 // Decides if to taken an offer or not
 func (_ *ProactiveClusterwideCapRanked) takeOffer(offer *mesos.Offer, task def.Task) bool {
-	offer_cpu, offer_mem, offer_watts := OfferAgg(offer)
+	offer_cpu, offer_mem, offer_watts := offerUtils.OfferAgg(offer)
 
 	if offer_cpu >= task.CPU && offer_mem >= task.RAM && offer_watts >= task.Watts {
 		return true
@@ -251,7 +253,7 @@ func (s *ProactiveClusterwideCapRanked) ResourceOffers(driver sched.SchedulerDri
 
 	// retrieving the available power for all the hosts in the offers.
 	for _, offer := range offers {
-		_, _, offer_watts := OfferAgg(offer)
+		_, _, offer_watts := offerUtils.OfferAgg(offer)
 		s.availablePower[*offer.Hostname] = offer_watts
 		// setting total power if the first time.
 		if _, ok := s.totalPower[*offer.Hostname]; !ok {
@@ -277,7 +279,7 @@ func (s *ProactiveClusterwideCapRanked) ResourceOffers(driver sched.SchedulerDri
 		select {
 		case <-s.Shutdown:
 			log.Println("Done scheduling tasks: declining offer on [", offer.GetHostname(), "]")
-			driver.DeclineOffer(offer.Id, longFilter)
+			driver.DeclineOffer(offer.Id, mesosUtils.LongFilter)
 
 			log.Println("Number of tasks still running: ", s.tasksRunning)
 			continue
@@ -328,7 +330,7 @@ func (s *ProactiveClusterwideCapRanked) ResourceOffers(driver sched.SchedulerDri
 				log.Printf("Starting on [%s]\n", offer.GetHostname())
 				taskToSchedule := s.newTask(offer, task)
 				to_schedule := []*mesos.TaskInfo{taskToSchedule}
-				driver.LaunchTasks([]*mesos.OfferID{offer.Id}, to_schedule, defaultFilter)
+				driver.LaunchTasks([]*mesos.OfferID{offer.Id}, to_schedule, mesosUtils.DefaultFilter)
 				log.Printf("Inst: %d", *task.Instances)
 				s.schedTrace.Print(offer.GetHostname() + ":" + taskToSchedule.GetTaskId().GetValue())
 				*task.Instances--
@@ -354,10 +356,10 @@ func (s *ProactiveClusterwideCapRanked) ResourceOffers(driver sched.SchedulerDri
 		// If no tasks fit the offer, then declining the offer.
 		if !taken {
 			log.Printf("There is not enough resources to launch a task on Host: %s\n", offer.GetHostname())
-			cpus, mem, watts := OfferAgg(offer)
+			cpus, mem, watts := offerUtils.OfferAgg(offer)
 
 			log.Printf("<CPU: %f, RAM: %f, Watts: %f>\n", cpus, mem, watts)
-			driver.DeclineOffer(offer.Id, defaultFilter)
+			driver.DeclineOffer(offer.Id, mesosUtils.DefaultFilter)
 		}
 	}
 }

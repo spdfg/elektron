@@ -2,6 +2,8 @@ package schedulers
 
 import (
 	"bitbucket.org/sunybingcloud/electron/def"
+	"bitbucket.org/sunybingcloud/electron/utilities/mesosUtils"
+	"bitbucket.org/sunybingcloud/electron/utilities/offerUtils"
 	"fmt"
 	"github.com/golang/protobuf/proto"
 	mesos "github.com/mesos/mesos-go/mesosproto"
@@ -117,14 +119,14 @@ func (s *FirstFitSortedWattsClassMapWatts) ResourceOffers(driver sched.Scheduler
 		select {
 		case <-s.Shutdown:
 			log.Println("Done scheduling tasks: declining offer on [", offer.GetHostname(), "]")
-			driver.DeclineOffer(offer.Id, longFilter)
+			driver.DeclineOffer(offer.Id, mesosUtils.LongFilter)
 
 			log.Println("Number of tasks still running: ", s.tasksRunning)
 			continue
 		default:
 		}
 
-		offerCPU, offerRAM, offerWatts := OfferAgg(offer)
+		offerCPU, offerRAM, offerWatts := offerUtils.OfferAgg(offer)
 
 		// First fit strategy
 		taken := false
@@ -155,7 +157,7 @@ func (s *FirstFitSortedWattsClassMapWatts) ResourceOffers(driver sched.Scheduler
 				taskToSchedule := s.newTask(offer, task, nodeClass)
 				s.schedTrace.Print(offer.GetHostname() + ":" + taskToSchedule.GetTaskId().GetValue())
 				log.Printf("Starting %s on [%s]\n", task.Name, offer.GetHostname())
-				driver.LaunchTasks([]*mesos.OfferID{offer.Id}, []*mesos.TaskInfo{taskToSchedule}, defaultFilter)
+				driver.LaunchTasks([]*mesos.OfferID{offer.Id}, []*mesos.TaskInfo{taskToSchedule}, mesosUtils.DefaultFilter)
 
 				taken = true
 				fmt.Println("Inst: ", *task.Instances)
@@ -176,10 +178,10 @@ func (s *FirstFitSortedWattsClassMapWatts) ResourceOffers(driver sched.Scheduler
 		// If there was no match for the task
 		if !taken {
 			fmt.Println("There is not enough resources to launch a task:")
-			cpus, mem, watts := OfferAgg(offer)
+			cpus, mem, watts := offerUtils.OfferAgg(offer)
 
 			log.Printf("<CPU: %f, RAM: %f, Watts: %f>\n", cpus, mem, watts)
-			driver.DeclineOffer(offer.Id, defaultFilter)
+			driver.DeclineOffer(offer.Id, mesosUtils.DefaultFilter)
 
 		}
 	}

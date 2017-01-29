@@ -2,6 +2,8 @@ package schedulers
 
 import (
 	"bitbucket.org/sunybingcloud/electron/def"
+	"bitbucket.org/sunybingcloud/electron/utilities/mesosUtils"
+	"bitbucket.org/sunybingcloud/electron/utilities/offerUtils"
 	"fmt"
 	"github.com/golang/protobuf/proto"
 	mesos "github.com/mesos/mesos-go/mesosproto"
@@ -17,7 +19,7 @@ import (
 // Decides if to take an offer or not
 func (*BinPackSortedWattsSortedOffers) takeOffer(offer *mesos.Offer, task def.Task) bool {
 
-	cpus, mem, watts := OfferAgg(offer)
+	cpus, mem, watts := offerUtils.OfferAgg(offer)
 
 	//TODO: Insert watts calculation here instead of taking them as a parameter
 
@@ -37,18 +39,18 @@ type BinPackSortedWattsSortedOffers struct {
 	running      map[string]map[string]bool
 	ignoreWatts  bool
 
-		     // First set of PCP values are garbage values, signal to logger to start recording when we're
-		     // about to schedule a new task
+	// First set of PCP values are garbage values, signal to logger to start recording when we're
+	// about to schedule a new task
 	RecordPCP bool
 
-		     // This channel is closed when the program receives an interrupt,
-		     // signalling that the program should shut down.
+	// This channel is closed when the program receives an interrupt,
+	// signalling that the program should shut down.
 	Shutdown chan struct{}
-		     // This channel is closed after shutdown is closed, and only when all
-		     // outstanding tasks have been cleaned up
+	// This channel is closed after shutdown is closed, and only when all
+	// outstanding tasks have been cleaned up
 	Done chan struct{}
 
-		     // Controls when to shutdown pcp logging
+	// Controls when to shutdown pcp logging
 	PCPLog chan struct{}
 
 	schedTrace *log.Logger
@@ -127,13 +129,13 @@ func (s *BinPackSortedWattsSortedOffers) ResourceOffers(driver sched.SchedulerDr
 	log.Printf("Received %d resource offers", len(offers))
 
 	// Sorting the offers
-	sort.Sort(OffersSorter(offers))
+	sort.Sort(offerUtils.OffersSorter(offers))
 
 	// Printing the sorted offers and the corresponding CPU resource availability
 	log.Println("Sorted Offers:")
 	for i := 0; i < len(offers); i++ {
 		offer := offers[i]
-		offerCPU, _, _ := OfferAgg(offer)
+		offerCPU, _, _ := offerUtils.OfferAgg(offer)
 		log.Printf("Offer[%s].CPU = %f\n", offer.GetHostname(), offerCPU)
 	}
 
@@ -141,7 +143,7 @@ func (s *BinPackSortedWattsSortedOffers) ResourceOffers(driver sched.SchedulerDr
 		select {
 		case <-s.Shutdown:
 			log.Println("Done scheduling tasks: declining offer on [", offer.GetHostname(), "]")
-			driver.DeclineOffer(offer.Id, longFilter)
+			driver.DeclineOffer(offer.Id, mesosUtils.LongFilter)
 
 			log.Println("Number of tasks still running: ", s.tasksRunning)
 			continue
@@ -150,7 +152,7 @@ func (s *BinPackSortedWattsSortedOffers) ResourceOffers(driver sched.SchedulerDr
 
 		tasks := []*mesos.TaskInfo{}
 
-		offer_cpu, offer_ram, offer_watts := OfferAgg(offer)
+		offer_cpu, offer_ram, offer_watts := offerUtils.OfferAgg(offer)
 
 		taken := false
 		totalWatts := 0.0
@@ -203,15 +205,15 @@ func (s *BinPackSortedWattsSortedOffers) ResourceOffers(driver sched.SchedulerDr
 
 		if taken {
 			log.Printf("Starting on [%s]\n", offer.GetHostname())
-			driver.LaunchTasks([]*mesos.OfferID{offer.Id}, tasks, defaultFilter)
+			driver.LaunchTasks([]*mesos.OfferID{offer.Id}, tasks, mesosUtils.DefaultFilter)
 		} else {
 
 			// If there was no match for the task
 			fmt.Println("There is not enough resources to launch a task:")
-			cpus, mem, watts := OfferAgg(offer)
+			cpus, mem, watts := offerUtils.OfferAgg(offer)
 
 			log.Printf("<CPU: %f, RAM: %f, Watts: %f>\n", cpus, mem, watts)
-			driver.DeclineOffer(offer.Id, defaultFilter)
+			driver.DeclineOffer(offer.Id, mesosUtils.DefaultFilter)
 		}
 	}
 }
@@ -234,4 +236,3 @@ func (s *BinPackSortedWattsSortedOffers) StatusUpdate(driver sched.SchedulerDriv
 	}
 	log.Printf("DONE: Task status [%s] for task [%s]", NameFor(status.State), *status.TaskId.Value)
 }
-
