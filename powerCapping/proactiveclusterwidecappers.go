@@ -3,7 +3,7 @@ Cluster wide dynamic capping
 
 This is not a scheduler but a scheduling scheme that schedulers can use.
 */
-package pcp
+package powerCapping
 
 import (
 	"bitbucket.org/sunybingcloud/electron/constants"
