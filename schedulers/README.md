@@ -9,6 +9,7 @@ To Do:
  * Make newTask(...) variadic where the newTaskClass argument can either be given or not. If not give, then pick task.Watts as the watts attribute, else pick task.ClassToWatts[newTaskClass].
  * Retrofit pcp/proactiveclusterwidecappers.go to include the power capping go routines and to cap only when necessary.
  * Create a package that would contain routines to perform various logging and move helpers.coLocated(...) into that.
+ * Retrofit schedulers to be able to run either using ClassMapWatts enabled or disabled.
 
 Scheduling Algorithms:
 
