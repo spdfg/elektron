@@ -13,7 +13,7 @@ package schedulers
 import (
 	"bitbucket.org/sunybingcloud/electron/constants"
 	"bitbucket.org/sunybingcloud/electron/def"
-	"bitbucket.org/sunybingcloud/electron/pcp"
+	powCap "bitbucket.org/sunybingcloud/electron/powerCapping"
 	"bitbucket.org/sunybingcloud/electron/rapl"
 	"bitbucket.org/sunybingcloud/electron/utilities/mesosUtils"
 	"bitbucket.org/sunybingcloud/electron/utilities/offerUtils"
@@ -53,7 +53,7 @@ type ProactiveClusterwideCapRanked struct {
 	availablePower map[string]float64    // available power for each node in the cluster.
 	totalPower     map[string]float64    // total power for each node in the cluster.
 	ignoreWatts    bool
-	capper         *pcp.ClusterwideCapper
+	capper         *powCap.ClusterwideCapper
 	ticker         *time.Ticker
 	recapTicker    *time.Ticker
 	isCapping      bool // indicate whether we are currently performing cluster wide capping.
@@ -96,7 +96,7 @@ func NewProactiveClusterwideCapRanked(tasks []def.Task, ignoreWatts bool, schedT
 		availablePower: make(map[string]float64),
 		totalPower:     make(map[string]float64),
 		RecordPCP:      false,
-		capper:         pcp.GetClusterwideCapperInstance(),
+		capper:         powCap.GetClusterwideCapperInstance(),
 		ticker:         time.NewTicker(10 * time.Second),
 		recapTicker:    time.NewTicker(20 * time.Second),
 		isCapping:      false,
