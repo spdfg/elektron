@@ -21,6 +21,17 @@ func OfferAgg(offer *mesos.Offer) (float64, float64, float64) {
 	return cpus, mem, watts
 }
 
+// Determine the power class of the host in the offer
+func PowerClass(offer *mesos.Offer) string {
+	var powerClass string
+	for _, attr := range offer.GetAttributes() {
+		if attr.GetName() == "class" {
+			powerClass = attr.GetText().GetValue()
+		}
+	}
+	return powerClass
+}
+
 type OffersSorter []*mesos.Offer
 
 func (offersSorter OffersSorter) Len() int {
