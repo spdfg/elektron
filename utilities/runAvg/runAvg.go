@@ -1,7 +1,7 @@
 /*
 A utility to calculate the running average.
 
-One should implement Val() to be able to use this utility.
+One should implement Val() and ID() to use this utility.
 */
 
 package runAvg
