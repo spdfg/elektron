@@ -1,8 +1,8 @@
 package mesosUtils
 
 import (
-	mesos "github.com/mesos/mesos-go/mesosproto"
 	"github.com/golang/protobuf/proto"
+	mesos "github.com/mesos/mesos-go/mesosproto"
 )
 
 var (

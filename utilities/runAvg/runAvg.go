@@ -32,7 +32,7 @@ func getInstance(curSum float64, wSize int) *runningAverageCalculator {
 	if racSingleton == nil {
 		racSingleton = &runningAverageCalculator{
 			considerationWindowSize: wSize,
-			currentSum: curSum,
+			currentSum:              curSum,
 		}
 		return racSingleton
 	} else {

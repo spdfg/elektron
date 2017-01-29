@@ -5,6 +5,8 @@ import (
 	"bitbucket.org/sunybingcloud/electron/def"
 	"bitbucket.org/sunybingcloud/electron/pcp"
 	"bitbucket.org/sunybingcloud/electron/rapl"
+	"bitbucket.org/sunybingcloud/electron/utilities/mesosUtils"
+	"bitbucket.org/sunybingcloud/electron/utilities/offerUtils"
 	"fmt"
 	"github.com/golang/protobuf/proto"
 	mesos "github.com/mesos/mesos-go/mesosproto"
@@ -17,8 +19,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-	"bitbucket.org/sunybingcloud/electron/utilities/offerUtils"
-	"bitbucket.org/sunybingcloud/electron/utilities/mesosUtils"
 )
 
 // Decides if to take an offer or not
