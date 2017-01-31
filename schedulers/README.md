@@ -16,9 +16,12 @@ Scheduling Algorithms:
  * First Fit
  * First Fit with sorted watts
  * Bin-packing with sorted watts
- * FCFS Proactive Cluster-wide Capping
- * Ranked Proactive Cluster-wide Capping
- * Piston Capping -- Works when scheduler is run with WAR
  * ClassMapWatts -- Bin-packing and First Fit that now use Watts per power class.
  * Top Heavy -- Hybrid scheduler that packs small tasks (less power intensive) using Bin-packing and spreads large tasks (power intensive) using First Fit.
  * Bottom Heavy -- Hybrid scheduler that packs large tasks (power intensive) using Bin-packing and spreads small tasks (less power intensive) using First Fit. 
+ 
+ Capping Strategies
+ 
+ * Extrema Dynamic Capping
+ * Proactive Cluster-wide Capping
+ * Piston Capping
