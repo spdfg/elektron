@@ -65,7 +65,7 @@ func NewFirstFitSortedWattsClassMapWatts(tasks []def.Task, ignoreWatts bool, sch
 	return s
 }
 
-func (s *FirstFitSortedWattsClassMapWatts) newTask(offer *mesos.Offer, task def.Task, newTaskClass string) *mesos.TaskInfo {
+func (s *FirstFitSortedWattsClassMapWatts) newTask(offer *mesos.Offer, task def.Task, powerClass string) *mesos.TaskInfo {
 	taskName := fmt.Sprintf("%s-%d", task.Name, *task.Instances)
 	s.tasksCreated++
 
@@ -89,7 +89,7 @@ func (s *FirstFitSortedWattsClassMapWatts) newTask(offer *mesos.Offer, task def.
 	}
 
 	if !s.ignoreWatts {
-		resources = append(resources, mesosutil.NewScalarResource("watts", task.ClassToWatts[newTaskClass]))
+		resources = append(resources, mesosutil.NewScalarResource("watts", task.ClassToWatts[powerClass]))
 	}
 
 	return &mesos.TaskInfo{
@@ -140,21 +140,17 @@ func (s *FirstFitSortedWattsClassMapWatts) ResourceOffers(driver sched.Scheduler
 				}
 			}
 
-			// retrieving the node class from the offer
-			var nodeClass string
-			for _, attr := range offer.GetAttributes() {
-				if attr.GetName() == "class" {
-					nodeClass = attr.GetText().GetValue()
-				}
-			}
+			// retrieving the powerClass from the offer
+			powerClass := offerUtils.PowerClass(offer)
 
 			// Decision to take the offer or not
-			if (s.ignoreWatts || (offerWatts >= task.ClassToWatts[nodeClass])) &&
+			if (s.ignoreWatts || (offerWatts >= task.ClassToWatts[powerClass])) &&
 				(offerCPU >= task.CPU) && (offerRAM >= task.RAM) {
+				fmt.Println("Watts being used: ", task.ClassToWatts[powerClass])
 				log.Println("Co-Located with: ")
 				coLocated(s.running[offer.GetSlaveId().GoString()])
 
-				taskToSchedule := s.newTask(offer, task, nodeClass)
+				taskToSchedule := s.newTask(offer, task, powerClass)
 				s.schedTrace.Print(offer.GetHostname() + ":" + taskToSchedule.GetTaskId().GetValue())
 				log.Printf("Starting %s on [%s]\n", task.Name, offer.GetHostname())
 				driver.LaunchTasks([]*mesos.OfferID{offer.Id}, []*mesos.TaskInfo{taskToSchedule}, mesosUtils.DefaultFilter)
