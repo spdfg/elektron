@@ -21,8 +21,6 @@ var ignoreWatts = flag.Bool("ignoreWatts", false, "Ignore watts in offers")
 var pcplogPrefix = flag.String("logPrefix", "", "Prefix for pcplog")
 var hiThreshold = flag.Float64("hiThreshold", 0.0, "Upperbound for when we should start capping")
 var loThreshold = flag.Float64("loThreshold", 0.0, "Lowerbound for when we should start uncapping")
-var powerClass = flag.Bool("powerClass", false, "Map Watts to power-class of host in offer. "+
-	"Workload needs to have 'ClassToWatts' attribute.")
 
 // Short hand args
 func init() {
@@ -32,8 +30,6 @@ func init() {
 	flag.StringVar(pcplogPrefix, "p", "", "Prefix for pcplog (shorthand)")
 	flag.Float64Var(hiThreshold, "ht", 700.0, "Upperbound for when we should start capping (shorthand)")
 	flag.Float64Var(loThreshold, "lt", 400.0, "Lowerbound for when we should start uncapping (shorthand)")
-	flag.BoolVar(powerClass, "pc", false, "Map watts to power-class of host in offer. "+
-		"Workload needs to have 'ClassToWatts' attribute (shorthand)")
 }
 
 func main() {
