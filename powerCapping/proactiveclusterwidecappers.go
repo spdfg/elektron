@@ -1,7 +1,7 @@
 /*
 Cluster wide dynamic capping
 
-This is not a scheduler but a scheduling scheme that schedulers can use.
+This is a capping strategy that can be used with schedulers to improve the power consumption.
 */
 package powerCapping
 
