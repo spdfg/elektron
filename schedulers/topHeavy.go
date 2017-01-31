@@ -127,17 +127,6 @@ func (s *TopHeavy) newTask(offer *mesos.Offer, task def.Task, newTaskClass strin
 	}
 }
 
-// retrieve the power class of host in offer
-func (s *TopHeavy) getPowerClass(offer *mesos.Offer) string {
-	var powerClass string
-	for _, attr := range offer.GetAttributes() {
-		if attr.GetName() == "class" {
-			powerClass = attr.GetText().GetValue()
-		}
-	}
-	return powerClass
-}
-
 // Shut down scheduler if no more tasks to schedule
 func (s *TopHeavy) shutDownIfNecessary() {
 	if len(s.smallTasks) <= 0 && len(s.largeTasks) <= 0 {
@@ -182,7 +171,7 @@ func (s *TopHeavy) pack(offers []*mesos.Offer, driver sched.SchedulerDriver) {
 			task := s.smallTasks[i]
 
 			for *task.Instances > 0 {
-				powerClass := s.getPowerClass(offer)
+				powerClass := offerUtils.PowerClass(offer)
 				// Does the task fit
 				// OR lazy evaluation. If ignore watts is set to true, second statement won't
 				// be evaluated.
@@ -242,7 +231,7 @@ func (s *TopHeavy) spread(offers []*mesos.Offer, driver sched.SchedulerDriver) {
 		taken := false
 		for i := 0; i < len(s.largeTasks); i++ {
 			task := s.largeTasks[i]
-			powerClass := s.getPowerClass(offer)
+			powerClass := offerUtils.PowerClass(offer)
 
 			// Decision to take the offer or not
 			wattsToConsider := task.Watts
