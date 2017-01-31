@@ -271,5 +271,5 @@ func (capper ClusterwideCapper) FCFSDeterminedCap(totalPower map[string]float64,
 
 // Stringer for an instance of clusterwideCapper
 func (capper ClusterwideCapper) String() string {
-	return "Cluster Capper -- Proactively cap the entire cluster."
+	return "Cluster-wide Capper -- Proactively cap the entire cluster."
 }
