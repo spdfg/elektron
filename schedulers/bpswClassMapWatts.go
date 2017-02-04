@@ -143,7 +143,7 @@ func (s *BPSWClassMapWatts) ResourceOffers(driver sched.SchedulerDriver, offers 
 
 		offerCPU, offerRAM, offerWatts := offerUtils.OfferAgg(offer)
 
-		taken := false
+		offerTaken := false
 		totalWatts := 0.0
 		totalCPU := 0.0
 		totalRAM := 0.0
@@ -168,7 +168,7 @@ func (s *BPSWClassMapWatts) ResourceOffers(driver sched.SchedulerDriver, offers 
 					(offerRAM >= (totalRAM + task.RAM)) {
 
 					fmt.Println("Watts being used: ", task.ClassToWatts[powerClass])
-					taken = true
+					offerTaken = true
 					totalWatts += task.ClassToWatts[powerClass]
 					totalCPU += task.CPU
 					totalRAM += task.RAM
@@ -196,7 +196,7 @@ func (s *BPSWClassMapWatts) ResourceOffers(driver sched.SchedulerDriver, offers 
 			}
 		}
 
-		if taken {
+		if offerTaken {
 			log.Printf("Starting on [%s]\n", offer.GetHostname())
 			driver.LaunchTasks([]*mesos.OfferID{offer.Id}, tasks, mesosUtils.DefaultFilter)
 		} else {

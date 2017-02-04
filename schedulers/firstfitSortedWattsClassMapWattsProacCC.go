@@ -267,7 +267,7 @@ func (s *FirstFitSortedWattsClassMapWattsProacCC) ResourceOffers(driver sched.Sc
 		offerCPU, offerRAM, offerWatts := offerUtils.OfferAgg(offer)
 
 		// First fit strategy
-		taken := false
+		offerTaken := false
 		for i := 0; i < len(s.tasks); i++ {
 			task := s.tasks[i]
 			// Check host if it exists
@@ -312,7 +312,7 @@ func (s *FirstFitSortedWattsClassMapWattsProacCC) ResourceOffers(driver sched.Sc
 				log.Printf("Starting %s on [%s]\n", task.Name, offer.GetHostname())
 				driver.LaunchTasks([]*mesos.OfferID{offer.Id}, []*mesos.TaskInfo{taskToSchedule}, mesosUtils.DefaultFilter)
 
-				taken = true
+				offerTaken = true
 				fmt.Println("Inst: ", *task.Instances)
 				*task.Instances--
 				if *task.Instances <= 0 {
@@ -332,7 +332,7 @@ func (s *FirstFitSortedWattsClassMapWattsProacCC) ResourceOffers(driver sched.Sc
 		}
 
 		// If there was no match for the task
-		if !taken {
+		if !offerTaken {
 			fmt.Println("There is not enough resources to launch a task:")
 			cpus, mem, watts := offerUtils.OfferAgg(offer)
 

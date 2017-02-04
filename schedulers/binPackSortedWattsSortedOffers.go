@@ -154,7 +154,7 @@ func (s *BinPackSortedWattsSortedOffers) ResourceOffers(driver sched.SchedulerDr
 
 		offer_cpu, offer_ram, offer_watts := offerUtils.OfferAgg(offer)
 
-		taken := false
+		offerTaken := false
 		totalWatts := 0.0
 		totalCPU := 0.0
 		totalRAM := 0.0
@@ -175,7 +175,7 @@ func (s *BinPackSortedWattsSortedOffers) ResourceOffers(driver sched.SchedulerDr
 					(offer_cpu >= (totalCPU + task.CPU)) &&
 					(offer_ram >= (totalRAM + task.RAM)) {
 
-					taken = true
+					offerTaken = true
 					totalWatts += task.Watts
 					totalCPU += task.CPU
 					totalRAM += task.RAM
@@ -203,7 +203,7 @@ func (s *BinPackSortedWattsSortedOffers) ResourceOffers(driver sched.SchedulerDr
 			}
 		}
 
-		if taken {
+		if offerTaken {
 			log.Printf("Starting on [%s]\n", offer.GetHostname())
 			driver.LaunchTasks([]*mesos.OfferID{offer.Id}, tasks, mesosUtils.DefaultFilter)
 		} else {

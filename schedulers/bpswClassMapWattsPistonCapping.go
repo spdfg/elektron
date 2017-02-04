@@ -242,7 +242,7 @@ func (s *BPSWClassMapWattsPistonCapping) ResourceOffers(driver sched.SchedulerDr
 
 		offerCPU, offerRAM, offerWatts := offerUtils.OfferAgg(offer)
 
-		taken := false
+		offerTaken := false
 		totalWatts := 0.0
 		totalCPU := 0.0
 		totalRAM := 0.0
@@ -275,7 +275,7 @@ func (s *BPSWClassMapWattsPistonCapping) ResourceOffers(driver sched.SchedulerDr
 					}
 
 					fmt.Println("Watts being used: ", task.ClassToWatts[powerClass])
-					taken = true
+					offerTaken = true
 					totalWatts += task.ClassToWatts[powerClass]
 					totalCPU += task.CPU
 					totalRAM += task.RAM
@@ -303,7 +303,7 @@ func (s *BPSWClassMapWattsPistonCapping) ResourceOffers(driver sched.SchedulerDr
 			}
 		}
 
-		if taken {
+		if offerTaken {
 			// Updating the cap value for offer.Hostname
 			bpswClassMapWattsPistonMutex.Lock()
 			bpswClassMapWattsPistonCapValues[*offer.Hostname] += partialLoad

@@ -249,7 +249,7 @@ func (s *BinPackedPistonCapper) ResourceOffers(driver sched.SchedulerDriver, off
 
 		fitTasks := []*mesos.TaskInfo{}
 		offerCPU, offerRAM, offerWatts := offerUtils.OfferAgg(offer)
-		taken := false
+		offerTaken := false
 		totalWatts := 0.0
 		totalCPU := 0.0
 		totalRAM := 0.0
@@ -276,7 +276,7 @@ func (s *BinPackedPistonCapper) ResourceOffers(driver sched.SchedulerDriver, off
 						s.startCapping()
 					}
 
-					taken = true
+					offerTaken = true
 					totalWatts += task.Watts
 					totalCPU += task.CPU
 					totalRAM += task.RAM
@@ -305,7 +305,7 @@ func (s *BinPackedPistonCapper) ResourceOffers(driver sched.SchedulerDriver, off
 			}
 		}
 
-		if taken {
+		if offerTaken {
 			// Updating the cap value for offer.Hostname
 			bpPistonMutex.Lock()
 			bpPistonCapValues[*offer.Hostname] += partialLoad

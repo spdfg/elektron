@@ -228,7 +228,7 @@ func (s *TopHeavy) spread(offers []*mesos.Offer, driver sched.SchedulerDriver) {
 
 		tasks := []*mesos.TaskInfo{}
 		offerCPU, offerRAM, offerWatts := offerUtils.OfferAgg(offer)
-		taken := false
+		offerTaken := false
 		for i := 0; i < len(s.largeTasks); i++ {
 			task := s.largeTasks[i]
 			powerClass := offerUtils.PowerClass(offer)
@@ -240,7 +240,7 @@ func (s *TopHeavy) spread(offers []*mesos.Offer, driver sched.SchedulerDriver) {
 			}
 			if (s.ignoreWatts || (offerWatts >= wattsToConsider)) &&
 				(offerCPU >= task.CPU) && (offerRAM >= task.RAM) {
-				taken = true
+				offerTaken = true
 				tasks = append(tasks, s.createTaskInfoAndLogSchedTrace(offer, powerClass, task))
 				log.Printf("Starting %s on [%s]\n", task.Name, offer.GetHostname())
 				driver.LaunchTasks([]*mesos.OfferID{offer.Id}, tasks, mesosUtils.DefaultFilter)
@@ -254,7 +254,7 @@ func (s *TopHeavy) spread(offers []*mesos.Offer, driver sched.SchedulerDriver) {
 			}
 		}
 
-		if !taken {
+		if !offerTaken {
 			// If there was no match for the task
 			fmt.Println("There is not enough resources to launch a task:")
 			cpus, mem, watts := offerUtils.OfferAgg(offer)

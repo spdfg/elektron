@@ -299,7 +299,7 @@ func (s *ProactiveClusterwideCapRanked) ResourceOffers(driver sched.SchedulerDri
 
 			Cluster wide capping is currently performed at regular intervals of time.
 		*/
-		taken := false
+		offerTaken := false
 
 		for i := 0; i < len(s.tasks); i++ {
 			task := s.tasks[i]
@@ -317,7 +317,7 @@ func (s *ProactiveClusterwideCapRanked) ResourceOffers(driver sched.SchedulerDri
 					rankedMutex.Unlock()
 					s.startCapping()
 				}
-				taken = true
+				offerTaken = true
 				tempCap, err := s.capper.FCFSDeterminedCap(s.totalPower, &task)
 
 				if err == nil {
@@ -354,7 +354,7 @@ func (s *ProactiveClusterwideCapRanked) ResourceOffers(driver sched.SchedulerDri
 		}
 
 		// If no tasks fit the offer, then declining the offer.
-		if !taken {
+		if !offerTaken {
 			log.Printf("There is not enough resources to launch a task on Host: %s\n", offer.GetHostname())
 			cpus, mem, watts := offerUtils.OfferAgg(offer)
 

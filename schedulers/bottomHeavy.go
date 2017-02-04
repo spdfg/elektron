@@ -166,7 +166,7 @@ func (s *BottomHeavy) pack(offers []*mesos.Offer, driver sched.SchedulerDriver) 
 		totalWatts := 0.0
 		totalCPU := 0.0
 		totalRAM := 0.0
-		taken := false
+		offerTaken := false
 		for i := 0; i < len(s.largeTasks); i++ {
 			task := s.largeTasks[i]
 
@@ -182,7 +182,7 @@ func (s *BottomHeavy) pack(offers []*mesos.Offer, driver sched.SchedulerDriver) 
 				if (s.ignoreWatts || (offerWatts >= (totalWatts + wattsToConsider))) &&
 					(offerCPU >= (totalCPU + task.CPU)) &&
 					(offerRAM >= (totalRAM + task.RAM)) {
-					taken = true
+					offerTaken = true
 					totalWatts += wattsToConsider
 					totalCPU += task.CPU
 					totalRAM += task.RAM
@@ -199,7 +199,7 @@ func (s *BottomHeavy) pack(offers []*mesos.Offer, driver sched.SchedulerDriver) 
 			}
 		}
 
-		if taken {
+		if offerTaken {
 			log.Printf("Starting on [%s]\n", offer.GetHostname())
 			driver.LaunchTasks([]*mesos.OfferID{offer.Id}, tasks, mesosUtils.DefaultFilter)
 		} else {
