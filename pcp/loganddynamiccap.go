@@ -33,7 +33,7 @@ func meanPKG(history *ring.Ring) float64 {
 		return 0.0
 	}
 
-	count /= 2
+	count /= 4 // two PKGs, two DRAM for all nodes currently
 
 	return (total / count)
 }
@@ -98,11 +98,16 @@ func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, prefix s
 			split := strings.Split(hostMetric, ":")
 			//log.Printf("%d Host %s: Metric: %s\n", i, split[0], split[1])
 
-			if strings.Contains(split[1], "RAPL_ENERGY_PKG") {
+			if strings.Contains(split[1], "RAPL_ENERGY_PKG") ||
+				strings.Contains(split[1], "RAPL_ENERGY_DRAM"){
 				//fmt.Println("Index: ", i)
 				powerIndexes = append(powerIndexes, i)
 				indexToHost[i] = split[0]
-				powerHistories[split[0]] = ring.New(10) // Two PKGS per node, 10 = 5 seconds tracking
+
+				// Only create one ring per host
+				if _, ok := powerHistories[split[0]]; !ok{
+					powerHistories[split[0]] = ring.New(20) // Two PKGS, two DRAM per node,  20 = 5 seconds of tracking
+				}
 			}
 		}
 
