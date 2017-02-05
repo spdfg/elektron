@@ -65,6 +65,7 @@ func (tsk *Task) SetTaskID(taskID string) bool {
 	}
 }
 
+// Sorter implements sort.Sort interface to sort tasks by Watts requirement.
 type WattsSorter []Task
 
 func (slice WattsSorter) Len() int {
@@ -76,6 +77,21 @@ func (slice WattsSorter) Less(i, j int) bool {
 }
 
 func (slice WattsSorter) Swap(i, j int) {
+	slice[i], slice[j] = slice[j], slice[i]
+}
+
+// Sorter implements sort.Sort interface to sort tasks by CPU requirement.
+type CPUSorter []Task
+
+func (slice CPUSorter) Len() int {
+	return len(slice)
+}
+
+func (slice CPUSorter) Less(i, j int) bool {
+	return slice[i].CPU < slice[j].CPU
+}
+
+func (slice CPUSorter) Swap(i, j int) {
 	slice[i], slice[j] = slice[j], slice[i]
 }
 
