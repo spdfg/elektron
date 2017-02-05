@@ -72,8 +72,8 @@ func main() {
 		return
 	}
 
-	//go pcp.Start(scheduler.PCPLog, &scheduler.RecordPCP, logPrefix)
-	go pcp.StartPCPLogAndExtremaDynamicCap(scheduler.PCPLog, &scheduler.RecordPCP, logPrefix, *hiThreshold, *loThreshold)
+	go pcp.Start(scheduler.PCPLog, &scheduler.RecordPCP, logPrefix)
+	//go pcp.StartPCPLogAndExtremaDynamicCap(scheduler.PCPLog, &scheduler.RecordPCP, logPrefix, *hiThreshold, *loThreshold)
 	time.Sleep(1 * time.Second) // Take a second between starting PCP log and continuing
 
 	// Attempt to handle signint to not leave pmdumptext running
