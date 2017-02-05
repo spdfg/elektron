@@ -17,7 +17,7 @@ import (
 
 var RAPLUnits = math.Pow(2, -32)
 
-func meanPKG(history *ring.Ring) float64 {
+func averageNodePowerHistory(history *ring.Ring) float64 {
 
 	total := 0.0
 	count := 0.0
@@ -33,12 +33,13 @@ func meanPKG(history *ring.Ring) float64 {
 		return 0.0
 	}
 
-	count /= 2
+	count /= 4 // two PKGs, two DRAM for all nodes currently
 
 	return (total / count)
 }
 
-func meanCluster(history *ring.Ring) float64 {
+// TODO: Figure a way to merge this and avgpower
+func averageClusterPowerHistory(history *ring.Ring) float64 {
 
 	total := 0.0
 	count := 0.0
@@ -95,14 +96,19 @@ func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, prefix s
 		indexToHost := make(map[int]string)
 
 		for i, hostMetric := range headers {
-			split := strings.Split(hostMetric, ":")
+			metricSplit := strings.Split(hostMetric, ":")
 			//log.Printf("%d Host %s: Metric: %s\n", i, split[0], split[1])
 
-			if strings.Contains(split[1], "RAPL_ENERGY_PKG") {
+			if strings.Contains(metricSplit[1], "RAPL_ENERGY_PKG") ||
+				strings.Contains(metricSplit[1], "RAPL_ENERGY_DRAM") {
 				//fmt.Println("Index: ", i)
 				powerIndexes = append(powerIndexes, i)
-				indexToHost[i] = split[0]
-				powerHistories[split[0]] = ring.New(10) // Two PKGS per node, 10 = 5 seconds tracking
+				indexToHost[i] = metricSplit[0]
+
+				// Only create one ring per host
+				if _, ok := powerHistories[metricSplit[0]]; !ok {
+					powerHistories[metricSplit[0]] = ring.New(20) // Two PKGS, two DRAM per node,  20 = 5 seconds of tracking
+				}
 			}
 		}
 
@@ -139,7 +145,7 @@ func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, prefix s
 				clusterPowerHist.Value = clusterPower
 				clusterPowerHist = clusterPowerHist.Next()
 
-				clusterMean := meanCluster(clusterPowerHist)
+				clusterMean := averageClusterPowerHistory(clusterPowerHist)
 
 				log.Printf("Total power: %f, %d Sec Avg: %f", clusterPower, clusterPowerHist.Len(), clusterMean)
 
@@ -151,10 +157,10 @@ func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, prefix s
 					// TODO: Just keep track of the largest to reduce fron nlogn to n
 					for name, history := range powerHistories {
 
-						histMean := meanPKG(history)
+						histMean := averageNodePowerHistory(history)
+
 						// Consider doing mean calculations using go routines if we need to speed up
 						victims = append(victims, Victim{Watts: histMean, Host: name})
-						//log.Printf("host: %s, Avg: %f", name, histMean * RAPLUnits)
 					}
 
 					sort.Sort(VictimSorter(victims)) // Sort by average wattage
