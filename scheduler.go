@@ -58,7 +58,7 @@ func main() {
 	startTime := time.Now().Format("20060102150405")
 	logPrefix := *pcplogPrefix + "_" + startTime
 
-	scheduler := schedulers.NewBinPackSortedWatts(tasks, *ignoreWatts, logPrefix)
+	scheduler := schedulers.NewBinPacked(tasks, *ignoreWatts, logPrefix)
 	driver, err := sched.NewMesosSchedulerDriver(sched.DriverConfig{
 		Master: *master,
 		Framework: &mesos.FrameworkInfo{
