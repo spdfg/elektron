@@ -28,7 +28,7 @@ func (s *BPSWMaxMinWatts) takeOffer(offer *mesos.Offer, task def.Task) bool {
 		// Error in determining wattsConsideration
 		log.Fatal(err)
 	}
-	if cpus >= task.CPU && mem >= task.RAM && (s.ignoreWatts || (watts >= wattsConsideration)) {
+	if cpus >= task.CPU && mem >= task.RAM && (!s.wattsAsAResource || (watts >= wattsConsideration)) {
 		return true
 	}
 
@@ -42,7 +42,7 @@ type BPSWMaxMinWatts struct {
 	tasks         []def.Task
 	metrics       map[string]def.Metric
 	running       map[string]map[string]bool
-	ignoreWatts   bool
+	wattsAsAResource   bool
 	classMapWatts bool
 
 	// First set of PCP values are garbage values, signal to logger to start recording when we're
@@ -63,7 +63,7 @@ type BPSWMaxMinWatts struct {
 }
 
 // New electron scheduler
-func NewBPMaxMinWatts(tasks []def.Task, ignoreWatts bool, schedTracePrefix string, classMapWatts bool) *BPSWMaxMinWatts {
+func NewBPMaxMinWatts(tasks []def.Task, wattsAsAResource bool, schedTracePrefix string, classMapWatts bool) *BPSWMaxMinWatts {
 	sort.Sort(def.WattsSorter(tasks))
 
 	logFile, err := os.Create("./" + schedTracePrefix + "_schedTrace.log")
@@ -73,7 +73,7 @@ func NewBPMaxMinWatts(tasks []def.Task, ignoreWatts bool, schedTracePrefix strin
 
 	s := &BPSWMaxMinWatts{
 		tasks:         tasks,
-		ignoreWatts:   ignoreWatts,
+		wattsAsAResource:   wattsAsAResource,
 		classMapWatts: classMapWatts,
 		Shutdown:      make(chan struct{}),
 		Done:          make(chan struct{}),
@@ -109,7 +109,7 @@ func (s *BPSWMaxMinWatts) newTask(offer *mesos.Offer, task def.Task) *mesos.Task
 		mesosutil.NewScalarResource("mem", task.RAM),
 	}
 
-	if !s.ignoreWatts {
+	if s.wattsAsAResource {
 		if wattsToConsider, err := def.WattsToConsider(task, s.classMapWatts, offer); err == nil {
 			log.Printf("Watts considered for host[%s] and task[%s] = %f", *offer.Hostname, task.Name, wattsToConsider)
 			resources = append(resources, mesosutil.NewScalarResource("watts", wattsToConsider))
@@ -152,7 +152,7 @@ func (s *BPSWMaxMinWatts) CheckFit(i int,
 	offerCPU, offerRAM, offerWatts := offerUtils.OfferAgg(offer)
 
 	// Does the task fit
-	if (s.ignoreWatts || (offerWatts >= (*totalWatts + wattsConsideration))) &&
+	if (!s.wattsAsAResource || (offerWatts >= (*totalWatts + wattsConsideration))) &&
 		(offerCPU >= (*totalCPU + task.CPU)) &&
 		(offerRAM >= (*totalRAM + task.RAM)) {
 

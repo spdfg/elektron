@@ -33,7 +33,7 @@ func (s *BPSWMaxMinPistonCapping) takeOffer(offer *mesos.Offer, task def.Task) b
 		// Error in determining wattsConsideration
 		log.Fatal(err)
 	}
-	if cpus >= task.CPU && mem >= task.RAM && (s.ignoreWatts || (watts >= wattsConsideration)) {
+	if cpus >= task.CPU && mem >= task.RAM && (!s.wattsAsAResource || (watts >= wattsConsideration)) {
 		return true
 	}
 
@@ -41,18 +41,18 @@ func (s *BPSWMaxMinPistonCapping) takeOffer(offer *mesos.Offer, task def.Task) b
 }
 
 type BPSWMaxMinPistonCapping struct {
-	base          //Type embedding to inherit common functions
-	tasksCreated  int
-	tasksRunning  int
-	tasks         []def.Task
-	metrics       map[string]def.Metric
-	running       map[string]map[string]bool
-	taskMonitor   map[string][]def.Task
-	totalPower    map[string]float64
-	ignoreWatts   bool
-	classMapWatts bool
-	ticker        *time.Ticker
-	isCapping     bool
+	base             //Type embedding to inherit common functions
+	tasksCreated     int
+	tasksRunning     int
+	tasks            []def.Task
+	metrics          map[string]def.Metric
+	running          map[string]map[string]bool
+	taskMonitor      map[string][]def.Task
+	totalPower       map[string]float64
+	wattsAsAResource bool
+	classMapWatts    bool
+	ticker           *time.Ticker
+	isCapping        bool
 
 	// First set of PCP values are garbage values, signal to logger to start recording when we're
 	// about to schedule a new task
@@ -72,7 +72,7 @@ type BPSWMaxMinPistonCapping struct {
 }
 
 // New electron scheduler
-func NewBPSWMaxMinPistonCapping(tasks []def.Task, ignoreWatts bool, schedTracePrefix string,
+func NewBPSWMaxMinPistonCapping(tasks []def.Task, wattsAsAResource bool, schedTracePrefix string,
 	classMapWatts bool) *BPSWMaxMinPistonCapping {
 	sort.Sort(def.WattsSorter(tasks))
 
@@ -82,19 +82,19 @@ func NewBPSWMaxMinPistonCapping(tasks []def.Task, ignoreWatts bool, schedTracePr
 	}
 
 	s := &BPSWMaxMinPistonCapping{
-		tasks:         tasks,
-		ignoreWatts:   ignoreWatts,
-		classMapWatts: classMapWatts,
-		Shutdown:      make(chan struct{}),
-		Done:          make(chan struct{}),
-		PCPLog:        make(chan struct{}),
-		running:       make(map[string]map[string]bool),
-		taskMonitor:   make(map[string][]def.Task),
-		totalPower:    make(map[string]float64),
-		RecordPCP:     false,
-		ticker:        time.NewTicker(5 * time.Second),
-		isCapping:     false,
-		schedTrace:    log.New(logFile, "", log.LstdFlags),
+		tasks:            tasks,
+		wattsAsAResource: wattsAsAResource,
+		classMapWatts:    classMapWatts,
+		Shutdown:         make(chan struct{}),
+		Done:             make(chan struct{}),
+		PCPLog:           make(chan struct{}),
+		running:          make(map[string]map[string]bool),
+		taskMonitor:      make(map[string][]def.Task),
+		totalPower:       make(map[string]float64),
+		RecordPCP:        false,
+		ticker:           time.NewTicker(5 * time.Second),
+		isCapping:        false,
+		schedTrace:       log.New(logFile, "", log.LstdFlags),
 	}
 	return s
 
@@ -134,7 +134,7 @@ func (s *BPSWMaxMinPistonCapping) newTask(offer *mesos.Offer, task def.Task) *me
 		mesosutil.NewScalarResource("mem", task.RAM),
 	}
 
-	if !s.ignoreWatts {
+	if s.wattsAsAResource {
 		if wattsToConsider, err := def.WattsToConsider(task, s.classMapWatts, offer); err == nil {
 			log.Printf("Watts considered for host[%s] and task[%s] = %f", *offer.Hostname, task.Name, wattsToConsider)
 			resources = append(resources, mesosutil.NewScalarResource("watts", wattsToConsider))
@@ -242,7 +242,7 @@ func (s *BPSWMaxMinPistonCapping) CheckFit(i int,
 	offerCPU, offerRAM, offerWatts := offerUtils.OfferAgg(offer)
 
 	// Does the task fit
-	if (s.ignoreWatts || (offerWatts >= (*totalWatts + wattsConsideration))) &&
+	if (!s.wattsAsAResource || (offerWatts >= (*totalWatts + wattsConsideration))) &&
 		(offerCPU >= (*totalCPU + task.CPU)) &&
 		(offerRAM >= (*totalRAM + task.RAM)) {
 

@@ -29,7 +29,7 @@ func (s *FirstFitProacCC) takeOffer(offer *mesos.Offer, task def.Task) bool {
 		// Error in determining wattsConsideration
 		log.Fatal(err)
 	}
-	if offer_cpu >= task.CPU && offer_mem >= task.RAM && (s.ignoreWatts || (offer_watts >= wattsConsideration)) {
+	if offer_cpu >= task.CPU && offer_mem >= task.RAM && (!s.wattsAsAResource || (offer_watts >= wattsConsideration)) {
 		return true
 	}
 	return false
@@ -37,22 +37,22 @@ func (s *FirstFitProacCC) takeOffer(offer *mesos.Offer, task def.Task) bool {
 
 // electronScheduler implements the Scheduler interface.
 type FirstFitProacCC struct {
-	base           // Type embedded to inherit common functions
-	tasksCreated   int
-	tasksRunning   int
-	tasks          []def.Task
-	metrics        map[string]def.Metric
-	running        map[string]map[string]bool
-	taskMonitor    map[string][]def.Task // store tasks that are currently running.
-	availablePower map[string]float64    // available power for each node in the cluster.
-	totalPower     map[string]float64    // total power for each node in the cluster.
-	ignoreWatts    bool
-	classMapWatts  bool
-	capper         *powCap.ClusterwideCapper
-	ticker         *time.Ticker
-	recapTicker    *time.Ticker
-	isCapping      bool // indicate whether we are currently performing cluster wide capping.
-	isRecapping    bool // indicate whether we are currently performing cluster wide re-capping.
+	base             // Type embedded to inherit common functions
+	tasksCreated     int
+	tasksRunning     int
+	tasks            []def.Task
+	metrics          map[string]def.Metric
+	running          map[string]map[string]bool
+	taskMonitor      map[string][]def.Task // store tasks that are currently running.
+	availablePower   map[string]float64    // available power for each node in the cluster.
+	totalPower       map[string]float64    // total power for each node in the cluster.
+	wattsAsAResource bool
+	classMapWatts    bool
+	capper           *powCap.ClusterwideCapper
+	ticker           *time.Ticker
+	recapTicker      *time.Ticker
+	isCapping        bool // indicate whether we are currently performing cluster wide capping.
+	isRecapping      bool // indicate whether we are currently performing cluster wide re-capping.
 
 	// First set of PCP values are garbage values, signal to logger to start recording when we're
 	// about to schedule the new task.
@@ -73,7 +73,7 @@ type FirstFitProacCC struct {
 }
 
 // New electron scheduler.
-func NewFirstFitProacCC(tasks []def.Task, ignoreWatts bool, schedTracePrefix string,
+func NewFirstFitProacCC(tasks []def.Task, wattsAsAResource bool, schedTracePrefix string,
 	classMapWatts bool) *FirstFitProacCC {
 
 	logFile, err := os.Create("./" + schedTracePrefix + "_schedTrace.log")
@@ -82,23 +82,23 @@ func NewFirstFitProacCC(tasks []def.Task, ignoreWatts bool, schedTracePrefix str
 	}
 
 	s := &FirstFitProacCC{
-		tasks:          tasks,
-		ignoreWatts:    ignoreWatts,
-		classMapWatts:  classMapWatts,
-		Shutdown:       make(chan struct{}),
-		Done:           make(chan struct{}),
-		PCPLog:         make(chan struct{}),
-		running:        make(map[string]map[string]bool),
-		taskMonitor:    make(map[string][]def.Task),
-		availablePower: make(map[string]float64),
-		totalPower:     make(map[string]float64),
-		RecordPCP:      false,
-		capper:         powCap.GetClusterwideCapperInstance(),
-		ticker:         time.NewTicker(10 * time.Second),
-		recapTicker:    time.NewTicker(20 * time.Second),
-		isCapping:      false,
-		isRecapping:    false,
-		schedTrace:     log.New(logFile, "", log.LstdFlags),
+		tasks:            tasks,
+		wattsAsAResource: wattsAsAResource,
+		classMapWatts:    classMapWatts,
+		Shutdown:         make(chan struct{}),
+		Done:             make(chan struct{}),
+		PCPLog:           make(chan struct{}),
+		running:          make(map[string]map[string]bool),
+		taskMonitor:      make(map[string][]def.Task),
+		availablePower:   make(map[string]float64),
+		totalPower:       make(map[string]float64),
+		RecordPCP:        false,
+		capper:           powCap.GetClusterwideCapperInstance(),
+		ticker:           time.NewTicker(10 * time.Second),
+		recapTicker:      time.NewTicker(20 * time.Second),
+		isCapping:        false,
+		isRecapping:      false,
+		schedTrace:       log.New(logFile, "", log.LstdFlags),
 	}
 	return s
 }
@@ -137,7 +137,7 @@ func (s *FirstFitProacCC) newTask(offer *mesos.Offer, task def.Task) *mesos.Task
 		mesosutil.NewScalarResource("mem", task.RAM),
 	}
 
-	if !s.ignoreWatts {
+	if s.wattsAsAResource {
 		if wattsToConsider, err := def.WattsToConsider(task, s.classMapWatts, offer); err == nil {
 			log.Printf("Watts considered for host[%s] and task[%s] = %f", *offer.Hostname, task.Name, wattsToConsider)
 			resources = append(resources, mesosutil.NewScalarResource("watts", wattsToConsider))

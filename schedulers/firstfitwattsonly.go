@@ -35,14 +35,14 @@ func (s *FirstFitWattsOnly) takeOffer(offer *mesos.Offer, task def.Task) bool {
 }
 
 type FirstFitWattsOnly struct {
-	base          // Type embedded to inherit common functions
-	tasksCreated  int
-	tasksRunning  int
-	tasks         []def.Task
-	metrics       map[string]def.Metric
-	running       map[string]map[string]bool
-	ignoreWatts   bool
-	classMapWatts bool
+	base             // Type embedded to inherit common functions
+	tasksCreated     int
+	tasksRunning     int
+	tasks            []def.Task
+	metrics          map[string]def.Metric
+	running          map[string]map[string]bool
+	wattsAsAResource bool
+	classMapWatts    bool
 
 	// First set of PCP values are garbage values, signal to logger to start recording when we're
 	// about to schedule a new task
@@ -62,7 +62,7 @@ type FirstFitWattsOnly struct {
 }
 
 // New electron scheduler
-func NewFirstFitWattsOnly(tasks []def.Task, ignoreWatts bool, schedTracePrefix string, classMapWatts bool) *FirstFitWattsOnly {
+func NewFirstFitWattsOnly(tasks []def.Task, wattsAsAResource bool, schedTracePrefix string, classMapWatts bool) *FirstFitWattsOnly {
 
 	logFile, err := os.Create("./" + schedTracePrefix + "_schedTrace.log")
 	if err != nil {
@@ -70,15 +70,15 @@ func NewFirstFitWattsOnly(tasks []def.Task, ignoreWatts bool, schedTracePrefix s
 	}
 
 	s := &FirstFitWattsOnly{
-		tasks:         tasks,
-		ignoreWatts:   ignoreWatts,
-		classMapWatts: classMapWatts,
-		Shutdown:      make(chan struct{}),
-		Done:          make(chan struct{}),
-		PCPLog:        make(chan struct{}),
-		running:       make(map[string]map[string]bool),
-		RecordPCP:     false,
-		schedTrace:    log.New(logFile, "", log.LstdFlags),
+		tasks:            tasks,
+		wattsAsAResource: wattsAsAResource,
+		classMapWatts:    classMapWatts,
+		Shutdown:         make(chan struct{}),
+		Done:             make(chan struct{}),
+		PCPLog:           make(chan struct{}),
+		running:          make(map[string]map[string]bool),
+		RecordPCP:        false,
+		schedTrace:       log.New(logFile, "", log.LstdFlags),
 	}
 	return s
 }

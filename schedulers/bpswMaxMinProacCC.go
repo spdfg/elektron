@@ -32,7 +32,7 @@ func (s *BPSWMaxMinProacCC) takeOffer(offer *mesos.Offer, task def.Task) bool {
 		// Error in determining wattsConsideration
 		log.Fatal(err)
 	}
-	if cpus >= task.CPU && mem >= task.RAM && (s.ignoreWatts || (watts >= wattsConsideration)) {
+	if cpus >= task.CPU && mem >= task.RAM && (!s.wattsAsAResource || (watts >= wattsConsideration)) {
 		return true
 	}
 
@@ -40,22 +40,22 @@ func (s *BPSWMaxMinProacCC) takeOffer(offer *mesos.Offer, task def.Task) bool {
 }
 
 type BPSWMaxMinProacCC struct {
-	base           // Type embedding to inherit common functions
-	tasksCreated   int
-	tasksRunning   int
-	tasks          []def.Task
-	metrics        map[string]def.Metric
-	running        map[string]map[string]bool
-	taskMonitor    map[string][]def.Task
-	availablePower map[string]float64
-	totalPower     map[string]float64
-	ignoreWatts    bool
-	classMapWatts  bool
-	capper         *powCap.ClusterwideCapper
-	ticker         *time.Ticker
-	recapTicker    *time.Ticker
-	isCapping      bool // indicate whether we are currently performing cluster-wide capping.
-	isRecapping    bool // indicate whether we are currently performing cluster-wide recapping.
+	base             // Type embedding to inherit common functions
+	tasksCreated     int
+	tasksRunning     int
+	tasks            []def.Task
+	metrics          map[string]def.Metric
+	running          map[string]map[string]bool
+	taskMonitor      map[string][]def.Task
+	availablePower   map[string]float64
+	totalPower       map[string]float64
+	wattsAsAResource bool
+	classMapWatts    bool
+	capper           *powCap.ClusterwideCapper
+	ticker           *time.Ticker
+	recapTicker      *time.Ticker
+	isCapping        bool // indicate whether we are currently performing cluster-wide capping.
+	isRecapping      bool // indicate whether we are currently performing cluster-wide recapping.
 
 	// First set of PCP values are garbage values, signal to logger to start recording when we're
 	// about to schedule a new task
@@ -75,7 +75,7 @@ type BPSWMaxMinProacCC struct {
 }
 
 // New electron scheduler
-func NewBPSWMaxMinProacCC(tasks []def.Task, ignoreWatts bool, schedTracePrefix string, classMapWatts bool) *BPSWMaxMinProacCC {
+func NewBPSWMaxMinProacCC(tasks []def.Task, wattsAsAResource bool, schedTracePrefix string, classMapWatts bool) *BPSWMaxMinProacCC {
 	sort.Sort(def.WattsSorter(tasks))
 
 	logFile, err := os.Create("./" + schedTracePrefix + "_schedTrace.log")
@@ -84,23 +84,23 @@ func NewBPSWMaxMinProacCC(tasks []def.Task, ignoreWatts bool, schedTracePrefix s
 	}
 
 	s := &BPSWMaxMinProacCC{
-		tasks:          tasks,
-		ignoreWatts:    ignoreWatts,
-		classMapWatts:  classMapWatts,
-		Shutdown:       make(chan struct{}),
-		Done:           make(chan struct{}),
-		PCPLog:         make(chan struct{}),
-		running:        make(map[string]map[string]bool),
-		taskMonitor:    make(map[string][]def.Task),
-		availablePower: make(map[string]float64),
-		totalPower:     make(map[string]float64),
-		RecordPCP:      false,
-		capper:         powCap.GetClusterwideCapperInstance(),
-		ticker:         time.NewTicker(10 * time.Second),
-		recapTicker:    time.NewTicker(20 * time.Second),
-		isCapping:      false,
-		isRecapping:    false,
-		schedTrace:     log.New(logFile, "", log.LstdFlags),
+		tasks:            tasks,
+		wattsAsAResource: wattsAsAResource,
+		classMapWatts:    classMapWatts,
+		Shutdown:         make(chan struct{}),
+		Done:             make(chan struct{}),
+		PCPLog:           make(chan struct{}),
+		running:          make(map[string]map[string]bool),
+		taskMonitor:      make(map[string][]def.Task),
+		availablePower:   make(map[string]float64),
+		totalPower:       make(map[string]float64),
+		RecordPCP:        false,
+		capper:           powCap.GetClusterwideCapperInstance(),
+		ticker:           time.NewTicker(10 * time.Second),
+		recapTicker:      time.NewTicker(20 * time.Second),
+		isCapping:        false,
+		isRecapping:      false,
+		schedTrace:       log.New(logFile, "", log.LstdFlags),
 	}
 	return s
 }
@@ -139,7 +139,7 @@ func (s *BPSWMaxMinProacCC) newTask(offer *mesos.Offer, task def.Task) *mesos.Ta
 		mesosutil.NewScalarResource("mem", task.RAM),
 	}
 
-	if !s.ignoreWatts {
+	if s.wattsAsAResource {
 		if wattsToConsider, err := def.WattsToConsider(task, s.classMapWatts, offer); err == nil {
 			log.Printf("Watts considered for host[%s] and task[%s] = %f", *offer.Hostname, task.Name, wattsToConsider)
 			resources = append(resources, mesosutil.NewScalarResource("watts", wattsToConsider))
@@ -265,7 +265,7 @@ func (s *BPSWMaxMinProacCC) CheckFit(i int,
 	offerCPU, offerRAM, offerWatts := offerUtils.OfferAgg(offer)
 
 	// Does the task fit
-	if (s.ignoreWatts || (offerWatts >= (*totalWatts + wattsConsideration))) &&
+	if (!s.wattsAsAResource || (offerWatts >= (*totalWatts + wattsConsideration))) &&
 		(offerCPU >= (*totalCPU + task.CPU)) &&
 		(offerRAM >= (*totalRAM + task.RAM)) {
 

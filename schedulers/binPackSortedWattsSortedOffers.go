@@ -28,7 +28,7 @@ func (s *BinPackSortedWattsSortedOffers) takeOffer(offer *mesos.Offer, task def.
 		// Error in determining wattsConsideration
 		log.Fatal(err)
 	}
-	if cpus >= task.CPU && mem >= task.RAM && (s.ignoreWatts || (watts >= wattsConsideration)) {
+	if cpus >= task.CPU && mem >= task.RAM && (!s.wattsAsAResource || (watts >= wattsConsideration)) {
 		return true
 	}
 
@@ -36,14 +36,14 @@ func (s *BinPackSortedWattsSortedOffers) takeOffer(offer *mesos.Offer, task def.
 }
 
 type BinPackSortedWattsSortedOffers struct {
-	base          // Type embedded to inherit common functions
-	tasksCreated  int
-	tasksRunning  int
-	tasks         []def.Task
-	metrics       map[string]def.Metric
-	running       map[string]map[string]bool
-	ignoreWatts   bool
-	classMapWatts bool
+	base             // Type embedded to inherit common functions
+	tasksCreated     int
+	tasksRunning     int
+	tasks            []def.Task
+	metrics          map[string]def.Metric
+	running          map[string]map[string]bool
+	wattsAsAResource bool
+	classMapWatts    bool
 
 	// First set of PCP values are garbage values, signal to logger to start recording when we're
 	// about to schedule a new task
@@ -63,7 +63,7 @@ type BinPackSortedWattsSortedOffers struct {
 }
 
 // New electron scheduler
-func NewBinPackSortedWattsSortedOffers(tasks []def.Task, ignoreWatts bool, schedTracePrefix string,
+func NewBinPackSortedWattsSortedOffers(tasks []def.Task, wattsAsAResource bool, schedTracePrefix string,
 	classMapWatts bool) *BinPackSortedWattsSortedOffers {
 	sort.Sort(def.WattsSorter(tasks))
 
@@ -73,15 +73,15 @@ func NewBinPackSortedWattsSortedOffers(tasks []def.Task, ignoreWatts bool, sched
 	}
 
 	s := &BinPackSortedWattsSortedOffers{
-		tasks:         tasks,
-		ignoreWatts:   ignoreWatts,
-		classMapWatts: classMapWatts,
-		Shutdown:      make(chan struct{}),
-		Done:          make(chan struct{}),
-		PCPLog:        make(chan struct{}),
-		running:       make(map[string]map[string]bool),
-		RecordPCP:     false,
-		schedTrace:    log.New(logFile, "", log.LstdFlags),
+		tasks:            tasks,
+		wattsAsAResource: wattsAsAResource,
+		classMapWatts:    classMapWatts,
+		Shutdown:         make(chan struct{}),
+		Done:             make(chan struct{}),
+		PCPLog:           make(chan struct{}),
+		running:          make(map[string]map[string]bool),
+		RecordPCP:        false,
+		schedTrace:       log.New(logFile, "", log.LstdFlags),
 	}
 	return s
 }
@@ -109,7 +109,7 @@ func (s *BinPackSortedWattsSortedOffers) newTask(offer *mesos.Offer, task def.Ta
 		mesosutil.NewScalarResource("mem", task.RAM),
 	}
 
-	if !s.ignoreWatts {
+	if s.wattsAsAResource {
 		if wattsToConsider, err := def.WattsToConsider(task, s.classMapWatts, offer); err == nil {
 			log.Printf("Watts considered for host[%s] and task[%s] = %f", *offer.Hostname, task.Name, wattsToConsider)
 			resources = append(resources, mesosutil.NewScalarResource("watts", wattsToConsider))
@@ -190,7 +190,7 @@ func (s *BinPackSortedWattsSortedOffers) ResourceOffers(driver sched.SchedulerDr
 
 			for *task.Instances > 0 {
 				// Does the task fit
-				if (s.ignoreWatts || (offer_watts >= (totalWatts + wattsConsideration))) &&
+				if (!s.wattsAsAResource || (offer_watts >= (totalWatts + wattsConsideration))) &&
 					(offer_cpu >= (totalCPU + task.CPU)) &&
 					(offer_ram >= (totalRAM + task.RAM)) {
 

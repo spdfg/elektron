@@ -17,7 +17,7 @@ import (
 
 var master = flag.String("master", "xavier:5050", "Location of leading Mesos master")
 var tasksFile = flag.String("workload", "", "JSON file containing task definitions")
-var ignoreWatts = flag.Bool("ignoreWatts", false, "Ignore watts in offers")
+var wattsAsAResource = flag.Bool("wattsAsAResource", false, "Enable Watts as a Resource")
 var pcplogPrefix = flag.String("logPrefix", "", "Prefix for pcplog")
 var hiThreshold = flag.Float64("hiThreshold", 0.0, "Upperbound for when we should start capping")
 var loThreshold = flag.Float64("loThreshold", 0.0, "Lowerbound for when we should start uncapping")
@@ -27,7 +27,7 @@ var classMapWatts = flag.Bool("classMapWatts", false, "Enable mapping of watts t
 func init() {
 	flag.StringVar(master, "m", "xavier:5050", "Location of leading Mesos master (shorthand)")
 	flag.StringVar(tasksFile, "w", "", "JSON file containing task definitions (shorthand)")
-	flag.BoolVar(ignoreWatts, "i", false, "Ignore watts in offers (shorthand)")
+	flag.BoolVar(wattsAsAResource, "waar", false, "Enable Watts as a Resource")
 	flag.StringVar(pcplogPrefix, "p", "", "Prefix for pcplog (shorthand)")
 	flag.Float64Var(hiThreshold, "ht", 700.0, "Upperbound for when we should start capping (shorthand)")
 	flag.Float64Var(loThreshold, "lt", 400.0, "Lowerbound for when we should start uncapping (shorthand)")
@@ -60,7 +60,7 @@ func main() {
 	startTime := time.Now().Format("20060102150405")
 	logPrefix := *pcplogPrefix + "_" + startTime
 
-	scheduler := schedulers.NewBinPackedPistonCapper(tasks, *ignoreWatts, logPrefix, *classMapWatts)
+	scheduler := schedulers.NewBinPackedPistonCapper(tasks, *wattsAsAResource, logPrefix, *classMapWatts)
 	driver, err := sched.NewMesosSchedulerDriver(sched.DriverConfig{
 		Master: *master,
 		Framework: &mesos.FrameworkInfo{

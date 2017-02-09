@@ -27,18 +27,18 @@ import (
   corresponding to the load on that node.
 */
 type BinPackedPistonCapper struct {
-	base          // Type embedded to inherit common functions
-	tasksCreated  int
-	tasksRunning  int
-	tasks         []def.Task
-	metrics       map[string]def.Metric
-	running       map[string]map[string]bool
-	taskMonitor   map[string][]def.Task
-	totalPower    map[string]float64
-	ignoreWatts   bool
-	classMapWatts bool
-	ticker        *time.Ticker
-	isCapping     bool
+	base             // Type embedded to inherit common functions
+	tasksCreated     int
+	tasksRunning     int
+	tasks            []def.Task
+	metrics          map[string]def.Metric
+	running          map[string]map[string]bool
+	taskMonitor      map[string][]def.Task
+	totalPower       map[string]float64
+	wattsAsAResource bool
+	classMapWatts    bool
+	ticker           *time.Ticker
+	isCapping        bool
 
 	// First set of PCP values are garbage values, signal to logger to start recording when we're
 	// about to schedule the new task.
@@ -59,7 +59,7 @@ type BinPackedPistonCapper struct {
 }
 
 // New electron scheduler.
-func NewBinPackedPistonCapper(tasks []def.Task, ignoreWatts bool, schedTracePrefix string,
+func NewBinPackedPistonCapper(tasks []def.Task, wattsAsAResource bool, schedTracePrefix string,
 	classMapWatts bool) *BinPackedPistonCapper {
 
 	logFile, err := os.Create("./" + schedTracePrefix + "_schedTrace.log")
@@ -68,19 +68,19 @@ func NewBinPackedPistonCapper(tasks []def.Task, ignoreWatts bool, schedTracePref
 	}
 
 	s := &BinPackedPistonCapper{
-		tasks:         tasks,
-		ignoreWatts:   ignoreWatts,
-		classMapWatts: classMapWatts,
-		Shutdown:      make(chan struct{}),
-		Done:          make(chan struct{}),
-		PCPLog:        make(chan struct{}),
-		running:       make(map[string]map[string]bool),
-		taskMonitor:   make(map[string][]def.Task),
-		totalPower:    make(map[string]float64),
-		RecordPCP:     false,
-		ticker:        time.NewTicker(5 * time.Second),
-		isCapping:     false,
-		schedTrace:    log.New(logFile, "", log.LstdFlags),
+		tasks:            tasks,
+		wattsAsAResource: wattsAsAResource,
+		classMapWatts:    classMapWatts,
+		Shutdown:         make(chan struct{}),
+		Done:             make(chan struct{}),
+		PCPLog:           make(chan struct{}),
+		running:          make(map[string]map[string]bool),
+		taskMonitor:      make(map[string][]def.Task),
+		totalPower:       make(map[string]float64),
+		RecordPCP:        false,
+		ticker:           time.NewTicker(5 * time.Second),
+		isCapping:        false,
+		schedTrace:       log.New(logFile, "", log.LstdFlags),
 	}
 	return s
 }
@@ -93,7 +93,7 @@ func (s *BinPackedPistonCapper) takeOffer(offer *mesos.Offer, offerWatts float64
 		// Error in determining wattsToConsider
 		log.Fatal(err)
 	}
-	if (s.ignoreWatts || (offerWatts >= (totalWatts + wattsConsideration))) &&
+	if (!s.wattsAsAResource || (offerWatts >= (totalWatts + wattsConsideration))) &&
 		(offerCPU >= (totalCPU + task.CPU)) &&
 		(offerRAM >= (totalRAM + task.RAM)) {
 		return true
@@ -137,7 +137,7 @@ func (s *BinPackedPistonCapper) newTask(offer *mesos.Offer, task def.Task) *meso
 		mesosutil.NewScalarResource("mem", task.RAM),
 	}
 
-	if !s.ignoreWatts {
+	if s.wattsAsAResource {
 		if wattsToConsider, err := def.WattsToConsider(task, s.classMapWatts, offer); err == nil {
 			log.Printf("Watts considered for host[%s] and task[%s] = %f", *offer.Hostname, task.Name, wattsToConsider)
 			resources = append(resources, mesosutil.NewScalarResource("watts", wattsToConsider))
