@@ -1,6 +1,8 @@
 package utilities
 
-import "errors"
+import (
+	"errors"
+)
 
 /*
 The Pair and PairList have been taken from google groups forum,
@@ -44,11 +46,3 @@ func OrderedKeys(plist PairList) ([]string, error) {
 	return orderedKeys, nil
 }
 
-// determine the max value
-func Max(a, b float64) float64 {
-	if a > b {
-		return a
-	} else {
-		return b
-	}
-}

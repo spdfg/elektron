@@ -2,7 +2,9 @@ package def
 
 import (
 	"bitbucket.org/sunybingcloud/electron/constants"
+	"bitbucket.org/sunybingcloud/electron/utilities/offerUtils"
 	"encoding/json"
+	mesos "github.com/mesos/mesos-go/mesosproto"
 	"github.com/pkg/errors"
 	"os"
 )
@@ -62,6 +64,33 @@ func (tsk *Task) SetTaskID(taskID string) bool {
 	} else {
 		tsk.TaskID = taskID
 		return true
+	}
+}
+
+/*
+ Determine the watts value to consider for each task.
+
+ This value could either be task.Watts or task.ClassToWatts[<power class>]
+ If task.ClassToWatts is not present, then return task.Watts (this would be for workloads which don't have classMapWatts)
+*/
+func WattsToConsider(task Task, classMapWatts bool, offer *mesos.Offer) (float64, error) {
+	if classMapWatts {
+		// checking if ClassToWatts was present in the workload.
+		if task.ClassToWatts != nil {
+			return task.ClassToWatts[offerUtils.PowerClass(offer)], nil
+		} else {
+			// Checking whether task.Watts is 0.0. If yes, then throwing an error.
+			if task.Watts == 0.0 {
+				return task.Watts, errors.New("Configuration error in task. Watts attribute is 0 for " + task.Name)
+			}
+			return task.Watts, nil
+		}
+	} else {
+		// Checking whether task.Watts is 0.0. If yes, then throwing an error.
+		if task.Watts == 0.0 {
+			return task.Watts, errors.New("Configuration error in task. Watts attribute is 0 for " + task.Name)
+		}
+		return task.Watts, nil
 	}
 }
 

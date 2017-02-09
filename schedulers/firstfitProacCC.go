@@ -1,13 +1,3 @@
-/*
-Ranked based cluster wide capping.
-
-Note: Sorting the tasks right in the beginning, in ascending order of watts.
-	You are hence certain that the tasks that didn't fit are the ones that require more resources,
-		and hence, you can find a way to address that issue.
-	On the other hand, if you use first fit to fit the tasks and then sort them to determine the cap,
-		you are never certain as which tasks are the ones that don't fit and hence, it becomes much harder
-			to address this issue.
-*/
 package schedulers
 
 import (
@@ -25,24 +15,28 @@ import (
 	"log"
 	"math"
 	"os"
-	"sort"
 	"strings"
 	"sync"
 	"time"
 )
 
-// Decides if to taken an offer or not
-func (_ *ProactiveClusterwideCapRanked) takeOffer(offer *mesos.Offer, task def.Task) bool {
+// Decides if to take an offer or not
+func (s *FirstFitProacCC) takeOffer(offer *mesos.Offer, task def.Task) bool {
 	offer_cpu, offer_mem, offer_watts := offerUtils.OfferAgg(offer)
 
-	if offer_cpu >= task.CPU && offer_mem >= task.RAM && offer_watts >= task.Watts {
+	wattsConsideration, err := def.WattsToConsider(task, s.classMapWatts, offer)
+	if err != nil {
+		// Error in determining wattsConsideration
+		log.Fatal(err)
+	}
+	if offer_cpu >= task.CPU && offer_mem >= task.RAM && (s.ignoreWatts || (offer_watts >= wattsConsideration)) {
 		return true
 	}
 	return false
 }
 
-// electronScheduler implements the Scheduler interface
-type ProactiveClusterwideCapRanked struct {
+// electronScheduler implements the Scheduler interface.
+type FirstFitProacCC struct {
 	base           // Type embedded to inherit common functions
 	tasksCreated   int
 	tasksRunning   int
@@ -53,6 +47,7 @@ type ProactiveClusterwideCapRanked struct {
 	availablePower map[string]float64    // available power for each node in the cluster.
 	totalPower     map[string]float64    // total power for each node in the cluster.
 	ignoreWatts    bool
+	classMapWatts  bool
 	capper         *powCap.ClusterwideCapper
 	ticker         *time.Ticker
 	recapTicker    *time.Ticker
@@ -78,16 +73,18 @@ type ProactiveClusterwideCapRanked struct {
 }
 
 // New electron scheduler.
-func NewProactiveClusterwideCapRanked(tasks []def.Task, ignoreWatts bool, schedTracePrefix string) *ProactiveClusterwideCapRanked {
+func NewFirstFitProacCC(tasks []def.Task, ignoreWatts bool, schedTracePrefix string,
+	classMapWatts bool) *FirstFitProacCC {
 
 	logFile, err := os.Create("./" + schedTracePrefix + "_schedTrace.log")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	s := &ProactiveClusterwideCapRanked{
+	s := &FirstFitProacCC{
 		tasks:          tasks,
 		ignoreWatts:    ignoreWatts,
+		classMapWatts:  classMapWatts,
 		Shutdown:       make(chan struct{}),
 		Done:           make(chan struct{}),
 		PCPLog:         make(chan struct{}),
@@ -107,9 +104,9 @@ func NewProactiveClusterwideCapRanked(tasks []def.Task, ignoreWatts bool, schedT
 }
 
 // mutex
-var rankedMutex sync.Mutex
+var fcfsMutex sync.Mutex
 
-func (s *ProactiveClusterwideCapRanked) newTask(offer *mesos.Offer, task def.Task) *mesos.TaskInfo {
+func (s *FirstFitProacCC) newTask(offer *mesos.Offer, task def.Task) *mesos.TaskInfo {
 	taskName := fmt.Sprintf("%s-%d", task.Name, *task.Instances)
 	s.tasksCreated++
 
@@ -141,7 +138,13 @@ func (s *ProactiveClusterwideCapRanked) newTask(offer *mesos.Offer, task def.Tas
 	}
 
 	if !s.ignoreWatts {
-		resources = append(resources, mesosutil.NewScalarResource("watts", task.Watts))
+		if wattsToConsider, err := def.WattsToConsider(task, s.classMapWatts, offer); err == nil {
+			log.Printf("Watts considered for host[%s] and task[%s] = %f", *offer.Hostname, task.Name, wattsToConsider)
+			resources = append(resources, mesosutil.NewScalarResource("watts", wattsToConsider))
+		} else {
+			// Error in determining wattsConsideration
+			log.Fatal(err)
+		}
 	}
 
 	return &mesos.TaskInfo{
@@ -164,68 +167,68 @@ func (s *ProactiveClusterwideCapRanked) newTask(offer *mesos.Offer, task def.Tas
 	}
 }
 
-func (s *ProactiveClusterwideCapRanked) Disconnected(sched.SchedulerDriver) {
+func (s *FirstFitProacCC) Disconnected(sched.SchedulerDriver) {
 	// Need to stop the capping process.
 	s.ticker.Stop()
 	s.recapTicker.Stop()
-	rankedMutex.Lock()
+	fcfsMutex.Lock()
 	s.isCapping = false
-	rankedMutex.Unlock()
+	fcfsMutex.Unlock()
 	log.Println("Framework disconnected with master")
 }
 
 // go routine to cap the entire cluster in regular intervals of time.
-var rankedCurrentCapValue = 0.0 // initial value to indicate that we haven't capped the cluster yet.
-func (s *ProactiveClusterwideCapRanked) startCapping() {
+var fcfsCurrentCapValue = 0.0 // initial value to indicate that we haven't capped the cluster yet.
+func (s *FirstFitProacCC) startCapping() {
 	go func() {
 		for {
 			select {
 			case <-s.ticker.C:
-				// Need to cap the cluster to the rankedCurrentCapValue.
-				rankedMutex.Lock()
-				if rankedCurrentCapValue > 0.0 {
+				// Need to cap the cluster to the fcfsCurrentCapValue.
+				fcfsMutex.Lock()
+				if fcfsCurrentCapValue > 0.0 {
 					for _, host := range constants.Hosts {
 						// Rounding curreCapValue to the nearest int.
-						if err := rapl.Cap(host, "rapl", int(math.Floor(rankedCurrentCapValue+0.5))); err != nil {
+						if err := rapl.Cap(host, "rapl", int(math.Floor(fcfsCurrentCapValue+0.5))); err != nil {
 							log.Println(err)
 						}
 					}
-					log.Printf("Capped the cluster to %d", int(math.Floor(rankedCurrentCapValue+0.5)))
+					log.Printf("Capped the cluster to %d", int(math.Floor(fcfsCurrentCapValue+0.5)))
 				}
-				rankedMutex.Unlock()
+				fcfsMutex.Unlock()
 			}
 		}
 	}()
 }
 
 // go routine to cap the entire cluster in regular intervals of time.
-var rankedRecapValue = 0.0 // The cluster wide cap value when recapping.
-func (s *ProactiveClusterwideCapRanked) startRecapping() {
+var fcfsRecapValue = 0.0 // The cluster wide cap value when recapping.
+func (s *FirstFitProacCC) startRecapping() {
 	go func() {
 		for {
 			select {
 			case <-s.recapTicker.C:
-				rankedMutex.Lock()
+				fcfsMutex.Lock()
 				// If stopped performing cluster wide capping then we need to explicitly cap the entire cluster.
-				if s.isRecapping && rankedRecapValue > 0.0 {
+				if s.isRecapping && fcfsRecapValue > 0.0 {
 					for _, host := range constants.Hosts {
 						// Rounding curreCapValue to the nearest int.
-						if err := rapl.Cap(host, "rapl", int(math.Floor(rankedRecapValue+0.5))); err != nil {
+						if err := rapl.Cap(host, "rapl", int(math.Floor(fcfsRecapValue+0.5))); err != nil {
 							log.Println(err)
 						}
 					}
-					log.Printf("Recapped the cluster to %d", int(math.Floor(rankedRecapValue+0.5)))
+					log.Printf("Recapped the cluster to %d", int(math.Floor(fcfsRecapValue+0.5)))
 				}
 				// setting recapping to false
 				s.isRecapping = false
-				rankedMutex.Unlock()
+				fcfsMutex.Unlock()
 			}
 		}
 	}()
 }
 
 // Stop cluster wide capping
-func (s *ProactiveClusterwideCapRanked) stopCapping() {
+func (s *FirstFitProacCC) stopCapping() {
 	if s.isCapping {
 		log.Println("Stopping the cluster wide capping.")
 		s.ticker.Stop()
@@ -237,7 +240,7 @@ func (s *ProactiveClusterwideCapRanked) stopCapping() {
 }
 
 // Stop cluster wide Recapping
-func (s *ProactiveClusterwideCapRanked) stopRecapping() {
+func (s *FirstFitProacCC) stopRecapping() {
 	// If not capping, then definitely recapping.
 	if !s.isCapping && s.isRecapping {
 		log.Println("Stopping the cluster wide re-capping.")
@@ -248,7 +251,7 @@ func (s *ProactiveClusterwideCapRanked) stopRecapping() {
 	}
 }
 
-func (s *ProactiveClusterwideCapRanked) ResourceOffers(driver sched.SchedulerDriver, offers []*mesos.Offer) {
+func (s *FirstFitProacCC) ResourceOffers(driver sched.SchedulerDriver, offers []*mesos.Offer) {
 	log.Printf("Received %d resource offers", len(offers))
 
 	// retrieving the available power for all the hosts in the offers.
@@ -265,16 +268,6 @@ func (s *ProactiveClusterwideCapRanked) ResourceOffers(driver sched.SchedulerDri
 		log.Printf("TotalPower[%s] = %f", host, tpower)
 	}
 
-	// sorting the tasks in ascending order of watts.
-	if len(s.tasks) > 0 {
-		sort.Sort(def.WattsSorter(s.tasks))
-		// calculating the total number of tasks ranked.
-		numberOfRankedTasks := 0
-		for _, task := range s.tasks {
-			numberOfRankedTasks += *task.Instances
-		}
-		log.Printf("Ranked %d tasks in ascending order of tasks.", numberOfRankedTasks)
-	}
 	for _, offer := range offers {
 		select {
 		case <-s.Shutdown:
@@ -287,17 +280,14 @@ func (s *ProactiveClusterwideCapRanked) ResourceOffers(driver sched.SchedulerDri
 		}
 
 		/*
-			Ranked cluster wide capping strategy
+		   Clusterwide Capping strategy
 
-			For each task in the sorted tasks,
-				1. Need to check whether the offer can be taken or not (based on CPU, RAM and WATTS requirements).
-				2. If the task fits the offer, then need to determine the cluster wide cap.'
-				3. rankedCurrentCapValue is updated with the determined cluster wide cap.
+		   For each task in s.tasks,
+		     1. Need to check whether the offer can be taken or not (based on CPU and RAM requirements).
+		     2. If the tasks fits the offer, then I need to detemrine the cluster wide cap.
+		     3. fcfsCurrentCapValue is updated with the determined cluster wide cap.
 
-			Once we are done scheduling all the tasks,
-				we start recalculating the cluster wide cap each time a task finishes.
-
-			Cluster wide capping is currently performed at regular intervals of time.
+		   Cluster wide capping is currently performed at regular intervals of time.
 		*/
 		offerTaken := false
 
@@ -310,27 +300,28 @@ func (s *ProactiveClusterwideCapRanked) ResourceOffers(driver sched.SchedulerDri
 
 			// Does the task fit.
 			if s.takeOffer(offer, task) {
-				// Capping the cluster if haven't yet started
+				// Capping the cluster if haven't yet started,
 				if !s.isCapping {
-					rankedMutex.Lock()
+					fcfsMutex.Lock()
 					s.isCapping = true
-					rankedMutex.Unlock()
+					fcfsMutex.Unlock()
 					s.startCapping()
 				}
 				offerTaken = true
 				tempCap, err := s.capper.FCFSDeterminedCap(s.totalPower, &task)
 
 				if err == nil {
-					rankedMutex.Lock()
-					rankedCurrentCapValue = tempCap
-					rankedMutex.Unlock()
+					fcfsMutex.Lock()
+					fcfsCurrentCapValue = tempCap
+					fcfsMutex.Unlock()
 				} else {
-					log.Println("Failed to determine the new cluster wide cap: ", err)
+					log.Println("Failed to determine new cluster wide cap: ")
+					log.Println(err)
 				}
 				log.Printf("Starting on [%s]\n", offer.GetHostname())
 				taskToSchedule := s.newTask(offer, task)
-				to_schedule := []*mesos.TaskInfo{taskToSchedule}
-				driver.LaunchTasks([]*mesos.OfferID{offer.Id}, to_schedule, mesosUtils.DefaultFilter)
+				toSchedule := []*mesos.TaskInfo{taskToSchedule}
+				driver.LaunchTasks([]*mesos.OfferID{offer.Id}, toSchedule, mesosUtils.DefaultFilter)
 				log.Printf("Inst: %d", *task.Instances)
 				s.schedTrace.Print(offer.GetHostname() + ":" + taskToSchedule.GetTaskId().GetValue())
 				*task.Instances--
@@ -343,7 +334,7 @@ func (s *ProactiveClusterwideCapRanked) ResourceOffers(driver sched.SchedulerDri
 						log.Println("Done scheduling all tasks")
 						// Need to stop the cluster wide capping as there aren't any more tasks to schedule.
 						s.stopCapping()
-						s.startRecapping()
+						s.startRecapping() // Load changes after every task finishes and hence we need to change the capping of the cluster.
 						close(s.Shutdown)
 					}
 				}
@@ -353,7 +344,7 @@ func (s *ProactiveClusterwideCapRanked) ResourceOffers(driver sched.SchedulerDri
 			}
 		}
 
-		// If no tasks fit the offer, then declining the offer.
+		// If no task fit the offer, then declining the offer.
 		if !offerTaken {
 			log.Printf("There is not enough resources to launch a task on Host: %s\n", offer.GetHostname())
 			cpus, mem, watts := offerUtils.OfferAgg(offer)
@@ -364,18 +355,41 @@ func (s *ProactiveClusterwideCapRanked) ResourceOffers(driver sched.SchedulerDri
 	}
 }
 
-func (s *ProactiveClusterwideCapRanked) StatusUpdate(driver sched.SchedulerDriver, status *mesos.TaskStatus) {
+func (s *FirstFitProacCC) StatusUpdate(driver sched.SchedulerDriver, status *mesos.TaskStatus) {
 	log.Printf("Received task status [%s] for task [%s]\n", NameFor(status.State), *status.TaskId.Value)
 
 	if *status.State == mesos.TaskState_TASK_RUNNING {
-		rankedMutex.Lock()
+		fcfsMutex.Lock()
 		s.tasksRunning++
-		rankedMutex.Unlock()
+		fcfsMutex.Unlock()
 	} else if IsTerminal(status.State) {
 		delete(s.running[status.GetSlaveId().GoString()], *status.TaskId.Value)
-		rankedMutex.Lock()
+		// Need to remove the task from the window of tasks.
+		s.capper.TaskFinished(*status.TaskId.Value)
+		// Determining the new cluster wide cap.
+		//tempCap, err := s.capper.NaiveRecap(s.totalPower, s.taskMonitor, *status.TaskId.Value)
+		tempCap, err := s.capper.CleverRecap(s.totalPower, s.taskMonitor, *status.TaskId.Value)
+		if err == nil {
+			// if new determined cap value is different from the current recap value then we need to recap.
+			if int(math.Floor(tempCap+0.5)) != int(math.Floor(fcfsRecapValue+0.5)) {
+				fcfsRecapValue = tempCap
+				fcfsMutex.Lock()
+				s.isRecapping = true
+				fcfsMutex.Unlock()
+				log.Printf("Determined re-cap value: %f\n", fcfsRecapValue)
+			} else {
+				fcfsMutex.Lock()
+				s.isRecapping = false
+				fcfsMutex.Unlock()
+			}
+		} else {
+			// Not updating fcfsCurrentCapValue
+			log.Println(err)
+		}
+
+		fcfsMutex.Lock()
 		s.tasksRunning--
-		rankedMutex.Unlock()
+		fcfsMutex.Unlock()
 		if s.tasksRunning == 0 {
 			select {
 			case <-s.Shutdown:
@@ -383,30 +397,6 @@ func (s *ProactiveClusterwideCapRanked) StatusUpdate(driver sched.SchedulerDrive
 				s.stopRecapping()
 				close(s.Done)
 			default:
-			}
-		} else {
-			// Need to remove the task from the window
-			s.capper.TaskFinished(*status.TaskId.Value)
-			// Determining the new cluster wide cap.
-			//tempCap, err := s.capper.NaiveRecap(s.totalPower, s.taskMonitor, *status.TaskId.Value)
-			tempCap, err := s.capper.CleverRecap(s.totalPower, s.taskMonitor, *status.TaskId.Value)
-
-			if err == nil {
-				// If new determined cap value is different from the current recap value then we need to recap.
-				if int(math.Floor(tempCap+0.5)) != int(math.Floor(rankedRecapValue+0.5)) {
-					rankedRecapValue = tempCap
-					rankedMutex.Lock()
-					s.isRecapping = true
-					rankedMutex.Unlock()
-					log.Printf("Determined re-cap value: %f\n", rankedRecapValue)
-				} else {
-					rankedMutex.Lock()
-					s.isRecapping = false
-					rankedMutex.Unlock()
-				}
-			} else {
-				// Not updating rankedCurrentCapValue
-				log.Println(err)
 			}
 		}
 	}

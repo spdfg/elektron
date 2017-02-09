@@ -17,27 +17,33 @@ import (
 )
 
 // Decides if to take an offer or not
-func (*BPSWClassMapWatts) takeOffer(offer *mesos.Offer, task def.Task) bool {
+func (s *BPSWMaxMinWatts) takeOffer(offer *mesos.Offer, task def.Task) bool {
 
 	cpus, mem, watts := offerUtils.OfferAgg(offer)
 
 	//TODO: Insert watts calculation here instead of taking them as a parameter
 
-	if cpus >= task.CPU && mem >= task.RAM && watts >= task.Watts {
+	wattsConsideration, err := def.WattsToConsider(task, s.classMapWatts, offer)
+	if err != nil {
+		// Error in determining wattsConsideration
+		log.Fatal(err)
+	}
+	if cpus >= task.CPU && mem >= task.RAM && (s.ignoreWatts || (watts >= wattsConsideration)) {
 		return true
 	}
 
 	return false
 }
 
-type BPSWClassMapWatts struct {
-	base         // Type embedded to inherit common functions
-	tasksCreated int
-	tasksRunning int
-	tasks        []def.Task
-	metrics      map[string]def.Metric
-	running      map[string]map[string]bool
-	ignoreWatts  bool
+type BPSWMaxMinWatts struct {
+	base          //Type embedding to inherit common functions
+	tasksCreated  int
+	tasksRunning  int
+	tasks         []def.Task
+	metrics       map[string]def.Metric
+	running       map[string]map[string]bool
+	ignoreWatts   bool
+	classMapWatts bool
 
 	// First set of PCP values are garbage values, signal to logger to start recording when we're
 	// about to schedule a new task
@@ -57,7 +63,7 @@ type BPSWClassMapWatts struct {
 }
 
 // New electron scheduler
-func NewBPSWClassMapWatts(tasks []def.Task, ignoreWatts bool, schedTracePrefix string) *BPSWClassMapWatts {
+func NewBPMaxMinWatts(tasks []def.Task, ignoreWatts bool, schedTracePrefix string, classMapWatts bool) *BPSWMaxMinWatts {
 	sort.Sort(def.WattsSorter(tasks))
 
 	logFile, err := os.Create("./" + schedTracePrefix + "_schedTrace.log")
@@ -65,23 +71,25 @@ func NewBPSWClassMapWatts(tasks []def.Task, ignoreWatts bool, schedTracePrefix s
 		log.Fatal(err)
 	}
 
-	s := &BPSWClassMapWatts{
-		tasks:       tasks,
-		ignoreWatts: ignoreWatts,
-		Shutdown:    make(chan struct{}),
-		Done:        make(chan struct{}),
-		PCPLog:      make(chan struct{}),
-		running:     make(map[string]map[string]bool),
-		RecordPCP:   false,
-		schedTrace:  log.New(logFile, "", log.LstdFlags),
+	s := &BPSWMaxMinWatts{
+		tasks:         tasks,
+		ignoreWatts:   ignoreWatts,
+		classMapWatts: classMapWatts,
+		Shutdown:      make(chan struct{}),
+		Done:          make(chan struct{}),
+		PCPLog:        make(chan struct{}),
+		running:       make(map[string]map[string]bool),
+		RecordPCP:     false,
+		schedTrace:    log.New(logFile, "", log.LstdFlags),
 	}
 	return s
 }
 
-func (s *BPSWClassMapWatts) newTask(offer *mesos.Offer, task def.Task, powerClass string) *mesos.TaskInfo {
+func (s *BPSWMaxMinWatts) newTask(offer *mesos.Offer, task def.Task) *mesos.TaskInfo {
 	taskName := fmt.Sprintf("%s-%d", task.Name, *task.Instances)
 	s.tasksCreated++
 
+	// Start recording only when we're creating the first task
 	if !s.RecordPCP {
 		// Turn on logging
 		s.RecordPCP = true
@@ -102,7 +110,13 @@ func (s *BPSWClassMapWatts) newTask(offer *mesos.Offer, task def.Task, powerClas
 	}
 
 	if !s.ignoreWatts {
-		resources = append(resources, mesosutil.NewScalarResource("watts", task.ClassToWatts[powerClass]))
+		if wattsToConsider, err := def.WattsToConsider(task, s.classMapWatts, offer); err == nil {
+			log.Printf("Watts considered for host[%s] and task[%s] = %f", *offer.Hostname, task.Name, wattsToConsider)
+			resources = append(resources, mesosutil.NewScalarResource("watts", wattsToConsider))
+		} else {
+			// Error in determining wattsConsideration
+			log.Fatal(err)
+		}
 	}
 
 	return &mesos.TaskInfo{
@@ -125,7 +139,52 @@ func (s *BPSWClassMapWatts) newTask(offer *mesos.Offer, task def.Task, powerClas
 	}
 }
 
-func (s *BPSWClassMapWatts) ResourceOffers(driver sched.SchedulerDriver, offers []*mesos.Offer) {
+// Determine if the remaining space inside of the offer is enough for this
+// the task we need to create. If it is, create a TaskInfo and return it.
+func (s *BPSWMaxMinWatts) CheckFit(i int,
+	task def.Task,
+	wattsConsideration float64,
+	offer *mesos.Offer,
+	totalCPU *float64,
+	totalRAM *float64,
+	totalWatts *float64) (bool, *mesos.TaskInfo) {
+
+	offerCPU, offerRAM, offerWatts := offerUtils.OfferAgg(offer)
+
+	// Does the task fit
+	if (s.ignoreWatts || (offerWatts >= (*totalWatts + wattsConsideration))) &&
+		(offerCPU >= (*totalCPU + task.CPU)) &&
+		(offerRAM >= (*totalRAM + task.RAM)) {
+
+		*totalWatts += wattsConsideration
+		*totalCPU += task.CPU
+		*totalRAM += task.RAM
+		log.Println("Co-Located with: ")
+		coLocated(s.running[offer.GetSlaveId().GoString()])
+
+		taskToSchedule := s.newTask(offer, task)
+
+		fmt.Println("Inst: ", *task.Instances)
+		s.schedTrace.Print(offer.GetHostname() + ":" + taskToSchedule.GetTaskId().GetValue())
+		*task.Instances--
+
+		if *task.Instances <= 0 {
+			// All instances of task have been scheduled, remove it
+			s.tasks = append(s.tasks[:i], s.tasks[i+1:]...)
+
+			if len(s.tasks) <= 0 {
+				log.Println("Done scheduling all tasks")
+				close(s.Shutdown)
+			}
+		}
+
+		return true, taskToSchedule
+	}
+
+	return false, nil
+}
+
+func (s *BPSWMaxMinWatts) ResourceOffers(driver sched.SchedulerDriver, offers []*mesos.Offer) {
 	log.Printf("Received %d resource offers", len(offers))
 
 	for _, offer := range offers {
@@ -141,14 +200,51 @@ func (s *BPSWClassMapWatts) ResourceOffers(driver sched.SchedulerDriver, offers 
 
 		tasks := []*mesos.TaskInfo{}
 
-		offerCPU, offerRAM, offerWatts := offerUtils.OfferAgg(offer)
-
 		offerTaken := false
 		totalWatts := 0.0
 		totalCPU := 0.0
 		totalRAM := 0.0
+
+		// Assumes s.tasks is ordered in non-decreasing median max peak order
+
+		// Attempt to schedule a single instance of the heaviest workload available first
+		// Start from the back until one fits
+		for i := len(s.tasks) - 1; i >= 0; i-- {
+
+			task := s.tasks[i]
+			wattsConsideration, err := def.WattsToConsider(task, s.classMapWatts, offer)
+			if err != nil {
+				// Error in determining wattsConsideration
+				log.Fatal(err)
+			}
+
+			// Check host if it exists
+			if task.Host != "" {
+				// Don't take offer if it doesn't match our task's host requirement
+				if !strings.HasPrefix(*offer.Hostname, task.Host) {
+					continue
+				}
+			}
+
+			// TODO: Fix this so index doesn't need to be passed
+			taken, taskToSchedule := s.CheckFit(i, task, wattsConsideration, offer,
+				&totalCPU, &totalRAM, &totalWatts)
+
+			if taken {
+				offerTaken = true
+				tasks = append(tasks, taskToSchedule)
+				break
+			}
+		}
+
+		// Pack the rest of the offer with the smallest tasks
 		for i := 0; i < len(s.tasks); i++ {
 			task := s.tasks[i]
+			wattsConsideration, err := def.WattsToConsider(task, s.classMapWatts, offer)
+			if err != nil {
+				// Error in determining wattsConsideration
+				log.Fatal(err)
+			}
 
 			// Check host if it exists
 			if task.Host != "" {
@@ -159,37 +255,13 @@ func (s *BPSWClassMapWatts) ResourceOffers(driver sched.SchedulerDriver, offers 
 			}
 
 			for *task.Instances > 0 {
-				powerClass := offerUtils.PowerClass(offer)
-				// Does the task fit
-				// OR lazy evaluation. If ignore watts is set to true, second statement won't
-				// be evaluated.
-				if (s.ignoreWatts || (offerWatts >= (totalWatts + task.ClassToWatts[powerClass]))) &&
-					(offerCPU >= (totalCPU + task.CPU)) &&
-					(offerRAM >= (totalRAM + task.RAM)) {
+				// TODO: Fix this so index doesn't need to be passed
+				taken, taskToSchedule := s.CheckFit(i, task, wattsConsideration, offer,
+					&totalCPU, &totalRAM, &totalWatts)
 
-					fmt.Println("Watts being used: ", task.ClassToWatts[powerClass])
+				if taken {
 					offerTaken = true
-					totalWatts += task.ClassToWatts[powerClass]
-					totalCPU += task.CPU
-					totalRAM += task.RAM
-					log.Println("Co-Located with: ")
-					coLocated(s.running[offer.GetSlaveId().GoString()])
-					taskToSchedule := s.newTask(offer, task, powerClass)
 					tasks = append(tasks, taskToSchedule)
-
-					fmt.Println("Inst: ", *task.Instances)
-					s.schedTrace.Print(offer.GetHostname() + ":" + taskToSchedule.GetTaskId().GetValue())
-					*task.Instances--
-
-					if *task.Instances <= 0 {
-						// All instances of task have been scheduled, remove it
-						s.tasks = append(s.tasks[:i], s.tasks[i+1:]...)
-
-						if len(s.tasks) <= 0 {
-							log.Println("Done scheduling all tasks")
-							close(s.Shutdown)
-						}
-					}
 				} else {
 					break // Continue on to next task
 				}
@@ -211,7 +283,7 @@ func (s *BPSWClassMapWatts) ResourceOffers(driver sched.SchedulerDriver, offers 
 	}
 }
 
-func (s *BPSWClassMapWatts) StatusUpdate(driver sched.SchedulerDriver, status *mesos.TaskStatus) {
+func (s *BPSWMaxMinWatts) StatusUpdate(driver sched.SchedulerDriver, status *mesos.TaskStatus) {
 	log.Printf("Received task status [%s] for task [%s]", NameFor(status.State), *status.TaskId.Value)
 
 	if *status.State == mesos.TaskState_TASK_RUNNING {

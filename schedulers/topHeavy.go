@@ -35,6 +35,7 @@ type TopHeavy struct {
 	metrics                map[string]def.Metric
 	running                map[string]map[string]bool
 	ignoreWatts            bool
+	classMapWatts          bool
 	smallTasks, largeTasks []def.Task
 
 	// First set of PCP values are garbage values, signal to logger to start recording when we're
@@ -55,7 +56,7 @@ type TopHeavy struct {
 }
 
 // New electron scheduler
-func NewPackSmallSpreadBig(tasks []def.Task, ignoreWatts bool, schedTracePrefix string) *TopHeavy {
+func NewTopHeavy(tasks []def.Task, ignoreWatts bool, schedTracePrefix string, classMapWatts bool) *TopHeavy {
 	sort.Sort(def.WattsSorter(tasks))
 
 	logFile, err := os.Create("./" + schedTracePrefix + "_schedTrace.log")
@@ -67,20 +68,21 @@ func NewPackSmallSpreadBig(tasks []def.Task, ignoreWatts bool, schedTracePrefix 
 	// Classification done based on MMPU watts requirements.
 	mid := int(math.Floor((float64(len(tasks)) / 2.0) + 0.5))
 	s := &TopHeavy{
-		smallTasks:  tasks[:mid],
-		largeTasks:  tasks[mid+1:],
-		ignoreWatts: ignoreWatts,
-		Shutdown:    make(chan struct{}),
-		Done:        make(chan struct{}),
-		PCPLog:      make(chan struct{}),
-		running:     make(map[string]map[string]bool),
-		RecordPCP:   false,
-		schedTrace:  log.New(logFile, "", log.LstdFlags),
+		smallTasks:    tasks[:mid],
+		largeTasks:    tasks[mid+1:],
+		ignoreWatts:   ignoreWatts,
+		classMapWatts: classMapWatts,
+		Shutdown:      make(chan struct{}),
+		Done:          make(chan struct{}),
+		PCPLog:        make(chan struct{}),
+		running:       make(map[string]map[string]bool),
+		RecordPCP:     false,
+		schedTrace:    log.New(logFile, "", log.LstdFlags),
 	}
 	return s
 }
 
-func (s *TopHeavy) newTask(offer *mesos.Offer, task def.Task, newTaskClass string) *mesos.TaskInfo {
+func (s *TopHeavy) newTask(offer *mesos.Offer, task def.Task) *mesos.TaskInfo {
 	taskName := fmt.Sprintf("%s-%d", task.Name, *task.Instances)
 	s.tasksCreated++
 
@@ -104,7 +106,13 @@ func (s *TopHeavy) newTask(offer *mesos.Offer, task def.Task, newTaskClass strin
 	}
 
 	if !s.ignoreWatts {
-		resources = append(resources, mesosutil.NewScalarResource("watts", task.ClassToWatts[newTaskClass]))
+		if wattsToConsider, err := def.WattsToConsider(task, s.classMapWatts, offer); err == nil {
+			log.Printf("Watts considered for host[%s] and task[%s] = %f", *offer.Hostname, task.Name, wattsToConsider)
+			resources = append(resources, mesosutil.NewScalarResource("watts", wattsToConsider))
+		} else {
+			// Error in determining wattsConsideration
+			log.Fatal(err)
+		}
 	}
 
 	return &mesos.TaskInfo{
@@ -136,11 +144,10 @@ func (s *TopHeavy) shutDownIfNecessary() {
 }
 
 // create TaskInfo and log scheduling trace
-func (s *TopHeavy) createTaskInfoAndLogSchedTrace(offer *mesos.Offer,
-	powerClass string, task def.Task) *mesos.TaskInfo {
+func (s *TopHeavy) createTaskInfoAndLogSchedTrace(offer *mesos.Offer, task def.Task) *mesos.TaskInfo {
 	log.Println("Co-Located with:")
 	coLocated(s.running[offer.GetSlaveId().GoString()])
-	taskToSchedule := s.newTask(offer, task, powerClass)
+	taskToSchedule := s.newTask(offer, task)
 
 	fmt.Println("Inst: ", *task.Instances)
 	s.schedTrace.Print(offer.GetHostname() + ":" + taskToSchedule.GetTaskId().GetValue())
@@ -169,24 +176,24 @@ func (s *TopHeavy) pack(offers []*mesos.Offer, driver sched.SchedulerDriver) {
 		taken := false
 		for i := 0; i < len(s.smallTasks); i++ {
 			task := s.smallTasks[i]
+			wattsConsideration, err := def.WattsToConsider(task, s.classMapWatts, offer)
+			if err != nil {
+				// Error in determining wattsConsideration
+				log.Fatal(err)
+			}
 
 			for *task.Instances > 0 {
-				powerClass := offerUtils.PowerClass(offer)
 				// Does the task fit
 				// OR lazy evaluation. If ignore watts is set to true, second statement won't
 				// be evaluated.
-				wattsToConsider := task.Watts
-				if !s.ignoreWatts {
-					wattsToConsider = task.ClassToWatts[powerClass]
-				}
-				if (s.ignoreWatts || (offerWatts >= (totalWatts + wattsToConsider))) &&
+				if (s.ignoreWatts || (offerWatts >= (totalWatts + wattsConsideration))) &&
 					(offerCPU >= (totalCPU + task.CPU)) &&
 					(offerRAM >= (totalRAM + task.RAM)) {
 					taken = true
-					totalWatts += wattsToConsider
+					totalWatts += wattsConsideration
 					totalCPU += task.CPU
 					totalRAM += task.RAM
-					tasks = append(tasks, s.createTaskInfoAndLogSchedTrace(offer, powerClass, task))
+					tasks = append(tasks, s.createTaskInfoAndLogSchedTrace(offer, task))
 
 					if *task.Instances <= 0 {
 						// All instances of task have been scheduled, remove it
@@ -231,17 +238,17 @@ func (s *TopHeavy) spread(offers []*mesos.Offer, driver sched.SchedulerDriver) {
 		offerTaken := false
 		for i := 0; i < len(s.largeTasks); i++ {
 			task := s.largeTasks[i]
-			powerClass := offerUtils.PowerClass(offer)
+			wattsConsideration, err := def.WattsToConsider(task, s.classMapWatts, offer)
+			if err != nil {
+				// Error in determining wattsConsideration
+				log.Fatal(err)
+			}
 
 			// Decision to take the offer or not
-			wattsToConsider := task.Watts
-			if !s.ignoreWatts {
-				wattsToConsider = task.ClassToWatts[powerClass]
-			}
-			if (s.ignoreWatts || (offerWatts >= wattsToConsider)) &&
+			if (s.ignoreWatts || (offerWatts >= wattsConsideration)) &&
 				(offerCPU >= task.CPU) && (offerRAM >= task.RAM) {
 				offerTaken = true
-				tasks = append(tasks, s.createTaskInfoAndLogSchedTrace(offer, powerClass, task))
+				tasks = append(tasks, s.createTaskInfoAndLogSchedTrace(offer, task))
 				log.Printf("Starting %s on [%s]\n", task.Name, offer.GetHostname())
 				driver.LaunchTasks([]*mesos.OfferID{offer.Id}, tasks, mesosUtils.DefaultFilter)
 
@@ -286,10 +293,10 @@ func (s *TopHeavy) ResourceOffers(driver sched.SchedulerDriver, offers []*mesos.
 		default:
 		}
 
-		if constants.PowerClasses["ClassA"][*offer.Hostname] ||
-			constants.PowerClasses["ClassB"][*offer.Hostname] {
+		if constants.PowerClasses["A"][*offer.Hostname] ||
+			constants.PowerClasses["B"][*offer.Hostname] {
 			offersClassAB = append(offersClassAB, offer)
-		} else if constants.PowerClasses["ClassC"][*offer.Hostname] {
+		} else if constants.PowerClasses["C"][*offer.Hostname] {
 			offersClassC = append(offersClassC, offer)
 		}
 	}

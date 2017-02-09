@@ -18,7 +18,6 @@ To Do:
  * Make ClassMapWatts to commandLine arguments so Electron can be run with ClassMapWatts enabled/disabled.
  * Make def.Task an interface for further modularization and flexibility.
 
-
 **Requires [Performance Co-Pilot](http://pcp.io/) tool pmdumptext to be installed on the
 machine on which electron is launched for logging to work and PCP collector agents installed
 on the Mesos Agents**

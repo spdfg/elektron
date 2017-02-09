@@ -2,6 +2,8 @@
 Cluster wide dynamic capping
 
 This is a capping strategy that can be used with schedulers to improve the power consumption.
+
+Note: This capping strategy doesn't currently considered task.Watts to power class mapping with classMapWatts is enabled.
 */
 package powerCapping
 
@@ -244,8 +246,7 @@ func (capper ClusterwideCapper) TaskFinished(taskID string) {
 }
 
 // First come first serve scheduling.
-func (capper ClusterwideCapper) FCFSDeterminedCap(totalPower map[string]float64,
-	newTask *def.Task) (float64, error) {
+func (capper ClusterwideCapper) FCFSDeterminedCap(totalPower map[string]float64, newTask *def.Task) (float64, error) {
 	// Validation
 	if totalPower == nil {
 		return 100, errors.New("Invalid argument: totalPower")
