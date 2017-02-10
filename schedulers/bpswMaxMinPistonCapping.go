@@ -16,7 +16,6 @@ import (
 	"math"
 	"os"
 	"sort"
-	"strings"
 	"sync"
 	"time"
 )
@@ -36,7 +35,6 @@ func (s *BPSWMaxMinPistonCapping) takeOffer(offer *mesos.Offer, task def.Task) b
 	if cpus >= task.CPU && mem >= task.RAM && (!s.wattsAsAResource || (watts >= wattsConsideration)) {
 		return true
 	}
-
 	return false
 }
 
@@ -239,12 +237,8 @@ func (s *BPSWMaxMinPistonCapping) CheckFit(i int,
 	totalWatts *float64,
 	partialLoad *float64) (bool, *mesos.TaskInfo) {
 
-	offerCPU, offerRAM, offerWatts := offerUtils.OfferAgg(offer)
-
 	// Does the task fit
-	if (!s.wattsAsAResource || (offerWatts >= (*totalWatts + wattsConsideration))) &&
-		(offerCPU >= (*totalCPU + task.CPU)) &&
-		(offerRAM >= (*totalRAM + task.RAM)) {
+	if s.takeOffer(offer, task) {
 
 		// Start piston capping if haven't started yet
 		if !s.isCapping {
@@ -318,12 +312,9 @@ func (s *BPSWMaxMinPistonCapping) ResourceOffers(driver sched.SchedulerDriver, o
 				log.Fatal(err)
 			}
 
-			// Check host if it exists
-			if task.Host != "" {
-				// Don't take offer if it doesn't match our task's host requirement
-				if !strings.HasPrefix(*offer.Hostname, task.Host) {
-					continue
-				}
+			// Don't take offer if it doesn't match our task's host requirement
+			if offerUtils.HostMismatch(*offer.Hostname, task.Host) {
+				continue
 			}
 
 			// TODO: Fix this so index doesn't need to be passed
@@ -346,12 +337,9 @@ func (s *BPSWMaxMinPistonCapping) ResourceOffers(driver sched.SchedulerDriver, o
 				log.Fatal(err)
 			}
 
-			// Check host if it exists
-			if task.Host != "" {
-				// Don't take offer if it doesn't match our task's host requirement
-				if !strings.HasPrefix(*offer.Hostname, task.Host) {
-					continue
-				}
+			// Don't take offer if it doesn't match our task's host requirement
+			if offerUtils.HostMismatch(*offer.Hostname, task.Host) {
+				continue
 			}
 
 			for *task.Instances > 0 {

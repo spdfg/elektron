@@ -33,6 +33,8 @@ func PowerClass(offer *mesos.Offer) string {
 	return powerClass
 }
 
+// Implements the sort.Sort interface to sort Offers based on CPU.
+// TODO: Have a generic sorter that sorts based on a defined requirement (CPU, RAM, DISK or Watts)
 type OffersSorter []*mesos.Offer
 
 func (offersSorter OffersSorter) Len() int {
