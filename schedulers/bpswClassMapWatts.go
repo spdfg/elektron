@@ -12,21 +12,20 @@ import (
 	"log"
 	"os"
 	"sort"
-	"strings"
 	"time"
 )
 
 // Decides if to take an offer or not
-func (*BPSWClassMapWatts) takeOffer(offer *mesos.Offer, task def.Task) bool {
-
-	cpus, mem, watts := offerUtils.OfferAgg(offer)
+func (s *BPSWClassMapWatts) takeOffer(offer *mesos.Offer, totalCPU, totalRAM,
+	totalWatts float64, powerClass string, task def.Task) bool {
+	offerCPU, offerRAM, offerWatts := offerUtils.OfferAgg(offer)
 
 	//TODO: Insert watts calculation here instead of taking them as a parameter
-
-	if cpus >= task.CPU && mem >= task.RAM && watts >= task.Watts {
+	if (s.ignoreWatts || (offerWatts >= (totalWatts + task.ClassToWatts[powerClass]))) &&
+		(offerCPU >= (totalCPU + task.CPU)) &&
+		(offerRAM >= (totalRAM + task.RAM)) {
 		return true
 	}
-
 	return false
 }
 
@@ -141,8 +140,6 @@ func (s *BPSWClassMapWatts) ResourceOffers(driver sched.SchedulerDriver, offers 
 
 		tasks := []*mesos.TaskInfo{}
 
-		offerCPU, offerRAM, offerWatts := offerUtils.OfferAgg(offer)
-
 		offerTaken := false
 		totalWatts := 0.0
 		totalCPU := 0.0
@@ -150,12 +147,9 @@ func (s *BPSWClassMapWatts) ResourceOffers(driver sched.SchedulerDriver, offers 
 		for i := 0; i < len(s.tasks); i++ {
 			task := s.tasks[i]
 
-			// Check host if it exists
-			if task.Host != "" {
-				// Don't take offer if it doesn't match our task's host requirement
-				if !strings.HasPrefix(*offer.Hostname, task.Host) {
-					continue
-				}
+			// Don't take offer if it doesn't match our task's host requirement
+			if offerUtils.HostMismatch(*offer.Hostname, task.Host) {
+				continue
 			}
 
 			for *task.Instances > 0 {
@@ -163,9 +157,7 @@ func (s *BPSWClassMapWatts) ResourceOffers(driver sched.SchedulerDriver, offers 
 				// Does the task fit
 				// OR lazy evaluation. If ignore watts is set to true, second statement won't
 				// be evaluated.
-				if (s.ignoreWatts || (offerWatts >= (totalWatts + task.ClassToWatts[powerClass]))) &&
-					(offerCPU >= (totalCPU + task.CPU)) &&
-					(offerRAM >= (totalRAM + task.RAM)) {
+				if s.takeOffer(offer, totalCPU, totalRAM, totalWatts, powerClass, task) {
 
 					fmt.Println("Watts being used: ", task.ClassToWatts[powerClass])
 					offerTaken = true

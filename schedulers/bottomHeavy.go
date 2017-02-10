@@ -26,6 +26,20 @@ BinPacking has the most effect when co-scheduling of tasks is increased. Large t
 	co-scheduling them has a great impact on the total power utilization.
 */
 
+func (s *BottomHeavy) takeOffer(offer *mesos.Offer, totalCPU, totalRAM, totalWatts,
+	wattsToConsider float64, task def.Task) bool {
+	offerCPU, offerRAM, offerWatts := offerUtils.OfferAgg(offer)
+
+	//TODO: Insert watts calculation here instead of taking them as a parameter
+	if (s.ignoreWatts || (offerWatts >= (totalWatts + wattsToConsider))) &&
+		(offerCPU >= (totalCPU + task.CPU)) &&
+		(offerRAM >= (totalRAM + task.RAM)) {
+		return true
+	}
+	return false
+
+}
+
 // electronScheduler implements the Scheduler interface
 type BottomHeavy struct {
 	base                   // Type embedded to inherit common functions
@@ -162,7 +176,6 @@ func (s *BottomHeavy) pack(offers []*mesos.Offer, driver sched.SchedulerDriver) 
 		}
 
 		tasks := []*mesos.TaskInfo{}
-		offerCPU, offerRAM, offerWatts := offerUtils.OfferAgg(offer)
 		totalWatts := 0.0
 		totalCPU := 0.0
 		totalRAM := 0.0
@@ -179,9 +192,7 @@ func (s *BottomHeavy) pack(offers []*mesos.Offer, driver sched.SchedulerDriver) 
 				if !s.ignoreWatts {
 					wattsToConsider = task.ClassToWatts[powerClass]
 				}
-				if (s.ignoreWatts || (offerWatts >= (totalWatts + wattsToConsider))) &&
-					(offerCPU >= (totalCPU + task.CPU)) &&
-					(offerRAM >= (totalRAM + task.RAM)) {
+				if s.takeOffer(offer, totalCPU, totalRAM, totalWatts, wattsToConsider, task) {
 					offerTaken = true
 					totalWatts += wattsToConsider
 					totalCPU += task.CPU

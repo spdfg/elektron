@@ -26,16 +26,15 @@ import (
 	"math"
 	"os"
 	"sort"
-	"strings"
 	"sync"
 	"time"
 )
 
 // Decides if to taken an offer or not
-func (_ *ProactiveClusterwideCapRanked) takeOffer(offer *mesos.Offer, task def.Task) bool {
+func (s *ProactiveClusterwideCapRanked) takeOffer(offer *mesos.Offer, task def.Task) bool {
 	offer_cpu, offer_mem, offer_watts := offerUtils.OfferAgg(offer)
 
-	if offer_cpu >= task.CPU && offer_mem >= task.RAM && offer_watts >= task.Watts {
+	if offer_cpu >= task.CPU && offer_mem >= task.RAM && (s.ignoreWatts || (offer_watts >= task.Watts)) {
 		return true
 	}
 	return false
@@ -303,8 +302,8 @@ func (s *ProactiveClusterwideCapRanked) ResourceOffers(driver sched.SchedulerDri
 
 		for i := 0; i < len(s.tasks); i++ {
 			task := s.tasks[i]
-			// Don't take offer if it doesn't match our task's host requirement.
-			if !strings.HasPrefix(*offer.Hostname, task.Host) {
+			// Don't take offer if it doesn't match our task's host requirement
+			if offerUtils.HostMismatch(*offer.Hostname, task.Host) {
 				continue
 			}
 

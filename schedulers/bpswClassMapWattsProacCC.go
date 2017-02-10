@@ -16,21 +16,21 @@ import (
 	"math"
 	"os"
 	"sort"
-	"strings"
 	"sync"
 	"time"
 )
 
 // Decides if to take an offer or not
-func (*BPSWClassMapWattsProacCC) takeOffer(offer *mesos.Offer, task def.Task) bool {
-	cpus, mem, watts := offerUtils.OfferAgg(offer)
+func (s *BPSWClassMapWattsProacCC) takeOffer(offer *mesos.Offer, totalCPU, totalRAM,
+	totalWatts float64, powerClass string, task def.Task) bool {
+	offerCPU, offerRAM, offerWatts := offerUtils.OfferAgg(offer)
 
-	// TODO: Insert watts calculation here instead of taking them as parameter
-
-	if cpus >= task.CPU && mem >= task.RAM && watts >= task.Watts {
+	//TODO: Insert watts calculation here instead of taking them as a parameter
+	if (s.ignoreWatts || (offerWatts >= (totalWatts + task.ClassToWatts[powerClass]))) &&
+		(offerCPU >= (totalCPU + task.CPU)) &&
+		(offerRAM >= (totalRAM + task.RAM)) {
 		return true
 	}
-
 	return false
 }
 
@@ -278,20 +278,15 @@ func (s *BPSWClassMapWattsProacCC) ResourceOffers(driver sched.SchedulerDriver, 
 
 		tasks := []*mesos.TaskInfo{}
 
-		offerCPU, offerRAM, offerWatts := offerUtils.OfferAgg(offer)
-
 		offerTaken := false
 		totalWatts := 0.0
 		totalCPU := 0.0
 		totalRAM := 0.0
 		for i := 0; i < len(s.tasks); i++ {
 			task := s.tasks[i]
-			// Check host if it exists
-			if task.Host != "" {
-				// Don't take offer it it doesn't match our task's host requirement.
-				if strings.HasPrefix(*offer.Hostname, task.Host) {
-					continue
-				}
+			// Don't take offer if it doesn't match our task's host requirement
+			if offerUtils.HostMismatch(*offer.Hostname, task.Host) {
+				continue
 			}
 
 			for *task.Instances > 0 {
@@ -299,9 +294,7 @@ func (s *BPSWClassMapWattsProacCC) ResourceOffers(driver sched.SchedulerDriver, 
 				// Does the task fit
 				// OR Lazy evaluation. If ignore watts is set to true, second statement won't
 				// be evaluated.
-				if (s.ignoreWatts || (offerWatts >= (totalWatts + task.ClassToWatts[powerClass]))) &&
-					(offerCPU >= (totalCPU + task.CPU)) &&
-					(offerRAM >= (totalRAM + task.RAM)) {
+				if s.takeOffer(offer, totalCPU, totalRAM, totalWatts, powerClass, task) {
 
 					// Capping the cluster if haven't yet started
 					if !s.isCapping {

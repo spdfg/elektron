@@ -12,9 +12,21 @@ import (
 	"log"
 	"os"
 	"sort"
-	"strings"
 	"time"
 )
+
+// Decides if to take an offer or not
+func (s *FirstFitSortedWattsClassMapWatts) takeOffer(offer *mesos.Offer, powerClass string, task def.Task) bool {
+	offerCPU, offerRAM, offerWatts := offerUtils.OfferAgg(offer)
+
+	//TODO: Insert watts calculation here instead of taking them as a parameter
+	// Decision to take the offer or not
+	if (s.ignoreWatts || (offerWatts >= task.ClassToWatts[powerClass])) &&
+		(offerCPU >= task.CPU) && (offerRAM >= task.RAM) {
+		return true
+	}
+	return false
+}
 
 // electron scheduler implements the Scheduler interface
 type FirstFitSortedWattsClassMapWatts struct {
@@ -126,26 +138,20 @@ func (s *FirstFitSortedWattsClassMapWatts) ResourceOffers(driver sched.Scheduler
 		default:
 		}
 
-		offerCPU, offerRAM, offerWatts := offerUtils.OfferAgg(offer)
-
 		// First fit strategy
 		offerTaken := false
 		for i := 0; i < len(s.tasks); i++ {
 			task := s.tasks[i]
-			// Check host if it exists
-			if task.Host != "" {
-				// Don't take offer if it doens't match our task's host requirement.
-				if !strings.HasPrefix(*offer.Hostname, task.Host) {
-					continue
-				}
+			// Don't take offer if it doesn't match our task's host requirement
+			if offerUtils.HostMismatch(*offer.Hostname, task.Host) {
+				continue
 			}
 
 			// retrieving the powerClass from the offer
 			powerClass := offerUtils.PowerClass(offer)
 
 			// Decision to take the offer or not
-			if (s.ignoreWatts || (offerWatts >= task.ClassToWatts[powerClass])) &&
-				(offerCPU >= task.CPU) && (offerRAM >= task.RAM) {
+			if s.takeOffer(offer, powerClass, task) {
 				fmt.Println("Watts being used: ", task.ClassToWatts[powerClass])
 				log.Println("Co-Located with: ")
 				coLocated(s.running[offer.GetSlaveId().GoString()])

@@ -12,21 +12,19 @@ import (
 	"log"
 	"os"
 	"sort"
-	"strings"
 	"time"
 )
 
 // Decides if to take an offer or not
-func (*BPMaxMinWatts) takeOffer(offer *mesos.Offer, task def.Task) bool {
-
-	cpus, mem, watts := offerUtils.OfferAgg(offer)
+func (s *BPMaxMinWatts) takeOffer(offer *mesos.Offer, totalCPU, totalRAM, totalWatts float64, task def.Task) bool {
+	offerCPU, offerRAM, offerWatts := offerUtils.OfferAgg(offer)
 
 	//TODO: Insert watts calculation here instead of taking them as a parameter
-
-	if cpus >= task.CPU && mem >= task.RAM && watts >= task.Watts {
+	if (s.ignoreWatts || (offerWatts >= (totalWatts + task.Watts))) &&
+		(offerCPU >= (totalCPU + task.CPU)) &&
+		(offerRAM >= (totalRAM + task.RAM)) {
 		return true
 	}
-
 	return false
 }
 
@@ -135,12 +133,8 @@ func (s *BPMaxMinWatts) CheckFit(i int,
 	totalRAM *float64,
 	totalWatts *float64) (bool, *mesos.TaskInfo) {
 
-	offerCPU, offerRAM, offerWatts := offerUtils.OfferAgg(offer)
-
 	// Does the task fit
-	if (s.ignoreWatts || (offerWatts >= (*totalWatts + task.Watts))) &&
-		(offerCPU >= (*totalCPU + task.CPU)) &&
-		(offerRAM >= (*totalRAM + task.RAM)) {
+	if s.takeOffer(offer, *totalCPU, *totalRAM, *totalWatts, task) {
 
 		*totalWatts += task.Watts
 		*totalCPU += task.CPU
@@ -198,12 +192,9 @@ func (s *BPMaxMinWatts) ResourceOffers(driver sched.SchedulerDriver, offers []*m
 		for i := len(s.tasks) - 1; i >= 0; i-- {
 
 			task := s.tasks[i]
-			// Check host if it exists
-			if task.Host != "" {
-				// Don't take offer if it doesn't match our task's host requirement
-				if !strings.HasPrefix(*offer.Hostname, task.Host) {
-					continue
-				}
+			// Don't take offer if it doesn't match our task's host requirement
+			if offerUtils.HostMismatch(*offer.Hostname, task.Host) {
+				continue
 			}
 
 			// TODO: Fix this so index doesn't need to be passed
@@ -219,12 +210,9 @@ func (s *BPMaxMinWatts) ResourceOffers(driver sched.SchedulerDriver, offers []*m
 		// Pack the rest of the offer with the smallest tasks
 		for i, task := range s.tasks {
 
-			// Check host if it exists
-			if task.Host != "" {
-				// Don't take offer if it doesn't match our task's host requirement
-				if !strings.HasPrefix(*offer.Hostname, task.Host) {
-					continue
-				}
+			// Don't take offer if it doesn't match our task's host requirement
+			if offerUtils.HostMismatch(*offer.Hostname, task.Host) {
+				continue
 			}
 
 			for *task.Instances > 0 {
