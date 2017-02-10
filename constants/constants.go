@@ -1,18 +1,9 @@
 /*
 Constants that are used across scripts
 1. The available hosts = stratos-00x (x varies from 1 to 8)
-<<<<<<< HEAD
 2. CapMargin = percentage of the requested power to allocate
 3. ConsiderationWindowSize = number of tasks to consider for computation of the dynamic cap.
-=======
-2. cap_margin = percentage of the requested power to allocate
-3. power_threshold = overloading factor
-5. window_size = number of tasks to consider for computation of the dynamic cap.
-
-Also, exposing functions to update or initialize some of the constants.
-
 TODO: Clean this up and use Mesos Attributes instead.
->>>>>>> a0a3e78041067e5e2f9dc9b5d1e7b6dd001ce1e9
 */
 package constants
 
