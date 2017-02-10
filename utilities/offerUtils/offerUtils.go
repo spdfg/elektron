@@ -2,6 +2,7 @@ package offerUtils
 
 import (
 	mesos "github.com/mesos/mesos-go/mesosproto"
+	"strings"
 )
 
 func OfferAgg(offer *mesos.Offer) (float64, float64, float64) {
@@ -48,4 +49,12 @@ func (offersSorter OffersSorter) Less(i, j int) bool {
 	// getting CPU resource availability of offersSorter[j]
 	cpu2, _, _ := OfferAgg(offersSorter[j])
 	return cpu1 <= cpu2
+}
+
+// Is there a mismatch between the task's host requirement and the host corresponding to the offer.
+func HostMismatch(offerHost string, taskHost string) bool {
+	if taskHost != "" && !strings.HasPrefix(offerHost, taskHost) {
+		return true
+	}
+	return false
 }
