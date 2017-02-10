@@ -6,6 +6,8 @@ Constants that are used across scripts
 5. window_size = number of tasks to consider for computation of the dynamic cap.
 
 Also, exposing functions to update or initialize some of the constants.
+
+TODO: Clean this up and use Mesos Attributes instead.
 */
 package constants
 
