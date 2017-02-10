@@ -15,7 +15,6 @@ To Do:
  * Log fix for declining offer -- different reason when insufficient resources as compared to when there are no
     longer any tasks to schedule.
  * Have a centralised logFile that can be filtered by identifier. All electron logs should go into this file.
- * Make ClassMapWatts to commandLine arguments so Electron can be run with ClassMapWatts enabled/disabled.
  * Make def.Task an interface for further modularization and flexibility.
 
 **Requires [Performance Co-Pilot](http://pcp.io/) tool pmdumptext to be installed on the
