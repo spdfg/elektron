@@ -3,8 +3,10 @@ package schedulers
 import (
 	"bitbucket.org/sunybingcloud/electron/constants"
 	"bitbucket.org/sunybingcloud/electron/def"
-	"bitbucket.org/sunybingcloud/electron/pcp"
+	powCap "bitbucket.org/sunybingcloud/electron/powerCapping"
 	"bitbucket.org/sunybingcloud/electron/rapl"
+	"bitbucket.org/sunybingcloud/electron/utilities/mesosUtils"
+	"bitbucket.org/sunybingcloud/electron/utilities/offerUtils"
 	"fmt"
 	"github.com/golang/protobuf/proto"
 	mesos "github.com/mesos/mesos-go/mesosproto"
@@ -14,21 +16,21 @@ import (
 	"math"
 	"os"
 	"sort"
-	"strings"
 	"sync"
 	"time"
 )
 
 // Decides if to take an offer or not
-func (s *BPMaxMinProacCC) takeOffer(offer *mesos.Offer, task def.Task) bool {
-	cpus, mem, watts := OfferAgg(offer)
+func (s *BPMaxMinProacCC) takeOffer(offer *mesos.Offer, totalCPU, totalRAM, totalWatts float64, task def.Task) bool {
+	offerCPU, offerRAM, offerWatts := offerUtils.OfferAgg(offer)
 
 	//TODO: Insert watts calculation here instead of taking them as a parameter
-
-	if cpus >= task.CPU && mem >= task.RAM && watts >= task.Watts {
+	// Does the task fit
+	if (s.ignoreWatts || (offerWatts >= (*totalWatts + task.Watts))) &&
+		(offerCPU >= (*totalCPU + task.CPU)) &&
+		(offerRAM >= (*totalRAM + task.RAM)) {
 		return true
 	}
-
 	return false
 }
 
@@ -43,7 +45,7 @@ type BPMaxMinProacCC struct {
 	availablePower map[string]float64
 	totalPower     map[string]float64
 	ignoreWatts    bool
-	capper         *pcp.ClusterwideCapper
+	capper         *powCap.ClusterwideCapper
 	ticker         *time.Ticker
 	recapTicker    *time.Ticker
 	isCapping      bool // indicate whether we are currently performing cluster-wide capping.
@@ -86,7 +88,7 @@ func NewBPMaxMinProacCC(tasks []def.Task, ignoreWatts bool, schedTracePrefix str
 		availablePower: make(map[string]float64),
 		totalPower:     make(map[string]float64),
 		RecordPCP:      false,
-		capper:         pcp.GetClusterwideCapperInstance(),
+		capper:         powCap.GetClusterwideCapperInstance(),
 		ticker:         time.NewTicker(10 * time.Second),
 		recapTicker:    time.NewTicker(20 * time.Second),
 		isCapping:      false,
@@ -246,12 +248,8 @@ func (s *BPMaxMinProacCC) CheckFit(i int,
 	totalRAM *float64,
 	totalWatts *float64) (bool, *mesos.TaskInfo) {
 
-	offerCPU, offerRAM, offerWatts := OfferAgg(offer)
-
 	// Does the task fit
-	if (s.ignoreWatts || (offerWatts >= (*totalWatts + task.Watts))) &&
-		(offerCPU >= (*totalCPU + task.CPU)) &&
-		(offerRAM >= (*totalRAM + task.RAM)) {
+	if s.takeOffer(offer, *totalCPU, *totalRAM, *totalWatts, task) {
 
 		// Capping the cluster if haven't yet started
 		if !s.isCapping {
@@ -308,7 +306,7 @@ func (s *BPMaxMinProacCC) ResourceOffers(driver sched.SchedulerDriver, offers []
 
 	// retrieving the available power for all the hosts in the offers.
 	for _, offer := range offers {
-		_, _, offerWatts := OfferAgg(offer)
+		_, _, offerWatts := offerUtils.OfferAgg(offer)
 		s.availablePower[*offer.Hostname] = offerWatts
 		// setting total power if the first time
 		if _, ok := s.totalPower[*offer.Hostname]; !ok {
@@ -324,7 +322,7 @@ func (s *BPMaxMinProacCC) ResourceOffers(driver sched.SchedulerDriver, offers []
 		select {
 		case <-s.Shutdown:
 			log.Println("Done scheduling tasks: declining offer on [", offer.GetHostname(), "]")
-			driver.DeclineOffer(offer.Id, longFilter)
+			driver.DeclineOffer(offer.Id, mesosUtils.LongFilter)
 
 			log.Println("Number of tasks still running: ", s.tasksRunning)
 			continue
@@ -345,12 +343,9 @@ func (s *BPMaxMinProacCC) ResourceOffers(driver sched.SchedulerDriver, offers []
 		for i := len(s.tasks) - 1; i >= 0; i-- {
 
 			task := s.tasks[i]
-			// Check host if it exists
-			if task.Host != "" {
-				// Don't take offer if it doesn't match our task's host requirement
-				if !strings.HasPrefix(*offer.Hostname, task.Host) {
-					continue
-				}
+			// Don't take offer if it doesn't match our task's host requirement
+			if offerUtils.HostMismatch(*offer.Hostname, task.Host) {
+				continue
 			}
 
 			// TODO: Fix this so index doesn't need to be passed
@@ -366,12 +361,9 @@ func (s *BPMaxMinProacCC) ResourceOffers(driver sched.SchedulerDriver, offers []
 		// Pack the rest of the offer with the smallest tasks
 		for i, task := range s.tasks {
 
-			// Check host if it exists
-			if task.Host != "" {
-				// Don't take offer if it doesn't match our task's host requirement
-				if !strings.HasPrefix(*offer.Hostname, task.Host) {
-					continue
-				}
+			// Don't take offer if it doesn't match our task's host requirement
+			if offerUtils.HostMismatch(*offer.Hostname, task.Host) {
+				continue
 			}
 
 			for *task.Instances > 0 {
@@ -389,15 +381,15 @@ func (s *BPMaxMinProacCC) ResourceOffers(driver sched.SchedulerDriver, offers []
 
 		if offerTaken {
 			log.Printf("Starting on [%s]\n", offer.GetHostname())
-			driver.LaunchTasks([]*mesos.OfferID{offer.Id}, tasks, defaultFilter)
+			driver.LaunchTasks([]*mesos.OfferID{offer.Id}, tasks, mesosUtils.DefaultFilter)
 		} else {
 
 			// If there was no match for the task
 			fmt.Println("There is not enough resources to launch a task:")
-			cpus, mem, watts := OfferAgg(offer)
+			cpus, mem, watts := offerUtils.OfferAgg(offer)
 
 			log.Printf("<CPU: %f, RAM: %f, Watts: %f>\n", cpus, mem, watts)
-			driver.DeclineOffer(offer.Id, defaultFilter)
+			driver.DeclineOffer(offer.Id, mesosUtils.DefaultFilter)
 		}
 	}
 }

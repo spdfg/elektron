@@ -13,8 +13,10 @@ package schedulers
 import (
 	"bitbucket.org/sunybingcloud/electron/constants"
 	"bitbucket.org/sunybingcloud/electron/def"
-	"bitbucket.org/sunybingcloud/electron/pcp"
+	powCap "bitbucket.org/sunybingcloud/electron/powerCapping"
 	"bitbucket.org/sunybingcloud/electron/rapl"
+	"bitbucket.org/sunybingcloud/electron/utilities/mesosUtils"
+	"bitbucket.org/sunybingcloud/electron/utilities/offerUtils"
 	"fmt"
 	"github.com/golang/protobuf/proto"
 	mesos "github.com/mesos/mesos-go/mesosproto"
@@ -24,16 +26,15 @@ import (
 	"math"
 	"os"
 	"sort"
-	"strings"
 	"sync"
 	"time"
 )
 
 // Decides if to taken an offer or not
-func (_ *ProactiveClusterwideCapRanked) takeOffer(offer *mesos.Offer, task def.Task) bool {
-	offer_cpu, offer_mem, offer_watts := OfferAgg(offer)
+func (s *ProactiveClusterwideCapRanked) takeOffer(offer *mesos.Offer, task def.Task) bool {
+	offer_cpu, offer_mem, offer_watts := offerUtils.OfferAgg(offer)
 
-	if offer_cpu >= task.CPU && offer_mem >= task.RAM && offer_watts >= task.Watts {
+	if offer_cpu >= task.CPU && offer_mem >= task.RAM && (s.ignoreWatts || (offer_watts >= task.Watts)) {
 		return true
 	}
 	return false
@@ -51,7 +52,7 @@ type ProactiveClusterwideCapRanked struct {
 	availablePower map[string]float64    // available power for each node in the cluster.
 	totalPower     map[string]float64    // total power for each node in the cluster.
 	ignoreWatts    bool
-	capper         *pcp.ClusterwideCapper
+	capper         *powCap.ClusterwideCapper
 	ticker         *time.Ticker
 	recapTicker    *time.Ticker
 	isCapping      bool // indicate whether we are currently performing cluster wide capping.
@@ -94,7 +95,7 @@ func NewProactiveClusterwideCapRanked(tasks []def.Task, ignoreWatts bool, schedT
 		availablePower: make(map[string]float64),
 		totalPower:     make(map[string]float64),
 		RecordPCP:      false,
-		capper:         pcp.GetClusterwideCapperInstance(),
+		capper:         powCap.GetClusterwideCapperInstance(),
 		ticker:         time.NewTicker(10 * time.Second),
 		recapTicker:    time.NewTicker(20 * time.Second),
 		isCapping:      false,
@@ -251,7 +252,7 @@ func (s *ProactiveClusterwideCapRanked) ResourceOffers(driver sched.SchedulerDri
 
 	// retrieving the available power for all the hosts in the offers.
 	for _, offer := range offers {
-		_, _, offer_watts := OfferAgg(offer)
+		_, _, offer_watts := offerUtils.OfferAgg(offer)
 		s.availablePower[*offer.Hostname] = offer_watts
 		// setting total power if the first time.
 		if _, ok := s.totalPower[*offer.Hostname]; !ok {
@@ -277,7 +278,7 @@ func (s *ProactiveClusterwideCapRanked) ResourceOffers(driver sched.SchedulerDri
 		select {
 		case <-s.Shutdown:
 			log.Println("Done scheduling tasks: declining offer on [", offer.GetHostname(), "]")
-			driver.DeclineOffer(offer.Id, longFilter)
+			driver.DeclineOffer(offer.Id, mesosUtils.LongFilter)
 
 			log.Println("Number of tasks still running: ", s.tasksRunning)
 			continue
@@ -297,12 +298,12 @@ func (s *ProactiveClusterwideCapRanked) ResourceOffers(driver sched.SchedulerDri
 
 			Cluster wide capping is currently performed at regular intervals of time.
 		*/
-		taken := false
+		offerTaken := false
 
 		for i := 0; i < len(s.tasks); i++ {
 			task := s.tasks[i]
-			// Don't take offer if it doesn't match our task's host requirement.
-			if !strings.HasPrefix(*offer.Hostname, task.Host) {
+			// Don't take offer if it doesn't match our task's host requirement
+			if offerUtils.HostMismatch(*offer.Hostname, task.Host) {
 				continue
 			}
 
@@ -315,7 +316,7 @@ func (s *ProactiveClusterwideCapRanked) ResourceOffers(driver sched.SchedulerDri
 					rankedMutex.Unlock()
 					s.startCapping()
 				}
-				taken = true
+				offerTaken = true
 				tempCap, err := s.capper.FCFSDeterminedCap(s.totalPower, &task)
 
 				if err == nil {
@@ -328,7 +329,7 @@ func (s *ProactiveClusterwideCapRanked) ResourceOffers(driver sched.SchedulerDri
 				log.Printf("Starting on [%s]\n", offer.GetHostname())
 				taskToSchedule := s.newTask(offer, task)
 				to_schedule := []*mesos.TaskInfo{taskToSchedule}
-				driver.LaunchTasks([]*mesos.OfferID{offer.Id}, to_schedule, defaultFilter)
+				driver.LaunchTasks([]*mesos.OfferID{offer.Id}, to_schedule, mesosUtils.DefaultFilter)
 				log.Printf("Inst: %d", *task.Instances)
 				s.schedTrace.Print(offer.GetHostname() + ":" + taskToSchedule.GetTaskId().GetValue())
 				*task.Instances--
@@ -352,12 +353,12 @@ func (s *ProactiveClusterwideCapRanked) ResourceOffers(driver sched.SchedulerDri
 		}
 
 		// If no tasks fit the offer, then declining the offer.
-		if !taken {
+		if !offerTaken {
 			log.Printf("There is not enough resources to launch a task on Host: %s\n", offer.GetHostname())
-			cpus, mem, watts := OfferAgg(offer)
+			cpus, mem, watts := offerUtils.OfferAgg(offer)
 
 			log.Printf("<CPU: %f, RAM: %f, Watts: %f>\n", cpus, mem, watts)
-			driver.DeclineOffer(offer.Id, defaultFilter)
+			driver.DeclineOffer(offer.Id, mesosUtils.DefaultFilter)
 		}
 	}
 }

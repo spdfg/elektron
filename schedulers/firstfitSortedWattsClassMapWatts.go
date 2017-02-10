@@ -2,6 +2,8 @@ package schedulers
 
 import (
 	"bitbucket.org/sunybingcloud/electron/def"
+	"bitbucket.org/sunybingcloud/electron/utilities/mesosUtils"
+	"bitbucket.org/sunybingcloud/electron/utilities/offerUtils"
 	"fmt"
 	"github.com/golang/protobuf/proto"
 	mesos "github.com/mesos/mesos-go/mesosproto"
@@ -10,9 +12,21 @@ import (
 	"log"
 	"os"
 	"sort"
-	"strings"
 	"time"
 )
+
+// Decides if to take an offer or not
+func (s *FirstFitSortedWattsClassMapWatts) takeOffer(offer *mesos.Offer, powerClass string, task def.Task) bool {
+	offerCPU, offerRAM, offerWatts := offerUtils.OfferAgg(offer)
+
+	//TODO: Insert watts calculation here instead of taking them as a parameter
+	// Decision to take the offer or not
+	if (s.ignoreWatts || (offerWatts >= task.ClassToWatts[powerClass])) &&
+		(offerCPU >= task.CPU) && (offerRAM >= task.RAM) {
+		return true
+	}
+	return false
+}
 
 // electron scheduler implements the Scheduler interface
 type FirstFitSortedWattsClassMapWatts struct {
@@ -63,7 +77,7 @@ func NewFirstFitSortedWattsClassMapWatts(tasks []def.Task, ignoreWatts bool, sch
 	return s
 }
 
-func (s *FirstFitSortedWattsClassMapWatts) newTask(offer *mesos.Offer, task def.Task, newTaskClass string) *mesos.TaskInfo {
+func (s *FirstFitSortedWattsClassMapWatts) newTask(offer *mesos.Offer, task def.Task, powerClass string) *mesos.TaskInfo {
 	taskName := fmt.Sprintf("%s-%d", task.Name, *task.Instances)
 	s.tasksCreated++
 
@@ -87,7 +101,7 @@ func (s *FirstFitSortedWattsClassMapWatts) newTask(offer *mesos.Offer, task def.
 	}
 
 	if !s.ignoreWatts {
-		resources = append(resources, mesosutil.NewScalarResource("watts", task.ClassToWatts[newTaskClass]))
+		resources = append(resources, mesosutil.NewScalarResource("watts", task.ClassToWatts[powerClass]))
 	}
 
 	return &mesos.TaskInfo{
@@ -117,47 +131,37 @@ func (s *FirstFitSortedWattsClassMapWatts) ResourceOffers(driver sched.Scheduler
 		select {
 		case <-s.Shutdown:
 			log.Println("Done scheduling tasks: declining offer on [", offer.GetHostname(), "]")
-			driver.DeclineOffer(offer.Id, longFilter)
+			driver.DeclineOffer(offer.Id, mesosUtils.LongFilter)
 
 			log.Println("Number of tasks still running: ", s.tasksRunning)
 			continue
 		default:
 		}
 
-		offerCPU, offerRAM, offerWatts := OfferAgg(offer)
-
 		// First fit strategy
-		taken := false
+		offerTaken := false
 		for i := 0; i < len(s.tasks); i++ {
 			task := s.tasks[i]
-			// Check host if it exists
-			if task.Host != "" {
-				// Don't take offer if it doens't match our task's host requirement.
-				if !strings.HasPrefix(*offer.Hostname, task.Host) {
-					continue
-				}
+			// Don't take offer if it doesn't match our task's host requirement
+			if offerUtils.HostMismatch(*offer.Hostname, task.Host) {
+				continue
 			}
 
-			// retrieving the node class from the offer
-			var nodeClass string
-			for _, attr := range offer.GetAttributes() {
-				if attr.GetName() == "class" {
-					nodeClass = attr.GetText().GetValue()
-				}
-			}
+			// retrieving the powerClass from the offer
+			powerClass := offerUtils.PowerClass(offer)
 
 			// Decision to take the offer or not
-			if (s.ignoreWatts || (offerWatts >= task.ClassToWatts[nodeClass])) &&
-				(offerCPU >= task.CPU) && (offerRAM >= task.RAM) {
+			if s.takeOffer(offer, powerClass, task) {
+				fmt.Println("Watts being used: ", task.ClassToWatts[powerClass])
 				log.Println("Co-Located with: ")
 				coLocated(s.running[offer.GetSlaveId().GoString()])
 
-				taskToSchedule := s.newTask(offer, task, nodeClass)
+				taskToSchedule := s.newTask(offer, task, powerClass)
 				s.schedTrace.Print(offer.GetHostname() + ":" + taskToSchedule.GetTaskId().GetValue())
 				log.Printf("Starting %s on [%s]\n", task.Name, offer.GetHostname())
-				driver.LaunchTasks([]*mesos.OfferID{offer.Id}, []*mesos.TaskInfo{taskToSchedule}, defaultFilter)
+				driver.LaunchTasks([]*mesos.OfferID{offer.Id}, []*mesos.TaskInfo{taskToSchedule}, mesosUtils.DefaultFilter)
 
-				taken = true
+				offerTaken = true
 				fmt.Println("Inst: ", *task.Instances)
 				*task.Instances--
 				if *task.Instances <= 0 {
@@ -174,12 +178,12 @@ func (s *FirstFitSortedWattsClassMapWatts) ResourceOffers(driver sched.Scheduler
 		}
 
 		// If there was no match for the task
-		if !taken {
+		if !offerTaken {
 			fmt.Println("There is not enough resources to launch a task:")
-			cpus, mem, watts := OfferAgg(offer)
+			cpus, mem, watts := offerUtils.OfferAgg(offer)
 
 			log.Printf("<CPU: %f, RAM: %f, Watts: %f>\n", cpus, mem, watts)
-			driver.DeclineOffer(offer.Id, defaultFilter)
+			driver.DeclineOffer(offer.Id, mesosUtils.DefaultFilter)
 
 		}
 	}

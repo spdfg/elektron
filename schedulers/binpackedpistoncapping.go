@@ -4,6 +4,8 @@ import (
 	"bitbucket.org/sunybingcloud/electron/constants"
 	"bitbucket.org/sunybingcloud/electron/def"
 	"bitbucket.org/sunybingcloud/electron/rapl"
+	"bitbucket.org/sunybingcloud/electron/utilities/mesosUtils"
+	"bitbucket.org/sunybingcloud/electron/utilities/offerUtils"
 	"errors"
 	"fmt"
 	"github.com/golang/protobuf/proto"
@@ -13,7 +15,6 @@ import (
 	"log"
 	"math"
 	"os"
-	"strings"
 	"sync"
 	"time"
 )
@@ -217,7 +218,7 @@ func (s *BinPackedPistonCapper) ResourceOffers(driver sched.SchedulerDriver, off
 	// retrieving the total power for each host in the offers
 	for _, offer := range offers {
 		if _, ok := s.totalPower[*offer.Hostname]; !ok {
-			_, _, offer_watts := OfferAgg(offer)
+			_, _, offer_watts := offerUtils.OfferAgg(offer)
 			s.totalPower[*offer.Hostname] = offer_watts
 		}
 	}
@@ -238,7 +239,7 @@ func (s *BinPackedPistonCapper) ResourceOffers(driver sched.SchedulerDriver, off
 		select {
 		case <-s.Shutdown:
 			log.Println("Done scheduling tasks: declining offer on [", offer.GetHostname(), "]")
-			driver.DeclineOffer(offer.Id, longFilter)
+			driver.DeclineOffer(offer.Id, mesosUtils.LongFilter)
 
 			log.Println("Number of tasks still running: ", s.tasksRunning)
 			continue
@@ -246,8 +247,8 @@ func (s *BinPackedPistonCapper) ResourceOffers(driver sched.SchedulerDriver, off
 		}
 
 		fitTasks := []*mesos.TaskInfo{}
-		offerCPU, offerRAM, offerWatts := OfferAgg(offer)
-		taken := false
+		offerCPU, offerRAM, offerWatts := offerUtils.OfferAgg(offer)
+		offerTaken := false
 		totalWatts := 0.0
 		totalCPU := 0.0
 		totalRAM := 0.0
@@ -256,13 +257,8 @@ func (s *BinPackedPistonCapper) ResourceOffers(driver sched.SchedulerDriver, off
 		partialLoad := 0.0
 		for i := 0; i < len(s.tasks); i++ {
 			task := s.tasks[i]
-			// Check host if it exists
-			if task.Host != "" {
-				// Don't take offer if it doens't match our task's host requirement.
-				if !strings.HasPrefix(*offer.Hostname, task.Host) {
-					continue
-				}
-			}
+			// Don't take offer if it doesn't match our task's host requirement
+			if offerUtils.HostMismatch(*offer.Hostname, task.Host) {continue}
 
 			for *task.Instances > 0 {
 				// Does the task fit
@@ -274,7 +270,7 @@ func (s *BinPackedPistonCapper) ResourceOffers(driver sched.SchedulerDriver, off
 						s.startCapping()
 					}
 
-					taken = true
+					offerTaken = true
 					totalWatts += task.Watts
 					totalCPU += task.CPU
 					totalRAM += task.RAM
@@ -303,20 +299,20 @@ func (s *BinPackedPistonCapper) ResourceOffers(driver sched.SchedulerDriver, off
 			}
 		}
 
-		if taken {
+		if offerTaken {
 			// Updating the cap value for offer.Hostname
 			bpPistonMutex.Lock()
 			bpPistonCapValues[*offer.Hostname] += partialLoad
 			bpPistonMutex.Unlock()
 			log.Printf("Starting on [%s]\n", offer.GetHostname())
-			driver.LaunchTasks([]*mesos.OfferID{offer.Id}, fitTasks, defaultFilter)
+			driver.LaunchTasks([]*mesos.OfferID{offer.Id}, fitTasks, mesosUtils.DefaultFilter)
 		} else {
 			// If there was no match for task
 			log.Println("There is not enough resources to launch task: ")
-			cpus, mem, watts := OfferAgg(offer)
+			cpus, mem, watts := offerUtils.OfferAgg(offer)
 
 			log.Printf("<CPU: %f, RAM: %f, Watts: %f>\n", cpus, mem, watts)
-			driver.DeclineOffer(offer.Id, defaultFilter)
+			driver.DeclineOffer(offer.Id, mesosUtils.DefaultFilter)
 		}
 	}
 }

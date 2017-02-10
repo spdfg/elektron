@@ -58,7 +58,7 @@ func main() {
 	startTime := time.Now().Format("20060102150405")
 	logPrefix := *pcplogPrefix + "_" + startTime
 
-	scheduler := schedulers.NewFirstFitSortedWattsReducedWAR(tasks, *ignoreWatts, logPrefix)
+	scheduler := schedulers.NewBinPackSortedWatts(tasks, *ignoreWatts, logPrefix)
 	driver, err := sched.NewMesosSchedulerDriver(sched.DriverConfig{
 		Master: *master,
 		Framework: &mesos.FrameworkInfo{
@@ -96,7 +96,7 @@ func main() {
 		// Signals we have scheduled every task we have
 		select {
 		case <-scheduler.Shutdown:
-			//			case <-time.After(shutdownTimeout):
+			//case <-time.After(shutdownTimeout):
 		}
 
 		// All tasks have finished
@@ -104,7 +104,7 @@ func main() {
 		case <-scheduler.Done:
 			close(scheduler.PCPLog)
 			time.Sleep(5 * time.Second) //Wait for PCP to log a few more seconds
-			//			case <-time.After(shutdownTimeout):
+			//case <-time.After(shutdownTimeout):
 		}
 
 		// Done shutting down

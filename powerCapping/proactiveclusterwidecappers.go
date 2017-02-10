@@ -1,9 +1,9 @@
 /*
 Cluster wide dynamic capping
 
-This is not a scheduler but a scheduling scheme that schedulers can use.
+This is a capping strategy that can be used with schedulers to improve the power consumption.
 */
-package pcp
+package powerCapping
 
 import (
 	"bitbucket.org/sunybingcloud/electron/constants"
@@ -251,7 +251,7 @@ func (capper ClusterwideCapper) FCFSDeterminedCap(totalPower map[string]float64,
 		return 100, errors.New("Invalid argument: totalPower")
 	} else {
 		// Need to calculate the running average
-		runningAverage := runAvg.Calc(taskWrapper{task: *newTask}, constants.WindowSize)
+		runningAverage := runAvg.Calc(taskWrapper{task: *newTask}, constants.ConsiderationWindowSize)
 		// For each node, calculate the percentage of the running average to the total power.
 		ratios := make(map[string]float64)
 		for host, tpower := range totalPower {
@@ -271,5 +271,5 @@ func (capper ClusterwideCapper) FCFSDeterminedCap(totalPower map[string]float64,
 
 // Stringer for an instance of clusterwideCapper
 func (capper ClusterwideCapper) String() string {
-	return "Cluster Capper -- Proactively cap the entire cluster."
+	return "Cluster-wide Capper -- Proactively cap the entire cluster."
 }

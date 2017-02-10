@@ -8,12 +8,14 @@ To Do:
  * Add ability to use constraints
  * Running average calculations https://en.wikipedia.org/wiki/Moving_average#Exponential_moving_average
  * Make parameters corresponding to each scheduler configurable (possible to have a config template for each scheduler?)
+ * TODO : Adding type of scheduler to be used, to be picked from a config file, along with it's configurable parameters.
  * Write test code for each scheduler (This should be after the design change)
  * Some of the constants in constants/constants.go can vary based on the environment.  
    Possible to setup the constants at runtime based on the environment?
  * Log fix for declining offer -- different reason when insufficient resources as compared to when there are no
     longer any tasks to schedule.
  * Have a centralised logFile that can be filtered by identifier. All electron logs should go into this file.
+ * Make ClassMapWatts to commandLine arguments so Electron can be run with ClassMapWatts enabled/disabled.
 
 
 **Requires [Performance Co-Pilot](http://pcp.io/) tool pmdumptext to be installed on the

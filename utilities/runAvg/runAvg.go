@@ -1,7 +1,7 @@
 /*
 A utility to calculate the running average.
 
-One should implement Val() to be able to use this utility.
+One should implement Val() and ID() to use this utility.
 */
 
 package runAvg
@@ -19,9 +19,9 @@ type Interface interface {
 }
 
 type runningAverageCalculator struct {
-	window     list.List
-	windowSize int
-	currentSum float64
+	considerationWindow     list.List
+	considerationWindowSize int
+	currentSum              float64
 }
 
 // singleton instance
@@ -31,14 +31,14 @@ var racSingleton *runningAverageCalculator
 func getInstance(curSum float64, wSize int) *runningAverageCalculator {
 	if racSingleton == nil {
 		racSingleton = &runningAverageCalculator{
-			windowSize: wSize,
-			currentSum: curSum,
+			considerationWindowSize: wSize,
+			currentSum:              curSum,
 		}
 		return racSingleton
 	} else {
 		// Updating window size if a new window size is given.
-		if wSize != racSingleton.windowSize {
-			racSingleton.windowSize = wSize
+		if wSize != racSingleton.considerationWindowSize {
+			racSingleton.considerationWindowSize = wSize
 		}
 		return racSingleton
 	}
@@ -47,20 +47,20 @@ func getInstance(curSum float64, wSize int) *runningAverageCalculator {
 // Compute the running average by adding 'data' to the window.
 // Updating currentSum to get constant time complexity for every running average computation.
 func (rac *runningAverageCalculator) calculate(data Interface) float64 {
-	if rac.window.Len() < rac.windowSize {
-		rac.window.PushBack(data)
+	if rac.considerationWindow.Len() < rac.considerationWindowSize {
+		rac.considerationWindow.PushBack(data)
 		rac.currentSum += data.Val()
 	} else {
 		// removing the element at the front of the window.
-		elementToRemove := rac.window.Front()
+		elementToRemove := rac.considerationWindow.Front()
 		rac.currentSum -= elementToRemove.Value.(Interface).Val()
-		rac.window.Remove(elementToRemove)
+		rac.considerationWindow.Remove(elementToRemove)
 
 		// adding new element to the window
-		rac.window.PushBack(data)
+		rac.considerationWindow.PushBack(data)
 		rac.currentSum += data.Val()
 	}
-	return rac.currentSum / float64(rac.window.Len())
+	return rac.currentSum / float64(rac.considerationWindow.Len())
 }
 
 /*
@@ -68,9 +68,9 @@ If element with given ID present in the window, then remove it and return (remov
 Else, return (nil, error)
 */
 func (rac *runningAverageCalculator) removeFromWindow(id string) (interface{}, error) {
-	for element := rac.window.Front(); element != nil; element = element.Next() {
+	for element := rac.considerationWindow.Front(); element != nil; element = element.Next() {
 		if elementToRemove := element.Value.(Interface); elementToRemove.ID() == id {
-			rac.window.Remove(element)
+			rac.considerationWindow.Remove(element)
 			rac.currentSum -= elementToRemove.Val()
 			return elementToRemove, nil
 		}
@@ -102,7 +102,7 @@ func Init() {
 	}
 	// Setting parameters to default values. Could also set racSingleton to nil but this leads to unnecessary overhead of creating
 	// another instance when Calc is called.
-	racSingleton.window.Init()
-	racSingleton.windowSize = 0
+	racSingleton.considerationWindow.Init()
+	racSingleton.considerationWindowSize = 0
 	racSingleton.currentSum = 0.0
 }

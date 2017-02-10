@@ -3,8 +3,10 @@ package schedulers
 import (
 	"bitbucket.org/sunybingcloud/electron/constants"
 	"bitbucket.org/sunybingcloud/electron/def"
-	"bitbucket.org/sunybingcloud/electron/pcp"
+	powCap "bitbucket.org/sunybingcloud/electron/powerCapping"
 	"bitbucket.org/sunybingcloud/electron/rapl"
+	"bitbucket.org/sunybingcloud/electron/utilities/mesosUtils"
+	"bitbucket.org/sunybingcloud/electron/utilities/offerUtils"
 	"fmt"
 	"github.com/golang/protobuf/proto"
 	mesos "github.com/mesos/mesos-go/mesosproto"
@@ -14,10 +16,22 @@ import (
 	"math"
 	"os"
 	"sort"
-	"strings"
 	"sync"
 	"time"
 )
+
+// Decides if to take an offer or not
+func (s *FirstFitSortedWattsClassMapWattsProacCC) takeOffer(offer *mesos.Offer, powerClass string, task def.Task) bool {
+	offerCPU, offerRAM, offerWatts := offerUtils.OfferAgg(offer)
+
+	//TODO: Insert watts calculation here instead of taking them as a parameter
+	// Decision to take the offer or not
+	if (s.ignoreWatts || (offerWatts >= task.ClassToWatts[powerClass])) &&
+		(offerCPU >= task.CPU) && (offerRAM >= task.RAM) {
+		return true
+	}
+	return false
+}
 
 // electron scheduler implements the Scheduler interface
 type FirstFitSortedWattsClassMapWattsProacCC struct {
@@ -31,7 +45,7 @@ type FirstFitSortedWattsClassMapWattsProacCC struct {
 	availablePower map[string]float64
 	totalPower     map[string]float64
 	ignoreWatts    bool
-	capper         *pcp.ClusterwideCapper
+	capper         *powCap.ClusterwideCapper
 	ticker         *time.Ticker
 	recapTicker    *time.Ticker
 	isCapping      bool // indicate whether we are currently performing cluster-wide capping.
@@ -74,7 +88,7 @@ func NewFirstFitSortedWattsClassMapWattsProacCC(tasks []def.Task, ignoreWatts bo
 		availablePower: make(map[string]float64),
 		totalPower:     make(map[string]float64),
 		RecordPCP:      false,
-		capper:         pcp.GetClusterwideCapperInstance(),
+		capper:         powCap.GetClusterwideCapperInstance(),
 		ticker:         time.NewTicker(10 * time.Second),
 		recapTicker:    time.NewTicker(20 * time.Second),
 		isCapping:      false,
@@ -87,7 +101,7 @@ func NewFirstFitSortedWattsClassMapWattsProacCC(tasks []def.Task, ignoreWatts bo
 // mutex
 var ffswClassMapWattsProacCCMutex sync.Mutex
 
-func (s *FirstFitSortedWattsClassMapWattsProacCC) newTask(offer *mesos.Offer, task def.Task, newTaskClass string) *mesos.TaskInfo {
+func (s *FirstFitSortedWattsClassMapWattsProacCC) newTask(offer *mesos.Offer, task def.Task, powerClass string) *mesos.TaskInfo {
 	taskName := fmt.Sprintf("%s-%d", task.Name, *task.Instances)
 	s.tasksCreated++
 
@@ -119,7 +133,7 @@ func (s *FirstFitSortedWattsClassMapWattsProacCC) newTask(offer *mesos.Offer, ta
 	}
 
 	if !s.ignoreWatts {
-		resources = append(resources, mesosutil.NewScalarResource("watts", task.ClassToWatts[newTaskClass]))
+		resources = append(resources, mesosutil.NewScalarResource("watts", task.ClassToWatts[powerClass]))
 	}
 
 	return &mesos.TaskInfo{
@@ -239,7 +253,7 @@ func (s *FirstFitSortedWattsClassMapWattsProacCC) ResourceOffers(driver sched.Sc
 
 	// retrieving the available power for all the hosts in the offers.
 	for _, offer := range offers {
-		_, _, offerWatts := OfferAgg(offer)
+		_, _, offerWatts := offerUtils.OfferAgg(offer)
 		s.availablePower[*offer.Hostname] = offerWatts
 		// setting total power if the first time
 		if _, ok := s.totalPower[*offer.Hostname]; !ok {
@@ -255,38 +269,27 @@ func (s *FirstFitSortedWattsClassMapWattsProacCC) ResourceOffers(driver sched.Sc
 		select {
 		case <-s.Shutdown:
 			log.Println("Done scheduling tasks: declining offer on [", offer.GetHostname(), "]")
-			driver.DeclineOffer(offer.Id, longFilter)
+			driver.DeclineOffer(offer.Id, mesosUtils.LongFilter)
 
 			log.Println("Number of tasks still running: ", s.tasksRunning)
 			continue
 		default:
 		}
 
-		offerCPU, offerRAM, offerWatts := OfferAgg(offer)
-
 		// First fit strategy
-		taken := false
+		offerTaken := false
 		for i := 0; i < len(s.tasks); i++ {
 			task := s.tasks[i]
-			// Check host if it exists
-			if task.Host != "" {
-				// Don't take offer if it doens't match our task's host requirement.
-				if !strings.HasPrefix(*offer.Hostname, task.Host) {
-					continue
-				}
+			// Don't take offer if it doesn't match our task's host requirement
+			if offerUtils.HostMismatch(*offer.Hostname, task.Host) {
+				continue
 			}
 
-			// Retrieving the node class from the offer
-			var nodeClass string
-			for _, attr := range offer.GetAttributes() {
-				if attr.GetName() == "class" {
-					nodeClass = attr.GetText().GetValue()
-				}
-			}
+			// retrieving the powerClass for the offer
+			powerClass := offerUtils.PowerClass(offer)
 
 			// Decision to take the offer or not
-			if (s.ignoreWatts || (offerWatts >= task.ClassToWatts[nodeClass])) &&
-				(offerCPU >= task.CPU) && (offerRAM >= task.RAM) {
+			if s.takeOffer(offer, powerClass, task) {
 
 				// Capping the cluster if haven't yet started
 				if !s.isCapping {
@@ -296,7 +299,7 @@ func (s *FirstFitSortedWattsClassMapWattsProacCC) ResourceOffers(driver sched.Sc
 					s.startCapping()
 				}
 
-				fmt.Println("Watts being used: ", task.ClassToWatts[nodeClass])
+				fmt.Println("Watts being used: ", task.ClassToWatts[powerClass])
 				tempCap, err := s.capper.FCFSDeterminedCap(s.totalPower, &task)
 				if err == nil {
 					ffswClassMapWattsProacCCMutex.Lock()
@@ -310,12 +313,12 @@ func (s *FirstFitSortedWattsClassMapWattsProacCC) ResourceOffers(driver sched.Sc
 				log.Println("Co-Located with: ")
 				coLocated(s.running[offer.GetSlaveId().GoString()])
 
-				taskToSchedule := s.newTask(offer, task, nodeClass)
+				taskToSchedule := s.newTask(offer, task, powerClass)
 				s.schedTrace.Print(offer.GetHostname() + ":" + taskToSchedule.GetTaskId().GetValue())
 				log.Printf("Starting %s on [%s]\n", task.Name, offer.GetHostname())
-				driver.LaunchTasks([]*mesos.OfferID{offer.Id}, []*mesos.TaskInfo{taskToSchedule}, defaultFilter)
+				driver.LaunchTasks([]*mesos.OfferID{offer.Id}, []*mesos.TaskInfo{taskToSchedule}, mesosUtils.DefaultFilter)
 
-				taken = true
+				offerTaken = true
 				fmt.Println("Inst: ", *task.Instances)
 				*task.Instances--
 				if *task.Instances <= 0 {
@@ -335,12 +338,12 @@ func (s *FirstFitSortedWattsClassMapWattsProacCC) ResourceOffers(driver sched.Sc
 		}
 
 		// If there was no match for the task
-		if !taken {
+		if !offerTaken {
 			fmt.Println("There is not enough resources to launch a task:")
-			cpus, mem, watts := OfferAgg(offer)
+			cpus, mem, watts := offerUtils.OfferAgg(offer)
 
 			log.Printf("<CPU: %f, RAM: %f, Watts: %f>\n", cpus, mem, watts)
-			driver.DeclineOffer(offer.Id, defaultFilter)
+			driver.DeclineOffer(offer.Id, mesosUtils.DefaultFilter)
 		}
 	}
 }

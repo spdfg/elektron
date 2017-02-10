@@ -2,6 +2,8 @@ package schedulers
 
 import (
 	"bitbucket.org/sunybingcloud/electron/def"
+	"bitbucket.org/sunybingcloud/electron/utilities/mesosUtils"
+	"bitbucket.org/sunybingcloud/electron/utilities/offerUtils"
 	"fmt"
 	"github.com/golang/protobuf/proto"
 	mesos "github.com/mesos/mesos-go/mesosproto"
@@ -10,21 +12,19 @@ import (
 	"log"
 	"os"
 	"sort"
-	"strings"
 	"time"
 )
 
 // Decides if to take an offer or not
-func (*BinPackSortedWatts) takeOffer(offer *mesos.Offer, task def.Task) bool {
-
-	cpus, mem, watts := OfferAgg(offer)
+func (s *BinPackSortedWatts) takeOffer(offer *mesos.Offer, totalCPU, totalRAM, totalWatts float64, task def.Task) bool {
+	offerCPU, offerRAM, offerWatts := offerUtils.OfferAgg(offer)
 
 	//TODO: Insert watts calculation here instead of taking them as a parameter
-
-	if cpus >= task.CPU && mem >= task.RAM && watts >= task.Watts {
+	if (s.ignoreWatts || (offerWatts >= (totalWatts + task.Watts))) &&
+		(offerCPU >= (totalCPU + task.CPU)) &&
+		(offerRAM >= (totalRAM + task.RAM)) {
 		return true
 	}
-
 	return false
 }
 
@@ -130,7 +130,7 @@ func (s *BinPackSortedWatts) ResourceOffers(driver sched.SchedulerDriver, offers
 		select {
 		case <-s.Shutdown:
 			log.Println("Done scheduling tasks: declining offer on [", offer.GetHostname(), "]")
-			driver.DeclineOffer(offer.Id, longFilter)
+			driver.DeclineOffer(offer.Id, mesosUtils.LongFilter)
 
 			log.Println("Number of tasks still running: ", s.tasksRunning)
 			continue
@@ -139,30 +139,23 @@ func (s *BinPackSortedWatts) ResourceOffers(driver sched.SchedulerDriver, offers
 
 		tasks := []*mesos.TaskInfo{}
 
-		offer_cpu, offer_ram, offer_watts := OfferAgg(offer)
-
-		taken := false
+		offerTaken := false
 		totalWatts := 0.0
 		totalCPU := 0.0
 		totalRAM := 0.0
 		for i := 0; i < len(s.tasks); i++ {
 			task := s.tasks[i]
 
-			// Check host if it exists
-			if task.Host != "" {
-				// Don't take offer if it doesn't match our task's host requirement
-				if !strings.HasPrefix(*offer.Hostname, task.Host) {
-					continue
-				}
+			// Don't take offer if it doesn't match our task's host requirement
+			if offerUtils.HostMismatch(*offer.Hostname, task.Host) {
+				continue
 			}
 
 			for *task.Instances > 0 {
 				// Does the task fit
-				if (s.ignoreWatts || offer_watts >= (totalWatts+task.Watts)) &&
-					(offer_cpu >= (totalCPU + task.CPU)) &&
-					(offer_ram >= (totalRAM + task.RAM)) {
+				if s.takeOffer(offer, totalCPU, totalRAM, totalWatts, task) {
 
-					taken = true
+					offerTaken = true
 					totalWatts += task.Watts
 					totalCPU += task.CPU
 					totalRAM += task.RAM
@@ -190,17 +183,17 @@ func (s *BinPackSortedWatts) ResourceOffers(driver sched.SchedulerDriver, offers
 			}
 		}
 
-		if taken {
+		if offerTaken {
 			log.Printf("Starting on [%s]\n", offer.GetHostname())
-			driver.LaunchTasks([]*mesos.OfferID{offer.Id}, tasks, defaultFilter)
+			driver.LaunchTasks([]*mesos.OfferID{offer.Id}, tasks, mesosUtils.DefaultFilter)
 		} else {
 
 			// If there was no match for the task
 			fmt.Println("There is not enough resources to launch a task:")
-			cpus, mem, watts := OfferAgg(offer)
+			cpus, mem, watts := offerUtils.OfferAgg(offer)
 
 			log.Printf("<CPU: %f, RAM: %f, Watts: %f>\n", cpus, mem, watts)
-			driver.DeclineOffer(offer.Id, defaultFilter)
+			driver.DeclineOffer(offer.Id, mesosUtils.DefaultFilter)
 		}
 	}
 }

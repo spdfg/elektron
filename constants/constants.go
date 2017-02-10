@@ -6,6 +6,8 @@ Constants that are used across scripts
 5. window_size = number of tasks to consider for computation of the dynamic cap.
 
 Also, exposing functions to update or initialize some of the constants.
+
+TODO: Clean this up and use Mesos Attributes instead.
 */
 package constants
 
@@ -13,6 +15,24 @@ var Hosts = []string{"stratos-001.cs.binghamton.edu", "stratos-002.cs.binghamton
 	"stratos-003.cs.binghamton.edu", "stratos-004.cs.binghamton.edu",
 	"stratos-005.cs.binghamton.edu", "stratos-006.cs.binghamton.edu",
 	"stratos-007.cs.binghamton.edu", "stratos-008.cs.binghamton.edu"}
+
+// Classification of the nodes in the cluster based on their power consumption.
+var PowerClasses = map[string]map[string]bool{
+	"ClassA": map[string]bool{
+		"stratos-005.cs.binghamton.edu": true,
+		"stratos-006.cs.binghamton.edu": true,
+	},
+	"ClassB": map[string]bool{
+		"stratos-007.cs.binghamton.edu": true,
+		"stratos-008.cs.binghamton.edu": true,
+	},
+	"ClassC": map[string]bool{
+		"stratos-001.cs.binghamton.edu": true,
+		"stratos-002.cs.binghamton.edu": true,
+		"stratos-003.cs.binghamton.edu": true,
+		"stratos-004.cs.binghamton.edu": true,
+	},
+}
 
 // Add a new host to the slice of hosts.
 func AddNewHost(newHost string) bool {
@@ -68,7 +88,7 @@ func UpdateCapMargin(newCapMargin float64) bool {
 var StarvationFactor = PowerThreshold / CapMargin
 
 // Window size for running average
-var WindowSize = 20
+var ConsiderationWindowSize = 20
 
 // Update the window size.
 func UpdateWindowSize(newWindowSize int) bool {
@@ -76,7 +96,7 @@ func UpdateWindowSize(newWindowSize int) bool {
 	if newWindowSize == 0 {
 		return false
 	} else {
-		WindowSize = newWindowSize
+		ConsiderationWindowSize = newWindowSize
 		return true
 	}
 }

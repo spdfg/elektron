@@ -11,24 +11,26 @@ import (
 	sched "github.com/mesos/mesos-go/scheduler"
 	"log"
 	"os"
+	"sort"
 	"time"
 )
 
 // Decides if to take an offer or not
-func (*FirstFitWattsOnly) takeOffer(offer *mesos.Offer, task def.Task) bool {
+func (s *FirstFitSortedOffers) takeOffer(offer *mesos.Offer, task def.Task) bool {
 
-	_, _, watts := offerUtils.OfferAgg(offer)
+	cpus, mem, watts := offerUtils.OfferAgg(offer)
 
 	//TODO: Insert watts calculation here instead of taking them as a parameter
 
-	if watts >= task.Watts {
+	if cpus >= task.CPU && mem >= task.RAM && (s.ignoreWatts || watts >= task.Watts) {
 		return true
 	}
 
 	return false
 }
 
-type FirstFitWattsOnly struct {
+// electronScheduler implements the Scheduler interface
+type FirstFitSortedOffers struct {
 	base         // Type embedded to inherit common functions
 	tasksCreated int
 	tasksRunning int
@@ -55,14 +57,14 @@ type FirstFitWattsOnly struct {
 }
 
 // New electron scheduler
-func NewFirstFitWattsOnly(tasks []def.Task, ignoreWatts bool, schedTracePrefix string) *FirstFitWattsOnly {
+func NewFirstFitSortedOffers(tasks []def.Task, ignoreWatts bool, schedTracePrefix string) *FirstFitSortedOffers {
 
 	logFile, err := os.Create("./" + schedTracePrefix + "_schedTrace.log")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	s := &FirstFitWattsOnly{
+	s := &FirstFitSortedOffers{
 		tasks:       tasks,
 		ignoreWatts: ignoreWatts,
 		Shutdown:    make(chan struct{}),
@@ -75,7 +77,7 @@ func NewFirstFitWattsOnly(tasks []def.Task, ignoreWatts bool, schedTracePrefix s
 	return s
 }
 
-func (s *FirstFitWattsOnly) newTask(offer *mesos.Offer, task def.Task) *mesos.TaskInfo {
+func (s *FirstFitSortedOffers) newTask(offer *mesos.Offer, task def.Task) *mesos.TaskInfo {
 	taskName := fmt.Sprintf("%s-%d", task.Name, *task.Instances)
 	s.tasksCreated++
 
@@ -94,7 +96,12 @@ func (s *FirstFitWattsOnly) newTask(offer *mesos.Offer, task def.Task) *mesos.Ta
 	s.running[offer.GetSlaveId().GoString()][taskName] = true
 
 	resources := []*mesos.Resource{
-		mesosutil.NewScalarResource("watts", task.Watts),
+		mesosutil.NewScalarResource("cpus", task.CPU),
+		mesosutil.NewScalarResource("mem", task.RAM),
+	}
+
+	if !s.ignoreWatts {
+		resources = append(resources, mesosutil.NewScalarResource("watts", task.Watts))
 	}
 
 	return &mesos.TaskInfo{
@@ -117,8 +124,19 @@ func (s *FirstFitWattsOnly) newTask(offer *mesos.Offer, task def.Task) *mesos.Ta
 	}
 }
 
-func (s *FirstFitWattsOnly) ResourceOffers(driver sched.SchedulerDriver, offers []*mesos.Offer) {
+func (s *FirstFitSortedOffers) ResourceOffers(driver sched.SchedulerDriver, offers []*mesos.Offer) {
 	log.Printf("Received %d resource offers", len(offers))
+
+	// Sorting the offers
+	sort.Sort(offerUtils.OffersSorter(offers))
+
+	// Printing the sorted offers and the corresponding CPU resource availability
+	log.Println("Sorted Offers:")
+	for i := 0; i < len(offers); i++ {
+		offer := offers[i]
+		offerCPU, _, _ := offerUtils.OfferAgg(offer)
+		log.Printf("Offer[%s].CPU = %f\n", offer.GetHostname(), offerCPU)
+	}
 
 	for _, offer := range offers {
 		select {
@@ -188,7 +206,7 @@ func (s *FirstFitWattsOnly) ResourceOffers(driver sched.SchedulerDriver, offers 
 	}
 }
 
-func (s *FirstFitWattsOnly) StatusUpdate(driver sched.SchedulerDriver, status *mesos.TaskStatus) {
+func (s *FirstFitSortedOffers) StatusUpdate(driver sched.SchedulerDriver, status *mesos.TaskStatus) {
 	log.Printf("Received task status [%s] for task [%s]", NameFor(status.State), *status.TaskId.Value)
 
 	if *status.State == mesos.TaskState_TASK_RUNNING {
