@@ -3,7 +3,7 @@ Cluster wide dynamic capping
 
 This is a capping strategy that can be used with schedulers to improve the power consumption.
 
-Note: This capping strategy doesn't currently considered task.Watts to power class mapping with classMapWatts is enabled.
+Note: This capping strategy doesn't currently consider task.Watts to power class mapping with classMapWatts is enabled.
 */
 package powerCapping
 
