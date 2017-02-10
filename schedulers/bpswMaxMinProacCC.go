@@ -40,38 +40,15 @@ func (s *BPSWMaxMinProacCC) takeOffer(offer *mesos.Offer, task def.Task) bool {
 }
 
 type BPSWMaxMinProacCC struct {
-	base             // Type embedding to inherit common functions
-	tasksCreated     int
-	tasksRunning     int
-	tasks            []def.Task
-	metrics          map[string]def.Metric
-	running          map[string]map[string]bool
-	taskMonitor      map[string][]def.Task
-	availablePower   map[string]float64
-	totalPower       map[string]float64
-	wattsAsAResource bool
-	classMapWatts    bool
-	capper           *powCap.ClusterwideCapper
-	ticker           *time.Ticker
-	recapTicker      *time.Ticker
-	isCapping        bool // indicate whether we are currently performing cluster-wide capping.
-	isRecapping      bool // indicate whether we are currently performing cluster-wide recapping.
-
-	// First set of PCP values are garbage values, signal to logger to start recording when we're
-	// about to schedule a new task
-	RecordPCP bool
-
-	// This channel is closed when the program receives an interrupt,
-	// signalling that the program should shut down
-	Shutdown chan struct{}
-	// This channel is closed after shutdown is closed, and only when all
-	// outstanding tasks have been cleaned up
-	Done chan struct{}
-
-	// Controls when to shutdown pcp logging
-	PCPLog chan struct{}
-
-	schedTrace *log.Logger
+	base           // Type embedding to inherit common functions
+	taskMonitor    map[string][]def.Task
+	availablePower map[string]float64
+	totalPower     map[string]float64
+	capper         *powCap.ClusterwideCapper
+	ticker         *time.Ticker
+	recapTicker    *time.Ticker
+	isCapping      bool // indicate whether we are currently performing cluster-wide capping.
+	isRecapping    bool // indicate whether we are currently performing cluster-wide recapping.
 }
 
 // New electron scheduler
@@ -84,23 +61,25 @@ func NewBPSWMaxMinProacCC(tasks []def.Task, wattsAsAResource bool, schedTracePre
 	}
 
 	s := &BPSWMaxMinProacCC{
-		tasks:            tasks,
-		wattsAsAResource: wattsAsAResource,
-		classMapWatts:    classMapWatts,
-		Shutdown:         make(chan struct{}),
-		Done:             make(chan struct{}),
-		PCPLog:           make(chan struct{}),
-		running:          make(map[string]map[string]bool),
-		taskMonitor:      make(map[string][]def.Task),
-		availablePower:   make(map[string]float64),
-		totalPower:       make(map[string]float64),
-		RecordPCP:        false,
-		capper:           powCap.GetClusterwideCapperInstance(),
-		ticker:           time.NewTicker(10 * time.Second),
-		recapTicker:      time.NewTicker(20 * time.Second),
-		isCapping:        false,
-		isRecapping:      false,
-		schedTrace:       log.New(logFile, "", log.LstdFlags),
+		base: base{
+			tasks:            tasks,
+			wattsAsAResource: wattsAsAResource,
+			classMapWatts:    classMapWatts,
+			Shutdown:         make(chan struct{}),
+			Done:             make(chan struct{}),
+			PCPLog:           make(chan struct{}),
+			running:          make(map[string]map[string]bool),
+			RecordPCP:        false,
+			schedTrace:       log.New(logFile, "", log.LstdFlags),
+		},
+		taskMonitor:    make(map[string][]def.Task),
+		availablePower: make(map[string]float64),
+		totalPower:     make(map[string]float64),
+		capper:         powCap.GetClusterwideCapperInstance(),
+		ticker:         time.NewTicker(10 * time.Second),
+		recapTicker:    time.NewTicker(20 * time.Second),
+		isCapping:      false,
+		isRecapping:    false,
 	}
 	return s
 }

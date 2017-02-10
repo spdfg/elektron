@@ -37,39 +37,15 @@ func (s *FirstFitProacCC) takeOffer(offer *mesos.Offer, task def.Task) bool {
 
 // electronScheduler implements the Scheduler interface.
 type FirstFitProacCC struct {
-	base             // Type embedded to inherit common functions
-	tasksCreated     int
-	tasksRunning     int
-	tasks            []def.Task
-	metrics          map[string]def.Metric
-	running          map[string]map[string]bool
-	taskMonitor      map[string][]def.Task // store tasks that are currently running.
-	availablePower   map[string]float64    // available power for each node in the cluster.
-	totalPower       map[string]float64    // total power for each node in the cluster.
-	wattsAsAResource bool
-	classMapWatts    bool
-	capper           *powCap.ClusterwideCapper
-	ticker           *time.Ticker
-	recapTicker      *time.Ticker
-	isCapping        bool // indicate whether we are currently performing cluster wide capping.
-	isRecapping      bool // indicate whether we are currently performing cluster wide re-capping.
-
-	// First set of PCP values are garbage values, signal to logger to start recording when we're
-	// about to schedule the new task.
-	RecordPCP bool
-
-	// This channel is closed when the program receives an interrupt,
-	// signalling that the program should shut down.
-	Shutdown chan struct{}
-
-	// This channel is closed after shutdown is closed, and only when all
-	// outstanding tasks have been cleaned up.
-	Done chan struct{}
-
-	// Controls when to shutdown pcp logging.
-	PCPLog chan struct{}
-
-	schedTrace *log.Logger
+	base                                 // Type embedded to inherit common functions
+	taskMonitor    map[string][]def.Task // store tasks that are currently running.
+	availablePower map[string]float64    // available power for each node in the cluster.
+	totalPower     map[string]float64    // total power for each node in the cluster.
+	capper         *powCap.ClusterwideCapper
+	ticker         *time.Ticker
+	recapTicker    *time.Ticker
+	isCapping      bool // indicate whether we are currently performing cluster wide capping.
+	isRecapping    bool // indicate whether we are currently performing cluster wide re-capping.
 }
 
 // New electron scheduler.
@@ -82,23 +58,25 @@ func NewFirstFitProacCC(tasks []def.Task, wattsAsAResource bool, schedTracePrefi
 	}
 
 	s := &FirstFitProacCC{
-		tasks:            tasks,
-		wattsAsAResource: wattsAsAResource,
-		classMapWatts:    classMapWatts,
-		Shutdown:         make(chan struct{}),
-		Done:             make(chan struct{}),
-		PCPLog:           make(chan struct{}),
-		running:          make(map[string]map[string]bool),
-		taskMonitor:      make(map[string][]def.Task),
-		availablePower:   make(map[string]float64),
-		totalPower:       make(map[string]float64),
-		RecordPCP:        false,
-		capper:           powCap.GetClusterwideCapperInstance(),
-		ticker:           time.NewTicker(10 * time.Second),
-		recapTicker:      time.NewTicker(20 * time.Second),
-		isCapping:        false,
-		isRecapping:      false,
-		schedTrace:       log.New(logFile, "", log.LstdFlags),
+		base: base{
+			tasks:            tasks,
+			wattsAsAResource: wattsAsAResource,
+			classMapWatts:    classMapWatts,
+			Shutdown:         make(chan struct{}),
+			Done:             make(chan struct{}),
+			PCPLog:           make(chan struct{}),
+			running:          make(map[string]map[string]bool),
+			RecordPCP:        false,
+			schedTrace:       log.New(logFile, "", log.LstdFlags),
+		},
+		taskMonitor:    make(map[string][]def.Task),
+		availablePower: make(map[string]float64),
+		totalPower:     make(map[string]float64),
+		capper:         powCap.GetClusterwideCapperInstance(),
+		ticker:         time.NewTicker(10 * time.Second),
+		recapTicker:    time.NewTicker(20 * time.Second),
+		isCapping:      false,
+		isRecapping:    false,
 	}
 	return s
 }

@@ -4,9 +4,34 @@ import (
 	mesos "github.com/mesos/mesos-go/mesosproto"
 	sched "github.com/mesos/mesos-go/scheduler"
 	"log"
+	"bitbucket.org/sunybingcloud/electron/def"
 )
 
-type base struct{}
+type base struct{
+	tasksCreated     int
+	tasksRunning     int
+	tasks            []def.Task
+	metrics          map[string]def.Metric
+	running          map[string]map[string]bool
+	wattsAsAResource bool
+	classMapWatts    bool
+
+	// First set of PCP values are garbage values, signal to logger to start recording when we're
+	// about to schedule a new task
+	RecordPCP bool
+
+	// This channel is closed when the program receives an interrupt,
+	// signalling that the program should shut down.
+	Shutdown chan struct{}
+	// This channel is closed after shutdown is closed, and only when all
+	// outstanding tasks have been cleaned up
+	Done chan struct{}
+
+	// Controls when to shutdown pcp logging
+	PCPLog chan struct{}
+
+	schedTrace *log.Logger
+}
 
 func (s *base) OfferRescinded(_ sched.SchedulerDriver, offerID *mesos.OfferID) {
 	log.Printf("Offer %s rescinded", offerID)
