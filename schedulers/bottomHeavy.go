@@ -26,18 +26,29 @@ BinPacking has the most effect when co-scheduling of tasks is increased. Large t
 	co-scheduling them has a great impact on the total power utilization.
 */
 
-func (s *BottomHeavy) takeOffer(offer *mesos.Offer, totalCPU, totalRAM, totalWatts,
+func (s *BottomHeavy) takeOfferBinPack(offer *mesos.Offer, totalCPU, totalRAM, totalWatts,
 	wattsToConsider float64, task def.Task) bool {
 	offerCPU, offerRAM, offerWatts := offerUtils.OfferAgg(offer)
 
 	//TODO: Insert watts calculation here instead of taking them as a parameter
-	if (s.ignoreWatts || (offerWatts >= (totalWatts + wattsToConsider))) &&
+	if (!s.wattsAsAResource || (offerWatts >= (totalWatts + wattsToConsider))) &&
 		(offerCPU >= (totalCPU + task.CPU)) &&
 		(offerRAM >= (totalRAM + task.RAM)) {
 		return true
 	}
 	return false
 
+}
+
+func (s *BottomHeavy) takeOfferFirstFit(offer *mesos.Offer, wattsConsideration float64, task def.Task) bool {
+	offerCPU, offerRAM, offerWatts := offerUtils.OfferAgg(offer)
+
+	//TODO: Insert watts calculation here instead of taking them as a parameter
+	if (!s.wattsAsAResource || (offerWatts >= wattsConsideration)) &&
+		(offerCPU >= task.CPU) && (offerRAM >= task.RAM) {
+		return true
+	}
+	return false
 }
 
 // electronScheduler implements the Scheduler interface
@@ -48,7 +59,8 @@ type BottomHeavy struct {
 	tasks                  []def.Task
 	metrics                map[string]def.Metric
 	running                map[string]map[string]bool
-	ignoreWatts            bool
+	wattsAsAResource       bool
+	classMapWatts          bool
 	smallTasks, largeTasks []def.Task
 
 	// First set of PCP values are garbage values, signal to logger to start recording when we're
@@ -69,7 +81,7 @@ type BottomHeavy struct {
 }
 
 // New electron scheduler
-func NewBottomHeavy(tasks []def.Task, ignoreWatts bool, schedTracePrefix string) *BottomHeavy {
+func NewBottomHeavy(tasks []def.Task, wattsAsAResource bool, schedTracePrefix string, classMapWatts bool) *BottomHeavy {
 	sort.Sort(def.WattsSorter(tasks))
 
 	logFile, err := os.Create("./" + schedTracePrefix + "_schedTrace.log")
@@ -81,20 +93,21 @@ func NewBottomHeavy(tasks []def.Task, ignoreWatts bool, schedTracePrefix string)
 	// Classification done based on MMPU watts requirements.
 	mid := int(math.Floor((float64(len(tasks)) / 2.0) + 0.5))
 	s := &BottomHeavy{
-		smallTasks:  tasks[:mid],
-		largeTasks:  tasks[mid+1:],
-		ignoreWatts: ignoreWatts,
-		Shutdown:    make(chan struct{}),
-		Done:        make(chan struct{}),
-		PCPLog:      make(chan struct{}),
-		running:     make(map[string]map[string]bool),
-		RecordPCP:   false,
-		schedTrace:  log.New(logFile, "", log.LstdFlags),
+		smallTasks:       tasks[:mid],
+		largeTasks:       tasks[mid+1:],
+		wattsAsAResource: wattsAsAResource,
+		classMapWatts:    classMapWatts,
+		Shutdown:         make(chan struct{}),
+		Done:             make(chan struct{}),
+		PCPLog:           make(chan struct{}),
+		running:          make(map[string]map[string]bool),
+		RecordPCP:        false,
+		schedTrace:       log.New(logFile, "", log.LstdFlags),
 	}
 	return s
 }
 
-func (s *BottomHeavy) newTask(offer *mesos.Offer, task def.Task, newTaskClass string) *mesos.TaskInfo {
+func (s *BottomHeavy) newTask(offer *mesos.Offer, task def.Task) *mesos.TaskInfo {
 	taskName := fmt.Sprintf("%s-%d", task.Name, *task.Instances)
 	s.tasksCreated++
 
@@ -117,8 +130,14 @@ func (s *BottomHeavy) newTask(offer *mesos.Offer, task def.Task, newTaskClass st
 		mesosutil.NewScalarResource("mem", task.RAM),
 	}
 
-	if !s.ignoreWatts {
-		resources = append(resources, mesosutil.NewScalarResource("watts", task.ClassToWatts[newTaskClass]))
+	if s.wattsAsAResource {
+		if wattsToConsider, err := def.WattsToConsider(task, s.classMapWatts, offer); err == nil {
+			log.Printf("Watts considered for host[%s] and task[%s] = %f", *offer.Hostname, task.Name, wattsToConsider)
+			resources = append(resources, mesosutil.NewScalarResource("watts", wattsToConsider))
+		} else {
+			// Error in determining wattsConsideration
+			log.Fatal(err)
+		}
 	}
 
 	return &mesos.TaskInfo{
@@ -150,11 +169,10 @@ func (s *BottomHeavy) shutDownIfNecessary() {
 }
 
 // create TaskInfo and log scheduling trace
-func (s *BottomHeavy) createTaskInfoAndLogSchedTrace(offer *mesos.Offer,
-	powerClass string, task def.Task) *mesos.TaskInfo {
+func (s *BottomHeavy) createTaskInfoAndLogSchedTrace(offer *mesos.Offer, task def.Task) *mesos.TaskInfo {
 	log.Println("Co-Located with:")
 	coLocated(s.running[offer.GetSlaveId().GoString()])
-	taskToSchedule := s.newTask(offer, task, powerClass)
+	taskToSchedule := s.newTask(offer, task)
 
 	fmt.Println("Inst: ", *task.Instances)
 	s.schedTrace.Print(offer.GetHostname() + ":" + taskToSchedule.GetTaskId().GetValue())
@@ -182,22 +200,22 @@ func (s *BottomHeavy) pack(offers []*mesos.Offer, driver sched.SchedulerDriver) 
 		offerTaken := false
 		for i := 0; i < len(s.largeTasks); i++ {
 			task := s.largeTasks[i]
+			wattsConsideration, err := def.WattsToConsider(task, s.classMapWatts, offer)
+			if err != nil {
+				// Error in determining wattsConsideration
+				log.Fatal(err)
+			}
 
 			for *task.Instances > 0 {
-				powerClass := offerUtils.PowerClass(offer)
 				// Does the task fit
 				// OR lazy evaluation. If ignore watts is set to true, second statement won't
 				// be evaluated.
-				wattsToConsider := task.Watts
-				if !s.ignoreWatts {
-					wattsToConsider = task.ClassToWatts[powerClass]
-				}
-				if s.takeOffer(offer, totalCPU, totalRAM, totalWatts, wattsToConsider, task) {
+				if s.takeOfferBinPack(offer, totalCPU, totalRAM, totalWatts, wattsConsideration, task) {
 					offerTaken = true
-					totalWatts += wattsToConsider
+					totalWatts += wattsConsideration
 					totalCPU += task.CPU
 					totalRAM += task.RAM
-					tasks = append(tasks, s.createTaskInfoAndLogSchedTrace(offer, powerClass, task))
+					tasks = append(tasks, s.createTaskInfoAndLogSchedTrace(offer, task))
 
 					if *task.Instances <= 0 {
 						// All instances of task have been scheduled, remove it
@@ -238,21 +256,19 @@ func (s *BottomHeavy) spread(offers []*mesos.Offer, driver sched.SchedulerDriver
 		}
 
 		tasks := []*mesos.TaskInfo{}
-		offerCPU, offerRAM, offerWatts := offerUtils.OfferAgg(offer)
 		taken := false
 		for i := 0; i < len(s.smallTasks); i++ {
 			task := s.smallTasks[i]
-			powerClass := offerUtils.PowerClass(offer)
+			wattsConsideration, err := def.WattsToConsider(task, s.classMapWatts, offer)
+			if err != nil {
+				// Error in determining wattsConsideration
+				log.Fatal(err)
+			}
 
 			// Decision to take the offer or not
-			wattsToConsider := task.Watts
-			if !s.ignoreWatts {
-				wattsToConsider = task.ClassToWatts[powerClass]
-			}
-			if (s.ignoreWatts || (offerWatts >= wattsToConsider)) &&
-				(offerCPU >= task.CPU) && (offerRAM >= task.RAM) {
+			if s.takeOfferFirstFit(offer, wattsConsideration, task) {
 				taken = true
-				tasks = append(tasks, s.createTaskInfoAndLogSchedTrace(offer, powerClass, task))
+				tasks = append(tasks, s.createTaskInfoAndLogSchedTrace(offer, task))
 				log.Printf("Starting %s on [%s]\n", task.Name, offer.GetHostname())
 				driver.LaunchTasks([]*mesos.OfferID{offer.Id}, tasks, mesosUtils.DefaultFilter)
 
@@ -297,10 +313,10 @@ func (s *BottomHeavy) ResourceOffers(driver sched.SchedulerDriver, offers []*mes
 		default:
 		}
 
-		if constants.PowerClasses["ClassA"][*offer.Hostname] ||
-			constants.PowerClasses["ClassB"][*offer.Hostname] {
+		if constants.PowerClasses["A"][*offer.Hostname] ||
+			constants.PowerClasses["B"][*offer.Hostname] {
 			offersClassAB = append(offersClassAB, offer)
-		} else if constants.PowerClasses["ClassC"][*offer.Hostname] {
+		} else if constants.PowerClasses["C"][*offer.Hostname] {
 			offersClassC = append(offersClassC, offer)
 		}
 	}

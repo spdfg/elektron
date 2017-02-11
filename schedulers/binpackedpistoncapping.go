@@ -26,17 +26,18 @@ import (
   corresponding to the load on that node.
 */
 type BinPackedPistonCapper struct {
-	base         // Type embedded to inherit common functions
-	tasksCreated int
-	tasksRunning int
-	tasks        []def.Task
-	metrics      map[string]def.Metric
-	running      map[string]map[string]bool
-	taskMonitor  map[string][]def.Task
-	totalPower   map[string]float64
-	ignoreWatts  bool
-	ticker       *time.Ticker
-	isCapping    bool
+	base             // Type embedded to inherit common functions
+	tasksCreated     int
+	tasksRunning     int
+	tasks            []def.Task
+	metrics          map[string]def.Metric
+	running          map[string]map[string]bool
+	taskMonitor      map[string][]def.Task
+	totalPower       map[string]float64
+	wattsAsAResource bool
+	classMapWatts    bool
+	ticker           *time.Ticker
+	isCapping        bool
 
 	// First set of PCP values are garbage values, signal to logger to start recording when we're
 	// about to schedule the new task.
@@ -57,7 +58,8 @@ type BinPackedPistonCapper struct {
 }
 
 // New electron scheduler.
-func NewBinPackedPistonCapper(tasks []def.Task, ignoreWatts bool, schedTracePrefix string) *BinPackedPistonCapper {
+func NewBinPackedPistonCapper(tasks []def.Task, wattsAsAResource bool, schedTracePrefix string,
+	classMapWatts bool) *BinPackedPistonCapper {
 
 	logFile, err := os.Create("./" + schedTracePrefix + "_schedTrace.log")
 	if err != nil {
@@ -65,26 +67,32 @@ func NewBinPackedPistonCapper(tasks []def.Task, ignoreWatts bool, schedTracePref
 	}
 
 	s := &BinPackedPistonCapper{
-		tasks:       tasks,
-		ignoreWatts: ignoreWatts,
-		Shutdown:    make(chan struct{}),
-		Done:        make(chan struct{}),
-		PCPLog:      make(chan struct{}),
-		running:     make(map[string]map[string]bool),
-		taskMonitor: make(map[string][]def.Task),
-		totalPower:  make(map[string]float64),
-		RecordPCP:   false,
-		ticker:      time.NewTicker(5 * time.Second),
-		isCapping:   false,
-		schedTrace:  log.New(logFile, "", log.LstdFlags),
+		tasks:            tasks,
+		wattsAsAResource: wattsAsAResource,
+		classMapWatts:    classMapWatts,
+		Shutdown:         make(chan struct{}),
+		Done:             make(chan struct{}),
+		PCPLog:           make(chan struct{}),
+		running:          make(map[string]map[string]bool),
+		taskMonitor:      make(map[string][]def.Task),
+		totalPower:       make(map[string]float64),
+		RecordPCP:        false,
+		ticker:           time.NewTicker(5 * time.Second),
+		isCapping:        false,
+		schedTrace:       log.New(logFile, "", log.LstdFlags),
 	}
 	return s
 }
 
 // check whether task fits the offer or not.
-func (s *BinPackedPistonCapper) takeOffer(offerWatts float64, offerCPU float64, offerRAM float64,
+func (s *BinPackedPistonCapper) takeOffer(offer *mesos.Offer, offerWatts float64, offerCPU float64, offerRAM float64,
 	totalWatts float64, totalCPU float64, totalRAM float64, task def.Task) bool {
-	if (s.ignoreWatts || (offerWatts >= (totalWatts + task.Watts))) &&
+	wattsConsideration, err := def.WattsToConsider(task, s.classMapWatts, offer)
+	if err != nil {
+		// Error in determining wattsToConsider
+		log.Fatal(err)
+	}
+	if (!s.wattsAsAResource || (offerWatts >= (totalWatts + wattsConsideration))) &&
 		(offerCPU >= (totalCPU + task.CPU)) &&
 		(offerRAM >= (totalRAM + task.RAM)) {
 		return true
@@ -128,8 +136,14 @@ func (s *BinPackedPistonCapper) newTask(offer *mesos.Offer, task def.Task) *meso
 		mesosutil.NewScalarResource("mem", task.RAM),
 	}
 
-	if !s.ignoreWatts {
-		resources = append(resources, mesosutil.NewScalarResource("watts", task.Watts))
+	if s.wattsAsAResource {
+		if wattsToConsider, err := def.WattsToConsider(task, s.classMapWatts, offer); err == nil {
+			log.Printf("Watts considered for host[%s] and task[%s] = %f", *offer.Hostname, task.Name, wattsToConsider)
+			resources = append(resources, mesosutil.NewScalarResource("watts", wattsToConsider))
+		} else {
+			// Error in determining wattsConsideration
+			log.Fatal(err)
+		}
 	}
 
 	return &mesos.TaskInfo{
@@ -182,7 +196,8 @@ func (s *BinPackedPistonCapper) startCapping() {
 							if err := rapl.Cap(host, "rapl", roundedCapValue); err != nil {
 								log.Println(err)
 							} else {
-								log.Printf("Capped [%s] at %d", host, int(math.Floor(capValue+0.5)))
+								log.Printf("Capped [%s] at %d", host,
+									int(math.Floor(capValue+0.5)))
 							}
 							bpPistonPreviousRoundedCapValues[host] = roundedCapValue
 						}
@@ -218,8 +233,8 @@ func (s *BinPackedPistonCapper) ResourceOffers(driver sched.SchedulerDriver, off
 	// retrieving the total power for each host in the offers
 	for _, offer := range offers {
 		if _, ok := s.totalPower[*offer.Hostname]; !ok {
-			_, _, offer_watts := offerUtils.OfferAgg(offer)
-			s.totalPower[*offer.Hostname] = offer_watts
+			_, _, offerWatts := offerUtils.OfferAgg(offer)
+			s.totalPower[*offer.Hostname] = offerWatts
 		}
 	}
 
@@ -257,12 +272,21 @@ func (s *BinPackedPistonCapper) ResourceOffers(driver sched.SchedulerDriver, off
 		partialLoad := 0.0
 		for i := 0; i < len(s.tasks); i++ {
 			task := s.tasks[i]
+			wattsConsideration, err := def.WattsToConsider(task, s.classMapWatts, offer)
+			if err != nil {
+				// Error in determining wattsConsideration
+				log.Fatal(err)
+			}
+
 			// Don't take offer if it doesn't match our task's host requirement
-			if offerUtils.HostMismatch(*offer.Hostname, task.Host) {continue}
+			if offerUtils.HostMismatch(*offer.Hostname, task.Host) {
+				continue
+			}
 
 			for *task.Instances > 0 {
 				// Does the task fit
-				if s.takeOffer(offerWatts, offerCPU, offerRAM, totalWatts, totalCPU, totalRAM, task) {
+				if s.takeOffer(offer, offerWatts, offerCPU, offerRAM,
+					totalWatts, totalCPU, totalRAM, task) {
 
 					// Start piston capping if haven't started yet
 					if !s.isCapping {
@@ -271,7 +295,7 @@ func (s *BinPackedPistonCapper) ResourceOffers(driver sched.SchedulerDriver, off
 					}
 
 					offerTaken = true
-					totalWatts += task.Watts
+					totalWatts += wattsConsideration
 					totalCPU += task.CPU
 					totalRAM += task.RAM
 					log.Println("Co-Located with: ")
@@ -283,7 +307,7 @@ func (s *BinPackedPistonCapper) ResourceOffers(driver sched.SchedulerDriver, off
 					s.schedTrace.Print(offer.GetHostname() + ":" + taskToSchedule.GetTaskId().GetValue())
 					*task.Instances--
 					// updating the cap value for offer.Hostname
-					partialLoad += ((task.Watts * constants.CapMargin) / s.totalPower[*offer.Hostname]) * 100
+					partialLoad += ((wattsConsideration * constants.Tolerance) / s.totalPower[*offer.Hostname]) * 100
 
 					if *task.Instances <= 0 {
 						// All instances of task have been scheduled. Remove it
@@ -364,9 +388,16 @@ func (s *BinPackedPistonCapper) StatusUpdate(driver sched.SchedulerDriver, statu
 			log.Println(err)
 		}
 
+		// Need to determine the watts consideration for the finishedTask
+		var wattsConsideration float64
+		if s.classMapWatts {
+			wattsConsideration = finishedTask.ClassToWatts[hostToPowerClass(hostOfFinishedTask)]
+		} else {
+			wattsConsideration = finishedTask.Watts
+		}
 		// Need to update the cap values for host of the finishedTask
 		bpPistonMutex.Lock()
-		bpPistonCapValues[hostOfFinishedTask] -= ((finishedTask.Watts * constants.CapMargin) / s.totalPower[hostOfFinishedTask]) * 100
+		bpPistonCapValues[hostOfFinishedTask] -= ((wattsConsideration * constants.Tolerance) / s.totalPower[hostOfFinishedTask]) * 100
 		// Checking to see if the cap value has become 0, in which case we uncap the host.
 		if int(math.Floor(bpPistonCapValues[hostOfFinishedTask]+0.5)) == 0 {
 			bpPistonCapValues[hostOfFinishedTask] = 100

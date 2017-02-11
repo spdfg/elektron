@@ -16,26 +16,32 @@ import (
 )
 
 // Decides if to take an offer or not
-func (s *BPMaxMinWatts) takeOffer(offer *mesos.Offer, totalCPU, totalRAM, totalWatts float64, task def.Task) bool {
-	offerCPU, offerRAM, offerWatts := offerUtils.OfferAgg(offer)
+func (s *BPSWMaxMinWatts) takeOffer(offer *mesos.Offer, task def.Task) bool {
+
+	cpus, mem, watts := offerUtils.OfferAgg(offer)
 
 	//TODO: Insert watts calculation here instead of taking them as a parameter
-	if (s.ignoreWatts || (offerWatts >= (totalWatts + task.Watts))) &&
-		(offerCPU >= (totalCPU + task.CPU)) &&
-		(offerRAM >= (totalRAM + task.RAM)) {
+
+	wattsConsideration, err := def.WattsToConsider(task, s.classMapWatts, offer)
+	if err != nil {
+		// Error in determining wattsConsideration
+		log.Fatal(err)
+	}
+	if cpus >= task.CPU && mem >= task.RAM && (!s.wattsAsAResource || (watts >= wattsConsideration)) {
 		return true
 	}
 	return false
 }
 
-type BPMaxMinWatts struct {
-	base         //Type embedding to inherit common functions
-	tasksCreated int
-	tasksRunning int
-	tasks        []def.Task
-	metrics      map[string]def.Metric
-	running      map[string]map[string]bool
-	ignoreWatts  bool
+type BPSWMaxMinWatts struct {
+	base             //Type embedding to inherit common functions
+	tasksCreated     int
+	tasksRunning     int
+	tasks            []def.Task
+	metrics          map[string]def.Metric
+	running          map[string]map[string]bool
+	wattsAsAResource bool
+	classMapWatts    bool
 
 	// First set of PCP values are garbage values, signal to logger to start recording when we're
 	// about to schedule a new task
@@ -55,7 +61,7 @@ type BPMaxMinWatts struct {
 }
 
 // New electron scheduler
-func NewBPMaxMinWatts(tasks []def.Task, ignoreWatts bool, schedTracePrefix string) *BPMaxMinWatts {
+func NewBPMaxMinWatts(tasks []def.Task, wattsAsAResource bool, schedTracePrefix string, classMapWatts bool) *BPSWMaxMinWatts {
 	sort.Sort(def.WattsSorter(tasks))
 
 	logFile, err := os.Create("./" + schedTracePrefix + "_schedTrace.log")
@@ -63,20 +69,21 @@ func NewBPMaxMinWatts(tasks []def.Task, ignoreWatts bool, schedTracePrefix strin
 		log.Fatal(err)
 	}
 
-	s := &BPMaxMinWatts{
-		tasks:       tasks,
-		ignoreWatts: ignoreWatts,
-		Shutdown:    make(chan struct{}),
-		Done:        make(chan struct{}),
-		PCPLog:      make(chan struct{}),
-		running:     make(map[string]map[string]bool),
-		RecordPCP:   false,
-		schedTrace:  log.New(logFile, "", log.LstdFlags),
+	s := &BPSWMaxMinWatts{
+		tasks:            tasks,
+		wattsAsAResource: wattsAsAResource,
+		classMapWatts:    classMapWatts,
+		Shutdown:         make(chan struct{}),
+		Done:             make(chan struct{}),
+		PCPLog:           make(chan struct{}),
+		running:          make(map[string]map[string]bool),
+		RecordPCP:        false,
+		schedTrace:       log.New(logFile, "", log.LstdFlags),
 	}
 	return s
 }
 
-func (s *BPMaxMinWatts) newTask(offer *mesos.Offer, task def.Task) *mesos.TaskInfo {
+func (s *BPSWMaxMinWatts) newTask(offer *mesos.Offer, task def.Task) *mesos.TaskInfo {
 	taskName := fmt.Sprintf("%s-%d", task.Name, *task.Instances)
 	s.tasksCreated++
 
@@ -100,8 +107,14 @@ func (s *BPMaxMinWatts) newTask(offer *mesos.Offer, task def.Task) *mesos.TaskIn
 		mesosutil.NewScalarResource("mem", task.RAM),
 	}
 
-	if !s.ignoreWatts {
-		resources = append(resources, mesosutil.NewScalarResource("watts", task.Watts))
+	if s.wattsAsAResource {
+		if wattsToConsider, err := def.WattsToConsider(task, s.classMapWatts, offer); err == nil {
+			log.Printf("Watts considered for host[%s] and task[%s] = %f", *offer.Hostname, task.Name, wattsToConsider)
+			resources = append(resources, mesosutil.NewScalarResource("watts", wattsToConsider))
+		} else {
+			// Error in determining wattsConsideration
+			log.Fatal(err)
+		}
 	}
 
 	return &mesos.TaskInfo{
@@ -126,17 +139,19 @@ func (s *BPMaxMinWatts) newTask(offer *mesos.Offer, task def.Task) *mesos.TaskIn
 
 // Determine if the remaining space inside of the offer is enough for this
 // the task we need to create. If it is, create a TaskInfo and return it.
-func (s *BPMaxMinWatts) CheckFit(i int,
+func (s *BPSWMaxMinWatts) CheckFit(
+	i int,
 	task def.Task,
+	wattsConsideration float64,
 	offer *mesos.Offer,
 	totalCPU *float64,
 	totalRAM *float64,
 	totalWatts *float64) (bool, *mesos.TaskInfo) {
 
 	// Does the task fit
-	if s.takeOffer(offer, *totalCPU, *totalRAM, *totalWatts, task) {
+	if s.takeOffer(offer, task) {
 
-		*totalWatts += task.Watts
+		*totalWatts += wattsConsideration
 		*totalCPU += task.CPU
 		*totalRAM += task.RAM
 		log.Println("Co-Located with: ")
@@ -164,7 +179,7 @@ func (s *BPMaxMinWatts) CheckFit(i int,
 	return false, nil
 }
 
-func (s *BPMaxMinWatts) ResourceOffers(driver sched.SchedulerDriver, offers []*mesos.Offer) {
+func (s *BPSWMaxMinWatts) ResourceOffers(driver sched.SchedulerDriver, offers []*mesos.Offer) {
 	log.Printf("Received %d resource offers", len(offers))
 
 	for _, offer := range offers {
@@ -192,13 +207,20 @@ func (s *BPMaxMinWatts) ResourceOffers(driver sched.SchedulerDriver, offers []*m
 		for i := len(s.tasks) - 1; i >= 0; i-- {
 
 			task := s.tasks[i]
+			wattsConsideration, err := def.WattsToConsider(task, s.classMapWatts, offer)
+			if err != nil {
+				// Error in determining wattsConsideration
+				log.Fatal(err)
+			}
+
 			// Don't take offer if it doesn't match our task's host requirement
 			if offerUtils.HostMismatch(*offer.Hostname, task.Host) {
 				continue
 			}
 
 			// TODO: Fix this so index doesn't need to be passed
-			taken, taskToSchedule := s.CheckFit(i, task, offer, &totalCPU, &totalRAM, &totalWatts)
+			taken, taskToSchedule := s.CheckFit(i, task, wattsConsideration, offer,
+				&totalCPU, &totalRAM, &totalWatts)
 
 			if taken {
 				offerTaken = true
@@ -208,7 +230,13 @@ func (s *BPMaxMinWatts) ResourceOffers(driver sched.SchedulerDriver, offers []*m
 		}
 
 		// Pack the rest of the offer with the smallest tasks
-		for i, task := range s.tasks {
+		for i := 0; i < len(s.tasks); i++ {
+			task := s.tasks[i]
+			wattsConsideration, err := def.WattsToConsider(task, s.classMapWatts, offer)
+			if err != nil {
+				// Error in determining wattsConsideration
+				log.Fatal(err)
+			}
 
 			// Don't take offer if it doesn't match our task's host requirement
 			if offerUtils.HostMismatch(*offer.Hostname, task.Host) {
@@ -217,7 +245,8 @@ func (s *BPMaxMinWatts) ResourceOffers(driver sched.SchedulerDriver, offers []*m
 
 			for *task.Instances > 0 {
 				// TODO: Fix this so index doesn't need to be passed
-				taken, taskToSchedule := s.CheckFit(i, task, offer, &totalCPU, &totalRAM, &totalWatts)
+				taken, taskToSchedule := s.CheckFit(i, task, wattsConsideration, offer,
+					&totalCPU, &totalRAM, &totalWatts)
 
 				if taken {
 					offerTaken = true
@@ -243,7 +272,7 @@ func (s *BPMaxMinWatts) ResourceOffers(driver sched.SchedulerDriver, offers []*m
 	}
 }
 
-func (s *BPMaxMinWatts) StatusUpdate(driver sched.SchedulerDriver, status *mesos.TaskStatus) {
+func (s *BPSWMaxMinWatts) StatusUpdate(driver sched.SchedulerDriver, status *mesos.TaskStatus) {
 	log.Printf("Received task status [%s] for task [%s]", NameFor(status.State), *status.TaskId.Value)
 
 	if *status.State == mesos.TaskState_TASK_RUNNING {

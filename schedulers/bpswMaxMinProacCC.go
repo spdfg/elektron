@@ -21,35 +21,39 @@ import (
 )
 
 // Decides if to take an offer or not
-func (s *BPMaxMinProacCC) takeOffer(offer *mesos.Offer, totalCPU, totalRAM, totalWatts float64, task def.Task) bool {
-	offerCPU, offerRAM, offerWatts := offerUtils.OfferAgg(offer)
+func (s *BPSWMaxMinProacCC) takeOffer(offer *mesos.Offer, task def.Task) bool {
+	cpus, mem, watts := offerUtils.OfferAgg(offer)
 
 	//TODO: Insert watts calculation here instead of taking them as a parameter
-	// Does the task fit
-	if (s.ignoreWatts || (offerWatts >= (*totalWatts + task.Watts))) &&
-		(offerCPU >= (*totalCPU + task.CPU)) &&
-		(offerRAM >= (*totalRAM + task.RAM)) {
+
+	wattsConsideration, err := def.WattsToConsider(task, s.classMapWatts, offer)
+	if err != nil {
+		// Error in determining wattsConsideration
+		log.Fatal(err)
+	}
+	if cpus >= task.CPU && mem >= task.RAM && (!s.wattsAsAResource || (watts >= wattsConsideration)) {
 		return true
 	}
 	return false
 }
 
-type BPMaxMinProacCC struct {
-	base           // Type embedding to inherit common functions
-	tasksCreated   int
-	tasksRunning   int
-	tasks          []def.Task
-	metrics        map[string]def.Metric
-	running        map[string]map[string]bool
-	taskMonitor    map[string][]def.Task
-	availablePower map[string]float64
-	totalPower     map[string]float64
-	ignoreWatts    bool
-	capper         *powCap.ClusterwideCapper
-	ticker         *time.Ticker
-	recapTicker    *time.Ticker
-	isCapping      bool // indicate whether we are currently performing cluster-wide capping.
-	isRecapping    bool // indicate whether we are currently performing cluster-wide recapping.
+type BPSWMaxMinProacCC struct {
+	base             // Type embedding to inherit common functions
+	tasksCreated     int
+	tasksRunning     int
+	tasks            []def.Task
+	metrics          map[string]def.Metric
+	running          map[string]map[string]bool
+	taskMonitor      map[string][]def.Task
+	availablePower   map[string]float64
+	totalPower       map[string]float64
+	wattsAsAResource bool
+	classMapWatts    bool
+	capper           *powCap.ClusterwideCapper
+	ticker           *time.Ticker
+	recapTicker      *time.Ticker
+	isCapping        bool // indicate whether we are currently performing cluster-wide capping.
+	isRecapping      bool // indicate whether we are currently performing cluster-wide recapping.
 
 	// First set of PCP values are garbage values, signal to logger to start recording when we're
 	// about to schedule a new task
@@ -69,7 +73,7 @@ type BPMaxMinProacCC struct {
 }
 
 // New electron scheduler
-func NewBPMaxMinProacCC(tasks []def.Task, ignoreWatts bool, schedTracePrefix string) *BPMaxMinProacCC {
+func NewBPSWMaxMinProacCC(tasks []def.Task, wattsAsAResource bool, schedTracePrefix string, classMapWatts bool) *BPSWMaxMinProacCC {
 	sort.Sort(def.WattsSorter(tasks))
 
 	logFile, err := os.Create("./" + schedTracePrefix + "_schedTrace.log")
@@ -77,23 +81,24 @@ func NewBPMaxMinProacCC(tasks []def.Task, ignoreWatts bool, schedTracePrefix str
 		log.Fatal(err)
 	}
 
-	s := &BPMaxMinProacCC{
-		tasks:          tasks,
-		ignoreWatts:    ignoreWatts,
-		Shutdown:       make(chan struct{}),
-		Done:           make(chan struct{}),
-		PCPLog:         make(chan struct{}),
-		running:        make(map[string]map[string]bool),
-		taskMonitor:    make(map[string][]def.Task),
-		availablePower: make(map[string]float64),
-		totalPower:     make(map[string]float64),
-		RecordPCP:      false,
-		capper:         powCap.GetClusterwideCapperInstance(),
-		ticker:         time.NewTicker(10 * time.Second),
-		recapTicker:    time.NewTicker(20 * time.Second),
-		isCapping:      false,
-		isRecapping:    false,
-		schedTrace:     log.New(logFile, "", log.LstdFlags),
+	s := &BPSWMaxMinProacCC{
+		tasks:            tasks,
+		wattsAsAResource: wattsAsAResource,
+		classMapWatts:    classMapWatts,
+		Shutdown:         make(chan struct{}),
+		Done:             make(chan struct{}),
+		PCPLog:           make(chan struct{}),
+		running:          make(map[string]map[string]bool),
+		taskMonitor:      make(map[string][]def.Task),
+		availablePower:   make(map[string]float64),
+		totalPower:       make(map[string]float64),
+		RecordPCP:        false,
+		capper:           powCap.GetClusterwideCapperInstance(),
+		ticker:           time.NewTicker(10 * time.Second),
+		recapTicker:      time.NewTicker(20 * time.Second),
+		isCapping:        false,
+		isRecapping:      false,
+		schedTrace:       log.New(logFile, "", log.LstdFlags),
 	}
 	return s
 }
@@ -101,7 +106,7 @@ func NewBPMaxMinProacCC(tasks []def.Task, ignoreWatts bool, schedTracePrefix str
 // mutex
 var bpMaxMinProacCCMutex sync.Mutex
 
-func (s *BPMaxMinProacCC) newTask(offer *mesos.Offer, task def.Task) *mesos.TaskInfo {
+func (s *BPSWMaxMinProacCC) newTask(offer *mesos.Offer, task def.Task) *mesos.TaskInfo {
 	taskName := fmt.Sprintf("%s-%d", task.Name, *task.Instances)
 	s.tasksCreated++
 
@@ -132,8 +137,14 @@ func (s *BPMaxMinProacCC) newTask(offer *mesos.Offer, task def.Task) *mesos.Task
 		mesosutil.NewScalarResource("mem", task.RAM),
 	}
 
-	if !s.ignoreWatts {
-		resources = append(resources, mesosutil.NewScalarResource("watts", task.Watts))
+	if s.wattsAsAResource {
+		if wattsToConsider, err := def.WattsToConsider(task, s.classMapWatts, offer); err == nil {
+			log.Printf("Watts considered for host[%s] and task[%s] = %f", *offer.Hostname, task.Name, wattsToConsider)
+			resources = append(resources, mesosutil.NewScalarResource("watts", wattsToConsider))
+		} else {
+			// Error in determining wattsConsideration
+			log.Fatal(err)
+		}
 	}
 
 	return &mesos.TaskInfo{
@@ -159,7 +170,7 @@ func (s *BPMaxMinProacCC) newTask(offer *mesos.Offer, task def.Task) *mesos.Task
 // go routine to cap the entire cluster in regular intervals of time.
 var bpMaxMinProacCCCapValue = 0.0    // initial value to indicate that we haven't capped the cluster yet.
 var bpMaxMinProacCCNewCapValue = 0.0 // newly computed cap value
-func (s *BPMaxMinProacCC) startCapping() {
+func (s *BPSWMaxMinProacCC) startCapping() {
 	go func() {
 		for {
 			select {
@@ -190,7 +201,7 @@ func (s *BPMaxMinProacCC) startCapping() {
 
 // go routine to recap the entire cluster in regular intervals of time.
 var bpMaxMinProacCCRecapValue = 0.0 // The cluster-wide cap value when recapping.
-func (s *BPMaxMinProacCC) startRecapping() {
+func (s *BPSWMaxMinProacCC) startRecapping() {
 	go func() {
 		for {
 			select {
@@ -216,7 +227,7 @@ func (s *BPMaxMinProacCC) startRecapping() {
 }
 
 // Stop cluster-wide capping
-func (s *BPMaxMinProacCC) stopCapping() {
+func (s *BPSWMaxMinProacCC) stopCapping() {
 	if s.isCapping {
 		log.Println("Stopping the cluster-wide capping.")
 		s.ticker.Stop()
@@ -228,7 +239,7 @@ func (s *BPMaxMinProacCC) stopCapping() {
 }
 
 // Stop the cluster-wide recapping
-func (s *BPMaxMinProacCC) stopRecapping() {
+func (s *BPSWMaxMinProacCC) stopRecapping() {
 	// If not capping, then definitely recapping.
 	if !s.isCapping && s.isRecapping {
 		log.Println("Stopping the cluster-wide re-capping.")
@@ -241,15 +252,17 @@ func (s *BPMaxMinProacCC) stopRecapping() {
 
 // Determine if the remaining space inside of the offer is enough for
 // the task we need to create. If it is, create TaskInfo and return it.
-func (s *BPMaxMinProacCC) CheckFit(i int,
+func (s *BPSWMaxMinProacCC) CheckFit(
+	i int,
 	task def.Task,
+	wattsConsideration float64,
 	offer *mesos.Offer,
 	totalCPU *float64,
 	totalRAM *float64,
 	totalWatts *float64) (bool, *mesos.TaskInfo) {
 
 	// Does the task fit
-	if s.takeOffer(offer, *totalCPU, *totalRAM, *totalWatts, task) {
+	if s.takeOffer(offer, task) {
 
 		// Capping the cluster if haven't yet started
 		if !s.isCapping {
@@ -269,7 +282,7 @@ func (s *BPMaxMinProacCC) CheckFit(i int,
 			log.Println(err)
 		}
 
-		*totalWatts += task.Watts
+		*totalWatts += wattsConsideration
 		*totalCPU += task.CPU
 		*totalRAM += task.RAM
 		log.Println("Co-Located with: ")
@@ -301,7 +314,7 @@ func (s *BPMaxMinProacCC) CheckFit(i int,
 
 }
 
-func (s *BPMaxMinProacCC) ResourceOffers(driver sched.SchedulerDriver, offers []*mesos.Offer) {
+func (s *BPSWMaxMinProacCC) ResourceOffers(driver sched.SchedulerDriver, offers []*mesos.Offer) {
 	log.Printf("Received %d resource offers", len(offers))
 
 	// retrieving the available power for all the hosts in the offers.
@@ -343,13 +356,19 @@ func (s *BPMaxMinProacCC) ResourceOffers(driver sched.SchedulerDriver, offers []
 		for i := len(s.tasks) - 1; i >= 0; i-- {
 
 			task := s.tasks[i]
+			wattsConsideration, err := def.WattsToConsider(task, s.classMapWatts, offer)
+			if err != nil {
+				// Error in determining wattsConsideration
+				log.Fatal(err)
+			}
 			// Don't take offer if it doesn't match our task's host requirement
 			if offerUtils.HostMismatch(*offer.Hostname, task.Host) {
 				continue
 			}
 
 			// TODO: Fix this so index doesn't need to be passed
-			taken, taskToSchedule := s.CheckFit(i, task, offer, &totalCPU, &totalRAM, &totalWatts)
+			taken, taskToSchedule := s.CheckFit(i, task, wattsConsideration, offer,
+				&totalCPU, &totalRAM, &totalWatts)
 
 			if taken {
 				offerTaken = true
@@ -359,7 +378,13 @@ func (s *BPMaxMinProacCC) ResourceOffers(driver sched.SchedulerDriver, offers []
 		}
 
 		// Pack the rest of the offer with the smallest tasks
-		for i, task := range s.tasks {
+		for i := 0; i < len(s.tasks); i++ {
+			task := s.tasks[i]
+			wattsConsideration, err := def.WattsToConsider(task, s.classMapWatts, offer)
+			if err != nil {
+				// Error in determining wattsConsideration
+				log.Fatal(err)
+			}
 
 			// Don't take offer if it doesn't match our task's host requirement
 			if offerUtils.HostMismatch(*offer.Hostname, task.Host) {
@@ -368,7 +393,8 @@ func (s *BPMaxMinProacCC) ResourceOffers(driver sched.SchedulerDriver, offers []
 
 			for *task.Instances > 0 {
 				// TODO: Fix this so index doesn't need to be passed
-				taken, taskToSchedule := s.CheckFit(i, task, offer, &totalCPU, &totalRAM, &totalWatts)
+				taken, taskToSchedule := s.CheckFit(i, task, wattsConsideration, offer,
+					&totalCPU, &totalRAM, &totalWatts)
 
 				if taken {
 					offerTaken = true
@@ -394,7 +420,7 @@ func (s *BPMaxMinProacCC) ResourceOffers(driver sched.SchedulerDriver, offers []
 	}
 }
 
-func (s *BPMaxMinProacCC) StatusUpdate(driver sched.SchedulerDriver, status *mesos.TaskStatus) {
+func (s *BPSWMaxMinProacCC) StatusUpdate(driver sched.SchedulerDriver, status *mesos.TaskStatus) {
 	log.Printf("Received task status [%s] for task [%s]", NameFor(status.State), *status.TaskId.Value)
 
 	if *status.State == mesos.TaskState_TASK_RUNNING {

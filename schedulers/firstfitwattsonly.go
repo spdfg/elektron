@@ -15,13 +15,18 @@ import (
 )
 
 // Decides if to take an offer or not
-func (*FirstFitWattsOnly) takeOffer(offer *mesos.Offer, task def.Task) bool {
+func (s *FirstFitWattsOnly) takeOffer(offer *mesos.Offer, task def.Task) bool {
 
 	_, _, watts := offerUtils.OfferAgg(offer)
 
 	//TODO: Insert watts calculation here instead of taking them as a parameter
 
-	if watts >= task.Watts {
+	wattsConsideration, err := def.WattsToConsider(task, s.classMapWatts, offer)
+	if err != nil {
+		// Error in determining wattsConsideration
+		log.Fatal(err)
+	}
+	if watts >= wattsConsideration {
 		return true
 	}
 
@@ -29,13 +34,14 @@ func (*FirstFitWattsOnly) takeOffer(offer *mesos.Offer, task def.Task) bool {
 }
 
 type FirstFitWattsOnly struct {
-	base         // Type embedded to inherit common functions
-	tasksCreated int
-	tasksRunning int
-	tasks        []def.Task
-	metrics      map[string]def.Metric
-	running      map[string]map[string]bool
-	ignoreWatts  bool
+	base             // Type embedded to inherit common functions
+	tasksCreated     int
+	tasksRunning     int
+	tasks            []def.Task
+	metrics          map[string]def.Metric
+	running          map[string]map[string]bool
+	wattsAsAResource bool
+	classMapWatts    bool
 
 	// First set of PCP values are garbage values, signal to logger to start recording when we're
 	// about to schedule a new task
@@ -55,7 +61,7 @@ type FirstFitWattsOnly struct {
 }
 
 // New electron scheduler
-func NewFirstFitWattsOnly(tasks []def.Task, ignoreWatts bool, schedTracePrefix string) *FirstFitWattsOnly {
+func NewFirstFitWattsOnly(tasks []def.Task, wattsAsAResource bool, schedTracePrefix string, classMapWatts bool) *FirstFitWattsOnly {
 
 	logFile, err := os.Create("./" + schedTracePrefix + "_schedTrace.log")
 	if err != nil {
@@ -63,14 +69,15 @@ func NewFirstFitWattsOnly(tasks []def.Task, ignoreWatts bool, schedTracePrefix s
 	}
 
 	s := &FirstFitWattsOnly{
-		tasks:       tasks,
-		ignoreWatts: ignoreWatts,
-		Shutdown:    make(chan struct{}),
-		Done:        make(chan struct{}),
-		PCPLog:      make(chan struct{}),
-		running:     make(map[string]map[string]bool),
-		RecordPCP:   false,
-		schedTrace:  log.New(logFile, "", log.LstdFlags),
+		tasks:            tasks,
+		wattsAsAResource: wattsAsAResource,
+		classMapWatts:    classMapWatts,
+		Shutdown:         make(chan struct{}),
+		Done:             make(chan struct{}),
+		PCPLog:           make(chan struct{}),
+		running:          make(map[string]map[string]bool),
+		RecordPCP:        false,
+		schedTrace:       log.New(logFile, "", log.LstdFlags),
 	}
 	return s
 }
@@ -93,8 +100,13 @@ func (s *FirstFitWattsOnly) newTask(offer *mesos.Offer, task def.Task) *mesos.Ta
 	// Add task to list of tasks running on node
 	s.running[offer.GetSlaveId().GoString()][taskName] = true
 
+	wattsConsideration, err := def.WattsToConsider(task, s.classMapWatts, offer)
+	if err != nil {
+		// Error in determining wattsConsideration
+		log.Fatal(err)
+	}
 	resources := []*mesos.Resource{
-		mesosutil.NewScalarResource("watts", task.Watts),
+		mesosutil.NewScalarResource("watts", wattsConsideration),
 	}
 
 	return &mesos.TaskInfo{

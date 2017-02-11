@@ -2,7 +2,9 @@ package def
 
 import (
 	"bitbucket.org/sunybingcloud/electron/constants"
+	"bitbucket.org/sunybingcloud/electron/utilities/offerUtils"
 	"encoding/json"
+	mesos "github.com/mesos/mesos-go/mesosproto"
 	"github.com/pkg/errors"
 	"os"
 )
@@ -65,6 +67,34 @@ func (tsk *Task) SetTaskID(taskID string) bool {
 	}
 }
 
+/*
+ Determine the watts value to consider for each task.
+
+ This value could either be task.Watts or task.ClassToWatts[<power class>]
+ If task.ClassToWatts is not present, then return task.Watts (this would be for workloads which don't have classMapWatts)
+*/
+func WattsToConsider(task Task, classMapWatts bool, offer *mesos.Offer) (float64, error) {
+	if classMapWatts {
+		// checking if ClassToWatts was present in the workload.
+		if task.ClassToWatts != nil {
+			return task.ClassToWatts[offerUtils.PowerClass(offer)], nil
+		} else {
+			// Checking whether task.Watts is 0.0. If yes, then throwing an error.
+			if task.Watts == 0.0 {
+				return task.Watts, errors.New("Configuration error in task. Watts attribute is 0 for " + task.Name)
+			}
+			return task.Watts, nil
+		}
+	} else {
+		// Checking whether task.Watts is 0.0. If yes, then throwing an error.
+		if task.Watts == 0.0 {
+			return task.Watts, errors.New("Configuration error in task. Watts attribute is 0 for " + task.Name)
+		}
+		return task.Watts, nil
+	}
+}
+
+// Sorter implements sort.Sort interface to sort tasks by Watts requirement.
 type WattsSorter []Task
 
 func (slice WattsSorter) Len() int {
@@ -76,6 +106,21 @@ func (slice WattsSorter) Less(i, j int) bool {
 }
 
 func (slice WattsSorter) Swap(i, j int) {
+	slice[i], slice[j] = slice[j], slice[i]
+}
+
+// Sorter implements sort.Sort interface to sort tasks by CPU requirement.
+type CPUSorter []Task
+
+func (slice CPUSorter) Len() int {
+	return len(slice)
+}
+
+func (slice CPUSorter) Less(i, j int) bool {
+	return slice[i].CPU < slice[j].CPU
+}
+
+func (slice CPUSorter) Swap(i, j int) {
 	slice[i], slice[j] = slice[j], slice[i]
 }
 

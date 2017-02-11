@@ -16,26 +16,32 @@ import (
 )
 
 // Decides if to take an offer or not
-func (s *BinPackSortedWatts) takeOffer(offer *mesos.Offer, totalCPU, totalRAM, totalWatts float64, task def.Task) bool {
-	offerCPU, offerRAM, offerWatts := offerUtils.OfferAgg(offer)
+func (s *BinPackSortedWatts) takeOffer(offer *mesos.Offer, task def.Task) bool {
+
+	cpus, mem, watts := offerUtils.OfferAgg(offer)
 
 	//TODO: Insert watts calculation here instead of taking them as a parameter
-	if (s.ignoreWatts || (offerWatts >= (totalWatts + task.Watts))) &&
-		(offerCPU >= (totalCPU + task.CPU)) &&
-		(offerRAM >= (totalRAM + task.RAM)) {
+
+	wattsConsideration, err := def.WattsToConsider(task, s.classMapWatts, offer)
+	if err != nil {
+		// Error in determining wattsConsideration
+		log.Fatal(err)
+	}
+	if cpus >= task.CPU && mem >= task.RAM && (!s.wattsAsAResource || (watts >= wattsConsideration)) {
 		return true
 	}
 	return false
 }
 
 type BinPackSortedWatts struct {
-	base         // Type embedded to inherit common functions
-	tasksCreated int
-	tasksRunning int
-	tasks        []def.Task
-	metrics      map[string]def.Metric
-	running      map[string]map[string]bool
-	ignoreWatts  bool
+	base             // Type embedded to inherit common functions
+	tasksCreated     int
+	tasksRunning     int
+	tasks            []def.Task
+	metrics          map[string]def.Metric
+	running          map[string]map[string]bool
+	wattsAsAResource bool
+	classMapWatts    bool
 
 	// First set of PCP values are garbage values, signal to logger to start recording when we're
 	// about to schedule a new task
@@ -55,7 +61,7 @@ type BinPackSortedWatts struct {
 }
 
 // New electron scheduler
-func NewBinPackSortedWatts(tasks []def.Task, ignoreWatts bool, schedTracePrefix string) *BinPackSortedWatts {
+func NewBinPackSortedWatts(tasks []def.Task, wattsAsAResource bool, schedTracePrefix string, classMapWatts bool) *BinPackSortedWatts {
 	sort.Sort(def.WattsSorter(tasks))
 
 	logFile, err := os.Create("./" + schedTracePrefix + "_schedTrace.log")
@@ -64,14 +70,15 @@ func NewBinPackSortedWatts(tasks []def.Task, ignoreWatts bool, schedTracePrefix 
 	}
 
 	s := &BinPackSortedWatts{
-		tasks:       tasks,
-		ignoreWatts: ignoreWatts,
-		Shutdown:    make(chan struct{}),
-		Done:        make(chan struct{}),
-		PCPLog:      make(chan struct{}),
-		running:     make(map[string]map[string]bool),
-		RecordPCP:   false,
-		schedTrace:  log.New(logFile, "", log.LstdFlags),
+		tasks:            tasks,
+		wattsAsAResource: wattsAsAResource,
+		classMapWatts:    classMapWatts,
+		Shutdown:         make(chan struct{}),
+		Done:             make(chan struct{}),
+		PCPLog:           make(chan struct{}),
+		running:          make(map[string]map[string]bool),
+		RecordPCP:        false,
+		schedTrace:       log.New(logFile, "", log.LstdFlags),
 	}
 	return s
 }
@@ -99,8 +106,14 @@ func (s *BinPackSortedWatts) newTask(offer *mesos.Offer, task def.Task) *mesos.T
 		mesosutil.NewScalarResource("mem", task.RAM),
 	}
 
-	if !s.ignoreWatts {
-		resources = append(resources, mesosutil.NewScalarResource("watts", task.Watts))
+	if s.wattsAsAResource {
+		if wattsToConsider, err := def.WattsToConsider(task, s.classMapWatts, offer); err == nil {
+			log.Printf("Watts considered for host[%s] and task[%s] = %f", *offer.Hostname, task.Name, wattsToConsider)
+			resources = append(resources, mesosutil.NewScalarResource("watts", wattsToConsider))
+		} else {
+			// Error in determining wattsToConsider
+			log.Fatal(err)
+		}
 	}
 
 	return &mesos.TaskInfo{
@@ -145,6 +158,11 @@ func (s *BinPackSortedWatts) ResourceOffers(driver sched.SchedulerDriver, offers
 		totalRAM := 0.0
 		for i := 0; i < len(s.tasks); i++ {
 			task := s.tasks[i]
+			wattsConsideration, err := def.WattsToConsider(task, s.classMapWatts, offer)
+			if err != nil {
+				// Error in determining wattsConsideration
+				log.Fatal(err)
+			}
 
 			// Don't take offer if it doesn't match our task's host requirement
 			if offerUtils.HostMismatch(*offer.Hostname, task.Host) {
@@ -153,10 +171,10 @@ func (s *BinPackSortedWatts) ResourceOffers(driver sched.SchedulerDriver, offers
 
 			for *task.Instances > 0 {
 				// Does the task fit
-				if s.takeOffer(offer, totalCPU, totalRAM, totalWatts, task) {
+				if s.takeOffer(offer, task) {
 
 					offerTaken = true
-					totalWatts += task.Watts
+					totalWatts += wattsConsideration
 					totalCPU += task.CPU
 					totalRAM += task.RAM
 					log.Println("Co-Located with: ")
