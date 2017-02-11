@@ -1,13 +1,13 @@
 package schedulers
 
 import (
+	"bitbucket.org/sunybingcloud/electron/def"
 	mesos "github.com/mesos/mesos-go/mesosproto"
 	sched "github.com/mesos/mesos-go/scheduler"
 	"log"
-	"bitbucket.org/sunybingcloud/electron/def"
 )
 
-type base struct{
+type base struct {
 	tasksCreated     int
 	tasksRunning     int
 	tasks            []def.Task
