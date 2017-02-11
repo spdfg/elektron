@@ -34,14 +34,14 @@ func (s *BPSWMaxMinWatts) takeOffer(offer *mesos.Offer, task def.Task) bool {
 }
 
 type BPSWMaxMinWatts struct {
-	base          //Type embedding to inherit common functions
-	tasksCreated  int
-	tasksRunning  int
-	tasks         []def.Task
-	metrics       map[string]def.Metric
-	running       map[string]map[string]bool
-	wattsAsAResource   bool
-	classMapWatts bool
+	base             //Type embedding to inherit common functions
+	tasksCreated     int
+	tasksRunning     int
+	tasks            []def.Task
+	metrics          map[string]def.Metric
+	running          map[string]map[string]bool
+	wattsAsAResource bool
+	classMapWatts    bool
 
 	// First set of PCP values are garbage values, signal to logger to start recording when we're
 	// about to schedule a new task
@@ -70,15 +70,15 @@ func NewBPMaxMinWatts(tasks []def.Task, wattsAsAResource bool, schedTracePrefix 
 	}
 
 	s := &BPSWMaxMinWatts{
-		tasks:         tasks,
-		wattsAsAResource:   wattsAsAResource,
-		classMapWatts: classMapWatts,
-		Shutdown:      make(chan struct{}),
-		Done:          make(chan struct{}),
-		PCPLog:        make(chan struct{}),
-		running:       make(map[string]map[string]bool),
-		RecordPCP:     false,
-		schedTrace:    log.New(logFile, "", log.LstdFlags),
+		tasks:            tasks,
+		wattsAsAResource: wattsAsAResource,
+		classMapWatts:    classMapWatts,
+		Shutdown:         make(chan struct{}),
+		Done:             make(chan struct{}),
+		PCPLog:           make(chan struct{}),
+		running:          make(map[string]map[string]bool),
+		RecordPCP:        false,
+		schedTrace:       log.New(logFile, "", log.LstdFlags),
 	}
 	return s
 }

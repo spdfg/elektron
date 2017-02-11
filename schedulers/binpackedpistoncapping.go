@@ -279,7 +279,9 @@ func (s *BinPackedPistonCapper) ResourceOffers(driver sched.SchedulerDriver, off
 			}
 
 			// Don't take offer if it doesn't match our task's host requirement
-			if offerUtils.HostMismatch(*offer.Hostname, task.Host) {continue}
+			if offerUtils.HostMismatch(*offer.Hostname, task.Host) {
+				continue
+			}
 
 			for *task.Instances > 0 {
 				// Does the task fit

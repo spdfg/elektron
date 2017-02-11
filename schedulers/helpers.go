@@ -1,9 +1,9 @@
 package schedulers
 
 import (
+	"bitbucket.org/sunybingcloud/electron/constants"
 	"fmt"
 	"log"
-	"bitbucket.org/sunybingcloud/electron/constants"
 )
 
 func coLocated(tasks map[string]bool) {
@@ -24,4 +24,3 @@ func hostToPowerClass(hostName string) string {
 	}
 	return ""
 }
-
