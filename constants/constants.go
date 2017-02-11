@@ -1,7 +1,7 @@
 /*
 Constants that are used across scripts
 1. The available hosts = stratos-00x (x varies from 1 to 8)
-2. CapMargin = percentage of the requested power to allocate
+2. Tolerance = tolerance for a task that when exceeded would starve the task.
 3. ConsiderationWindowSize = number of tasks to consider for computation of the dynamic cap.
 TODO: Clean this up and use Mesos Attributes instead.
 */
@@ -32,10 +32,10 @@ var PowerClasses = map[string]map[string]bool{
 
 /*
   Margin with respect to the required power for a job.
-  So, if power required = 10W, the node would be capped to CapMargin * 10W.
+  So, if power required = 10W, the node would be capped to Tolerance * 10W.
   This value can be changed upon convenience.
 */
-var CapMargin = 0.70
+var Tolerance = 0.70
 
 // Window size for running average
 var ConsiderationWindowSize = 20

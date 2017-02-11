@@ -305,7 +305,7 @@ func (s *BinPackedPistonCapper) ResourceOffers(driver sched.SchedulerDriver, off
 					s.schedTrace.Print(offer.GetHostname() + ":" + taskToSchedule.GetTaskId().GetValue())
 					*task.Instances--
 					// updating the cap value for offer.Hostname
-					partialLoad += ((wattsConsideration * constants.CapMargin) / s.totalPower[*offer.Hostname]) * 100
+					partialLoad += ((wattsConsideration * constants.Tolerance) / s.totalPower[*offer.Hostname]) * 100
 
 					if *task.Instances <= 0 {
 						// All instances of task have been scheduled. Remove it
@@ -395,7 +395,7 @@ func (s *BinPackedPistonCapper) StatusUpdate(driver sched.SchedulerDriver, statu
 		}
 		// Need to update the cap values for host of the finishedTask
 		bpPistonMutex.Lock()
-		bpPistonCapValues[hostOfFinishedTask] -= ((wattsConsideration * constants.CapMargin) / s.totalPower[hostOfFinishedTask]) * 100
+		bpPistonCapValues[hostOfFinishedTask] -= ((wattsConsideration * constants.Tolerance) / s.totalPower[hostOfFinishedTask]) * 100
 		// Checking to see if the cap value has become 0, in which case we uncap the host.
 		if int(math.Floor(bpPistonCapValues[hostOfFinishedTask]+0.5)) == 0 {
 			bpPistonCapValues[hostOfFinishedTask] = 100

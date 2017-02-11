@@ -257,7 +257,7 @@ func (s *BPSWMaxMinPistonCapping) CheckFit(i int,
 		fmt.Println("Inst: ", *task.Instances)
 		s.schedTrace.Print(offer.GetHostname() + ":" + taskToSchedule.GetTaskId().GetValue())
 		*task.Instances--
-		*partialLoad += ((wattsConsideration * constants.CapMargin) / s.totalPower[*offer.Hostname]) * 100
+		*partialLoad += ((wattsConsideration * constants.Tolerance) / s.totalPower[*offer.Hostname]) * 100
 
 		if *task.Instances <= 0 {
 			// All instances of task have been scheduled, remove it
@@ -431,7 +431,7 @@ func (s *BPSWMaxMinPistonCapping) StatusUpdate(driver sched.SchedulerDriver, sta
 		}
 		// Need to update the cap values for host of the finishedTask
 		bpMaxMinPistonCappingMutex.Lock()
-		bpMaxMinPistonCappingCapValues[hostOfFinishedTask] -= ((wattsConsideration * constants.CapMargin) / s.totalPower[hostOfFinishedTask]) * 100
+		bpMaxMinPistonCappingCapValues[hostOfFinishedTask] -= ((wattsConsideration * constants.Tolerance) / s.totalPower[hostOfFinishedTask]) * 100
 		// Checking to see if the cap value has become 0, in which case we uncap the host.
 		if int(math.Floor(bpMaxMinPistonCappingCapValues[hostOfFinishedTask]+0.5)) == 0 {
 			bpMaxMinPistonCappingCapValues[hostOfFinishedTask] = 100
