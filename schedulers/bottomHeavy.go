@@ -26,6 +26,31 @@ BinPacking has the most effect when co-scheduling of tasks is increased. Large t
 	co-scheduling them has a great impact on the total power utilization.
 */
 
+func (s *BottomHeavy) takeOfferBinPack(offer *mesos.Offer, totalCPU, totalRAM, totalWatts,
+	wattsToConsider float64, task def.Task) bool {
+	offerCPU, offerRAM, offerWatts := offerUtils.OfferAgg(offer)
+
+	//TODO: Insert watts calculation here instead of taking them as a parameter
+	if (!s.wattsAsAResource || (offerWatts >= (totalWatts + wattsToConsider))) &&
+		(offerCPU >= (totalCPU + task.CPU)) &&
+		(offerRAM >= (totalRAM + task.RAM)) {
+		return true
+	}
+	return false
+
+}
+
+func (s *BottomHeavy) takeOfferFirstFit(offer *mesos.Offer, wattsConsideration float64, task def.Task) bool {
+	offerCPU, offerRAM, offerWatts := offerUtils.OfferAgg(offer)
+
+	//TODO: Insert watts calculation here instead of taking them as a parameter
+	if (!s.wattsAsAResource || (offerWatts >= wattsConsideration)) &&
+		(offerCPU >= task.CPU) && (offerRAM >= task.RAM) {
+		return true
+	}
+	return false
+}
+
 // electronScheduler implements the Scheduler interface
 type BottomHeavy struct {
 	base                   // Type embedded to inherit common functions
@@ -148,7 +173,6 @@ func (s *BottomHeavy) pack(offers []*mesos.Offer, driver sched.SchedulerDriver) 
 		}
 
 		tasks := []*mesos.TaskInfo{}
-		offerCPU, offerRAM, offerWatts := offerUtils.OfferAgg(offer)
 		totalWatts := 0.0
 		totalCPU := 0.0
 		totalRAM := 0.0
@@ -165,9 +189,7 @@ func (s *BottomHeavy) pack(offers []*mesos.Offer, driver sched.SchedulerDriver) 
 				// Does the task fit
 				// OR lazy evaluation. If ignore watts is set to true, second statement won't
 				// be evaluated.
-				if (!s.wattsAsAResource || (offerWatts >= (totalWatts + wattsConsideration))) &&
-					(offerCPU >= (totalCPU + task.CPU)) &&
-					(offerRAM >= (totalRAM + task.RAM)) {
+				if s.takeOfferBinPack(offer, totalCPU, totalRAM, totalWatts, wattsConsideration, task) {
 					offerTaken = true
 					totalWatts += wattsConsideration
 					totalCPU += task.CPU
@@ -213,7 +235,6 @@ func (s *BottomHeavy) spread(offers []*mesos.Offer, driver sched.SchedulerDriver
 		}
 
 		tasks := []*mesos.TaskInfo{}
-		offerCPU, offerRAM, offerWatts := offerUtils.OfferAgg(offer)
 		taken := false
 		for i := 0; i < len(s.smallTasks); i++ {
 			task := s.smallTasks[i]
@@ -221,14 +242,10 @@ func (s *BottomHeavy) spread(offers []*mesos.Offer, driver sched.SchedulerDriver
 			if err != nil {
 				// Error in determining wattsConsideration
 				log.Fatal(err)
-			} else {
-				// Logging the watts consideration
-				log.Printf("Watts Considered for host[%s], task[%s] = %f\n", *offer.Hostname, task.Name, wattsConsideration)
 			}
 
 			// Decision to take the offer or not
-			if (!s.wattsAsAResource || (offerWatts >= wattsConsideration)) &&
-				(offerCPU >= task.CPU) && (offerRAM >= task.RAM) {
+			if s.takeOfferFirstFit(offer, wattsConsideration, task) {
 				taken = true
 				tasks = append(tasks, s.createTaskInfoAndLogSchedTrace(offer, task))
 				log.Printf("Starting %s on [%s]\n", task.Name, offer.GetHostname())

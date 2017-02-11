@@ -12,7 +12,6 @@ import (
 	"log"
 	"os"
 	"sort"
-	"strings"
 	"time"
 )
 
@@ -154,12 +153,9 @@ func (s *FirstFitSortedWattsSortedOffers) ResourceOffers(driver sched.SchedulerD
 		for i := 0; i < len(s.tasks); i++ {
 			task := s.tasks[i]
 
-			// Check host if it exists
-			if task.Host != "" {
-				// Don't take offer if it doesn't match our task's host requirement
-				if !strings.HasPrefix(*offer.Hostname, task.Host) {
-					continue
-				}
+			// Don't take offer if it doesn't match our task's host requirement
+			if offerUtils.HostMismatch(*offer.Hostname, task.Host) {
+				continue
 			}
 
 			// Decision to take the offer or not

@@ -16,7 +16,6 @@ import (
 	"math"
 	"os"
 	"sort"
-	"strings"
 	"sync"
 	"time"
 )
@@ -36,7 +35,6 @@ func (s *BPSWMaxMinPistonCapping) takeOffer(offer *mesos.Offer, task def.Task) b
 	if cpus >= task.CPU && mem >= task.RAM && (!s.wattsAsAResource || (watts >= wattsConsideration)) {
 		return true
 	}
-
 	return false
 }
 
@@ -209,7 +207,8 @@ func (s *BPSWMaxMinPistonCapping) stopCapping() {
 
 // Determine if the remaining sapce inside of the offer is enough for
 // the task we need to create. If it is, create a TaskInfo and return it.
-func (s *BPSWMaxMinPistonCapping) CheckFit(i int,
+func (s *BPSWMaxMinPistonCapping) CheckFit(
+	i int,
 	task def.Task,
 	wattsConsideration float64,
 	offer *mesos.Offer,
@@ -218,12 +217,8 @@ func (s *BPSWMaxMinPistonCapping) CheckFit(i int,
 	totalWatts *float64,
 	partialLoad *float64) (bool, *mesos.TaskInfo) {
 
-	offerCPU, offerRAM, offerWatts := offerUtils.OfferAgg(offer)
-
 	// Does the task fit
-	if (!s.wattsAsAResource || (offerWatts >= (*totalWatts + wattsConsideration))) &&
-		(offerCPU >= (*totalCPU + task.CPU)) &&
-		(offerRAM >= (*totalRAM + task.RAM)) {
+	if s.takeOffer(offer, task) {
 
 		// Start piston capping if haven't started yet
 		if !s.isCapping {
@@ -242,7 +237,7 @@ func (s *BPSWMaxMinPistonCapping) CheckFit(i int,
 		fmt.Println("Inst: ", *task.Instances)
 		s.schedTrace.Print(offer.GetHostname() + ":" + taskToSchedule.GetTaskId().GetValue())
 		*task.Instances--
-		*partialLoad += ((wattsConsideration * constants.CapMargin) / s.totalPower[*offer.Hostname]) * 100
+		*partialLoad += ((wattsConsideration * constants.Tolerance) / s.totalPower[*offer.Hostname]) * 100
 
 		if *task.Instances <= 0 {
 			// All instances of task have been scheduled, remove it
@@ -297,12 +292,9 @@ func (s *BPSWMaxMinPistonCapping) ResourceOffers(driver sched.SchedulerDriver, o
 				log.Fatal(err)
 			}
 
-			// Check host if it exists
-			if task.Host != "" {
-				// Don't take offer if it doesn't match our task's host requirement
-				if !strings.HasPrefix(*offer.Hostname, task.Host) {
-					continue
-				}
+			// Don't take offer if it doesn't match our task's host requirement
+			if offerUtils.HostMismatch(*offer.Hostname, task.Host) {
+				continue
 			}
 
 			// TODO: Fix this so index doesn't need to be passed
@@ -325,12 +317,9 @@ func (s *BPSWMaxMinPistonCapping) ResourceOffers(driver sched.SchedulerDriver, o
 				log.Fatal(err)
 			}
 
-			// Check host if it exists
-			if task.Host != "" {
-				// Don't take offer if it doesn't match our task's host requirement
-				if !strings.HasPrefix(*offer.Hostname, task.Host) {
-					continue
-				}
+			// Don't take offer if it doesn't match our task's host requirement
+			if offerUtils.HostMismatch(*offer.Hostname, task.Host) {
+				continue
 			}
 
 			for *task.Instances > 0 {
@@ -422,7 +411,7 @@ func (s *BPSWMaxMinPistonCapping) StatusUpdate(driver sched.SchedulerDriver, sta
 		}
 		// Need to update the cap values for host of the finishedTask
 		bpMaxMinPistonCappingMutex.Lock()
-		bpMaxMinPistonCappingCapValues[hostOfFinishedTask] -= ((wattsConsideration * constants.CapMargin) / s.totalPower[hostOfFinishedTask]) * 100
+		bpMaxMinPistonCappingCapValues[hostOfFinishedTask] -= ((wattsConsideration * constants.Tolerance) / s.totalPower[hostOfFinishedTask]) * 100
 		// Checking to see if the cap value has become 0, in which case we uncap the host.
 		if int(math.Floor(bpMaxMinPistonCappingCapValues[hostOfFinishedTask]+0.5)) == 0 {
 			bpMaxMinPistonCappingCapValues[hostOfFinishedTask] = 100

@@ -12,7 +12,6 @@ import (
 	"log"
 	"os"
 	"sort"
-	"strings"
 	"time"
 )
 
@@ -31,7 +30,6 @@ func (s *BinPackSortedWatts) takeOffer(offer *mesos.Offer, task def.Task) bool {
 	if cpus >= task.CPU && mem >= task.RAM && (!s.wattsAsAResource || (watts >= wattsConsideration)) {
 		return true
 	}
-
 	return false
 }
 
@@ -133,8 +131,6 @@ func (s *BinPackSortedWatts) ResourceOffers(driver sched.SchedulerDriver, offers
 
 		tasks := []*mesos.TaskInfo{}
 
-		offer_cpu, offer_ram, offer_watts := offerUtils.OfferAgg(offer)
-
 		offerTaken := false
 		totalWatts := 0.0
 		totalCPU := 0.0
@@ -147,19 +143,14 @@ func (s *BinPackSortedWatts) ResourceOffers(driver sched.SchedulerDriver, offers
 				log.Fatal(err)
 			}
 
-			// Check host if it exists
-			if task.Host != "" {
-				// Don't take offer if it doesn't match our task's host requirement
-				if !strings.HasPrefix(*offer.Hostname, task.Host) {
-					continue
-				}
+			// Don't take offer if it doesn't match our task's host requirement
+			if offerUtils.HostMismatch(*offer.Hostname, task.Host) {
+				continue
 			}
 
 			for *task.Instances > 0 {
 				// Does the task fit
-				if (!s.wattsAsAResource || (offer_watts >= (totalWatts + wattsConsideration))) &&
-					(offer_cpu >= (totalCPU + task.CPU)) &&
-					(offer_ram >= (totalRAM + task.RAM)) {
+				if s.takeOffer(offer, task) {
 
 					offerTaken = true
 					totalWatts += wattsConsideration

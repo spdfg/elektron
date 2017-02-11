@@ -15,7 +15,6 @@ import (
 	"log"
 	"math"
 	"os"
-	"strings"
 	"sync"
 	"time"
 )
@@ -271,8 +270,8 @@ func (s *FirstFitProacCC) ResourceOffers(driver sched.SchedulerDriver, offers []
 
 		for i := 0; i < len(s.tasks); i++ {
 			task := s.tasks[i]
-			// Don't take offer if it doesn't match our task's host requirement.
-			if !strings.HasPrefix(*offer.Hostname, task.Host) {
+			// Don't take offer if it doesn't match our task's host requirement
+			if offerUtils.HostMismatch(*offer.Hostname, task.Host) {
 				continue
 			}
 

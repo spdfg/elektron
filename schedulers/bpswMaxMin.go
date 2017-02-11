@@ -12,7 +12,6 @@ import (
 	"log"
 	"os"
 	"sort"
-	"strings"
 	"time"
 )
 
@@ -31,7 +30,6 @@ func (s *BPSWMaxMinWatts) takeOffer(offer *mesos.Offer, task def.Task) bool {
 	if cpus >= task.CPU && mem >= task.RAM && (!s.wattsAsAResource || (watts >= wattsConsideration)) {
 		return true
 	}
-
 	return false
 }
 
@@ -40,7 +38,7 @@ type BPSWMaxMinWatts struct {
 }
 
 // New electron scheduler
-func NewBPMaxMinWatts(tasks []def.Task, wattsAsAResource bool, schedTracePrefix string, classMapWatts bool) *BPSWMaxMinWatts {
+func NewBPSWMaxMinWatts(tasks []def.Task, wattsAsAResource bool, schedTracePrefix string, classMapWatts bool) *BPSWMaxMinWatts {
 	sort.Sort(def.WattsSorter(tasks))
 
 	logFile, err := os.Create("./" + schedTracePrefix + "_schedTrace.log")
@@ -120,7 +118,8 @@ func (s *BPSWMaxMinWatts) newTask(offer *mesos.Offer, task def.Task) *mesos.Task
 
 // Determine if the remaining space inside of the offer is enough for this
 // the task we need to create. If it is, create a TaskInfo and return it.
-func (s *BPSWMaxMinWatts) CheckFit(i int,
+func (s *BPSWMaxMinWatts) CheckFit(
+	i int,
 	task def.Task,
 	wattsConsideration float64,
 	offer *mesos.Offer,
@@ -128,12 +127,8 @@ func (s *BPSWMaxMinWatts) CheckFit(i int,
 	totalRAM *float64,
 	totalWatts *float64) (bool, *mesos.TaskInfo) {
 
-	offerCPU, offerRAM, offerWatts := offerUtils.OfferAgg(offer)
-
 	// Does the task fit
-	if (!s.wattsAsAResource || (offerWatts >= (*totalWatts + wattsConsideration))) &&
-		(offerCPU >= (*totalCPU + task.CPU)) &&
-		(offerRAM >= (*totalRAM + task.RAM)) {
+	if s.takeOffer(offer, task) {
 
 		*totalWatts += wattsConsideration
 		*totalCPU += task.CPU
@@ -197,12 +192,9 @@ func (s *BPSWMaxMinWatts) ResourceOffers(driver sched.SchedulerDriver, offers []
 				log.Fatal(err)
 			}
 
-			// Check host if it exists
-			if task.Host != "" {
-				// Don't take offer if it doesn't match our task's host requirement
-				if !strings.HasPrefix(*offer.Hostname, task.Host) {
-					continue
-				}
+			// Don't take offer if it doesn't match our task's host requirement
+			if offerUtils.HostMismatch(*offer.Hostname, task.Host) {
+				continue
 			}
 
 			// TODO: Fix this so index doesn't need to be passed
@@ -225,12 +217,9 @@ func (s *BPSWMaxMinWatts) ResourceOffers(driver sched.SchedulerDriver, offers []
 				log.Fatal(err)
 			}
 
-			// Check host if it exists
-			if task.Host != "" {
-				// Don't take offer if it doesn't match our task's host requirement
-				if !strings.HasPrefix(*offer.Hostname, task.Host) {
-					continue
-				}
+			// Don't take offer if it doesn't match our task's host requirement
+			if offerUtils.HostMismatch(*offer.Hostname, task.Host) {
+				continue
 			}
 
 			for *task.Instances > 0 {

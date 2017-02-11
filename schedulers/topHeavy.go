@@ -26,6 +26,30 @@ This was done to give a little more room for the large tasks (power intensive) f
 starvation of power intensive tasks.
 */
 
+func (s *TopHeavy) takeOfferBinPack(offer *mesos.Offer, totalCPU, totalRAM, totalWatts,
+	wattsToConsider float64, task def.Task) bool {
+	offerCPU, offerRAM, offerWatts := offerUtils.OfferAgg(offer)
+
+	//TODO: Insert watts calculation here instead of taking them as a parameter
+	if (!s.wattsAsAResource || (offerWatts >= (totalWatts + wattsToConsider))) &&
+		(offerCPU >= (totalCPU + task.CPU)) &&
+		(offerRAM >= (totalRAM + task.RAM)) {
+		return true
+	}
+	return false
+}
+
+func (s *TopHeavy) takeOfferFirstFit(offer *mesos.Offer, wattsConsideration float64, task def.Task) bool {
+	offerCPU, offerRAM, offerWatts := offerUtils.OfferAgg(offer)
+
+	//TODO: Insert watts calculation here instead of taking them as a parameter
+	if (!s.wattsAsAResource || (offerWatts >= wattsConsideration)) &&
+		(offerCPU >= task.CPU) && (offerRAM >= task.RAM) {
+		return true
+	}
+	return false
+}
+
 // electronScheduler implements the Scheduler interface
 type TopHeavy struct {
 	base                   // Type embedded to inherit common functions
@@ -148,7 +172,6 @@ func (s *TopHeavy) pack(offers []*mesos.Offer, driver sched.SchedulerDriver) {
 		}
 
 		tasks := []*mesos.TaskInfo{}
-		offerCPU, offerRAM, offerWatts := offerUtils.OfferAgg(offer)
 		totalWatts := 0.0
 		totalCPU := 0.0
 		totalRAM := 0.0
@@ -165,9 +188,7 @@ func (s *TopHeavy) pack(offers []*mesos.Offer, driver sched.SchedulerDriver) {
 				// Does the task fit
 				// OR lazy evaluation. If ignore watts is set to true, second statement won't
 				// be evaluated.
-				if (!s.wattsAsAResource || (offerWatts >= (totalWatts + wattsConsideration))) &&
-					(offerCPU >= (totalCPU + task.CPU)) &&
-					(offerRAM >= (totalRAM + task.RAM)) {
+				if s.takeOfferBinPack(offer, totalCPU, totalRAM, totalWatts, wattsConsideration, task) {
 					taken = true
 					totalWatts += wattsConsideration
 					totalCPU += task.CPU
@@ -213,7 +234,6 @@ func (s *TopHeavy) spread(offers []*mesos.Offer, driver sched.SchedulerDriver) {
 		}
 
 		tasks := []*mesos.TaskInfo{}
-		offerCPU, offerRAM, offerWatts := offerUtils.OfferAgg(offer)
 		offerTaken := false
 		for i := 0; i < len(s.largeTasks); i++ {
 			task := s.largeTasks[i]
@@ -224,8 +244,7 @@ func (s *TopHeavy) spread(offers []*mesos.Offer, driver sched.SchedulerDriver) {
 			}
 
 			// Decision to take the offer or not
-			if (!s.wattsAsAResource || (offerWatts >= wattsConsideration)) &&
-				(offerCPU >= task.CPU) && (offerRAM >= task.RAM) {
+			if s.takeOfferFirstFit(offer, wattsConsideration, task) {
 				offerTaken = true
 				tasks = append(tasks, s.createTaskInfoAndLogSchedTrace(offer, task))
 				log.Printf("Starting %s on [%s]\n", task.Name, offer.GetHostname())

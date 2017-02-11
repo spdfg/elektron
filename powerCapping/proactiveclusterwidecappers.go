@@ -23,7 +23,7 @@ type taskWrapper struct {
 }
 
 func (tw taskWrapper) Val() float64 {
-	return tw.task.Watts * constants.CapMargin
+	return tw.task.Watts * constants.Tolerance
 }
 
 func (tw taskWrapper) ID() string {
@@ -121,7 +121,7 @@ func (capper ClusterwideCapper) CleverRecap(totalPower map[string]float64,
 				// Not considering this task for the computation of totalAllocatedPower and totalRunningTasks
 				continue
 			}
-			wattsUsages[host] = append(wattsUsages[host], float64(task.Watts)*constants.CapMargin)
+			wattsUsages[host] = append(wattsUsages[host], float64(task.Watts)*constants.Tolerance)
 		}
 	}
 
@@ -202,7 +202,7 @@ func (capper ClusterwideCapper) NaiveRecap(totalPower map[string]float64,
 				// Not considering this task for the computation of totalAllocatedPower and totalRunningTasks
 				continue
 			}
-			totalAllocatedPower += (float64(task.Watts) * constants.CapMargin)
+			totalAllocatedPower += (float64(task.Watts) * constants.Tolerance)
 			totalRunningTasks++
 		}
 	}

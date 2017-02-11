@@ -11,7 +11,6 @@ import (
 	sched "github.com/mesos/mesos-go/scheduler"
 	"log"
 	"os"
-	"strings"
 	"time"
 )
 
@@ -131,12 +130,9 @@ func (s *FirstFitWattsOnly) ResourceOffers(driver sched.SchedulerDriver, offers 
 		for i := 0; i < len(s.tasks); i++ {
 			task := s.tasks[i]
 
-			// Check host if it exists
-			if task.Host != "" {
-				// Don't take offer if it doesn't match our task's host requirement
-				if !strings.HasPrefix(*offer.Hostname, task.Host) {
-					continue
-				}
+			// Don't take offer if it doesn't match our task's host requirement
+			if offerUtils.HostMismatch(*offer.Hostname, task.Host) {
+				continue
 			}
 
 			// Decision to take the offer or not
