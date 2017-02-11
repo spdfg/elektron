@@ -252,7 +252,8 @@ func (s *BPSWMaxMinProacCC) stopRecapping() {
 
 // Determine if the remaining space inside of the offer is enough for
 // the task we need to create. If it is, create TaskInfo and return it.
-func (s *BPSWMaxMinProacCC) CheckFit(i int,
+func (s *BPSWMaxMinProacCC) CheckFit(
+	i int,
 	task def.Task,
 	wattsConsideration float64,
 	offer *mesos.Offer,

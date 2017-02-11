@@ -139,7 +139,8 @@ func (s *BPSWMaxMinWatts) newTask(offer *mesos.Offer, task def.Task) *mesos.Task
 
 // Determine if the remaining space inside of the offer is enough for this
 // the task we need to create. If it is, create a TaskInfo and return it.
-func (s *BPSWMaxMinWatts) CheckFit(i int,
+func (s *BPSWMaxMinWatts) CheckFit(
+	i int,
 	task def.Task,
 	wattsConsideration float64,
 	offer *mesos.Offer,

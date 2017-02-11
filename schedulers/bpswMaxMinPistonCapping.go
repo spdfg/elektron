@@ -228,7 +228,8 @@ func (s *BPSWMaxMinPistonCapping) stopCapping() {
 
 // Determine if the remaining sapce inside of the offer is enough for
 // the task we need to create. If it is, create a TaskInfo and return it.
-func (s *BPSWMaxMinPistonCapping) CheckFit(i int,
+func (s *BPSWMaxMinPistonCapping) CheckFit(
+	i int,
 	task def.Task,
 	wattsConsideration float64,
 	offer *mesos.Offer,
