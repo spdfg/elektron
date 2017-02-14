@@ -33,30 +33,7 @@ func (s *BinPackSortedWattsSortedOffers) takeOffer(offer *mesos.Offer, task def.
 }
 
 type BinPackSortedWattsSortedOffers struct {
-	base             // Type embedded to inherit common functions
-	tasksCreated     int
-	tasksRunning     int
-	tasks            []def.Task
-	metrics          map[string]def.Metric
-	running          map[string]map[string]bool
-	wattsAsAResource bool
-	classMapWatts    bool
-
-	// First set of PCP values are garbage values, signal to logger to start recording when we're
-	// about to schedule a new task
-	RecordPCP bool
-
-	// This channel is closed when the program receives an interrupt,
-	// signalling that the program should shut down.
-	Shutdown chan struct{}
-	// This channel is closed after shutdown is closed, and only when all
-	// outstanding tasks have been cleaned up
-	Done chan struct{}
-
-	// Controls when to shutdown pcp logging
-	PCPLog chan struct{}
-
-	schedTrace *log.Logger
+	base // Type embedded to inherit common functions
 }
 
 // New electron scheduler
@@ -70,15 +47,17 @@ func NewBinPackSortedWattsSortedOffers(tasks []def.Task, wattsAsAResource bool, 
 	}
 
 	s := &BinPackSortedWattsSortedOffers{
-		tasks:            tasks,
-		wattsAsAResource: wattsAsAResource,
-		classMapWatts:    classMapWatts,
-		Shutdown:         make(chan struct{}),
-		Done:             make(chan struct{}),
-		PCPLog:           make(chan struct{}),
-		running:          make(map[string]map[string]bool),
-		RecordPCP:        false,
-		schedTrace:       log.New(logFile, "", log.LstdFlags),
+		base: base{
+			tasks:            tasks,
+			wattsAsAResource: wattsAsAResource,
+			classMapWatts:    classMapWatts,
+			Shutdown:         make(chan struct{}),
+			Done:             make(chan struct{}),
+			PCPLog:           make(chan struct{}),
+			running:          make(map[string]map[string]bool),
+			RecordPCP:        false,
+			schedTrace:       log.New(logFile, "", log.LstdFlags),
+		},
 	}
 	return s
 }

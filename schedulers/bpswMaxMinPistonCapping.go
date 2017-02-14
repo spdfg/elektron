@@ -39,34 +39,11 @@ func (s *BPSWMaxMinPistonCapping) takeOffer(offer *mesos.Offer, task def.Task) b
 }
 
 type BPSWMaxMinPistonCapping struct {
-	base             //Type embedding to inherit common functions
-	tasksCreated     int
-	tasksRunning     int
-	tasks            []def.Task
-	metrics          map[string]def.Metric
-	running          map[string]map[string]bool
-	taskMonitor      map[string][]def.Task
-	totalPower       map[string]float64
-	wattsAsAResource bool
-	classMapWatts    bool
-	ticker           *time.Ticker
-	isCapping        bool
-
-	// First set of PCP values are garbage values, signal to logger to start recording when we're
-	// about to schedule a new task
-	RecordPCP bool
-
-	// This channel is closed when the program receives an interrupt,
-	// signalling that the program should shut down.
-	Shutdown chan struct{}
-	// This channel is closed after shutdown is closed, and only when all
-	// outstanding tasks have been cleaned up
-	Done chan struct{}
-
-	// Controls when to shutdown pcp logging
-	PCPLog chan struct{}
-
-	schedTrace *log.Logger
+	base        //Type embedding to inherit common functions
+	taskMonitor map[string][]def.Task
+	totalPower  map[string]float64
+	ticker      *time.Ticker
+	isCapping   bool
 }
 
 // New electron scheduler
@@ -80,19 +57,21 @@ func NewBPSWMaxMinPistonCapping(tasks []def.Task, wattsAsAResource bool, schedTr
 	}
 
 	s := &BPSWMaxMinPistonCapping{
-		tasks:            tasks,
-		wattsAsAResource: wattsAsAResource,
-		classMapWatts:    classMapWatts,
-		Shutdown:         make(chan struct{}),
-		Done:             make(chan struct{}),
-		PCPLog:           make(chan struct{}),
-		running:          make(map[string]map[string]bool),
-		taskMonitor:      make(map[string][]def.Task),
-		totalPower:       make(map[string]float64),
-		RecordPCP:        false,
-		ticker:           time.NewTicker(5 * time.Second),
-		isCapping:        false,
-		schedTrace:       log.New(logFile, "", log.LstdFlags),
+		base: base{
+			tasks:            tasks,
+			wattsAsAResource: wattsAsAResource,
+			classMapWatts:    classMapWatts,
+			Shutdown:         make(chan struct{}),
+			Done:             make(chan struct{}),
+			PCPLog:           make(chan struct{}),
+			running:          make(map[string]map[string]bool),
+			RecordPCP:        false,
+			schedTrace:       log.New(logFile, "", log.LstdFlags),
+		},
+		taskMonitor: make(map[string][]def.Task),
+		totalPower:  make(map[string]float64),
+		ticker:      time.NewTicker(5 * time.Second),
+		isCapping:   false,
 	}
 	return s
 

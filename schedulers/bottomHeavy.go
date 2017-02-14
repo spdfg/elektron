@@ -54,30 +54,7 @@ func (s *BottomHeavy) takeOfferFirstFit(offer *mesos.Offer, wattsConsideration f
 // electronScheduler implements the Scheduler interface
 type BottomHeavy struct {
 	base                   // Type embedded to inherit common functions
-	tasksCreated           int
-	tasksRunning           int
-	tasks                  []def.Task
-	metrics                map[string]def.Metric
-	running                map[string]map[string]bool
-	wattsAsAResource       bool
-	classMapWatts          bool
 	smallTasks, largeTasks []def.Task
-
-	// First set of PCP values are garbage values, signal to logger to start recording when we're
-	// about to schedule a new task
-	RecordPCP bool
-
-	// This channel is closed when the program receives an interrupt,
-	// signalling that the program should shut down.
-	Shutdown chan struct{}
-	// This channel is closed after shutdown is closed, and only when all
-	// outstanding tasks have been cleaned up
-	Done chan struct{}
-
-	// Controls when to shutdown pcp logging
-	PCPLog chan struct{}
-
-	schedTrace *log.Logger
 }
 
 // New electron scheduler
@@ -93,16 +70,18 @@ func NewBottomHeavy(tasks []def.Task, wattsAsAResource bool, schedTracePrefix st
 	// Classification done based on MMPU watts requirements.
 	mid := int(math.Floor((float64(len(tasks)) / 2.0) + 0.5))
 	s := &BottomHeavy{
-		smallTasks:       tasks[:mid],
-		largeTasks:       tasks[mid+1:],
-		wattsAsAResource: wattsAsAResource,
-		classMapWatts:    classMapWatts,
-		Shutdown:         make(chan struct{}),
-		Done:             make(chan struct{}),
-		PCPLog:           make(chan struct{}),
-		running:          make(map[string]map[string]bool),
-		RecordPCP:        false,
-		schedTrace:       log.New(logFile, "", log.LstdFlags),
+		base: base{
+			wattsAsAResource: wattsAsAResource,
+			classMapWatts:    classMapWatts,
+			Shutdown:         make(chan struct{}),
+			Done:             make(chan struct{}),
+			PCPLog:           make(chan struct{}),
+			running:          make(map[string]map[string]bool),
+			RecordPCP:        false,
+			schedTrace:       log.New(logFile, "", log.LstdFlags),
+		},
+		smallTasks: tasks[:mid],
+		largeTasks: tasks[mid+1:],
 	}
 	return s
 }
