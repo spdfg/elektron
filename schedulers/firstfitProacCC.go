@@ -166,7 +166,7 @@ func (s *FirstFitProacCC) startCapping() {
 				if fcfsCurrentCapValue > 0.0 {
 					for _, host := range constants.Hosts {
 						// Rounding curreCapValue to the nearest int.
-						if err := rapl.Cap(host, "rapl", int(math.Floor(fcfsCurrentCapValue+0.5))); err != nil {
+						if err := rapl.Cap(host, "rapl", float64(int(math.Floor(fcfsCurrentCapValue+0.5)))); err != nil {
 							log.Println(err)
 						}
 					}
@@ -190,7 +190,7 @@ func (s *FirstFitProacCC) startRecapping() {
 				if s.isRecapping && fcfsRecapValue > 0.0 {
 					for _, host := range constants.Hosts {
 						// Rounding curreCapValue to the nearest int.
-						if err := rapl.Cap(host, "rapl", int(math.Floor(fcfsRecapValue+0.5))); err != nil {
+						if err := rapl.Cap(host, "rapl", float64(int(math.Floor(fcfsRecapValue+0.5)))); err != nil {
 							log.Println(err)
 						}
 					}

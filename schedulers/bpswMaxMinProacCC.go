@@ -164,7 +164,7 @@ func (s *BPSWMaxMinProacCC) startCapping() {
 						if bpMaxMinProacCCCapValue > 0.0 {
 							for _, host := range constants.Hosts {
 								// Rounding cap value to nearest int
-								if err := rapl.Cap(host, "rapl", int(math.Floor(bpMaxMinProacCCCapValue+0.5))); err != nil {
+								if err := rapl.Cap(host, "rapl", float64(int(math.Floor(bpMaxMinProacCCCapValue+0.5)))); err != nil {
 									log.Println(err)
 								}
 							}
@@ -190,7 +190,7 @@ func (s *BPSWMaxMinProacCC) startRecapping() {
 				if s.isRecapping && bpMaxMinProacCCRecapValue > 0.0 {
 					for _, host := range constants.Hosts {
 						// Rounding the recap value to the nearest int
-						if err := rapl.Cap(host, "rapl", int(math.Floor(bpMaxMinProacCCRecapValue+0.5))); err != nil {
+						if err := rapl.Cap(host, "rapl", float64(int(math.Floor(bpMaxMinProacCCRecapValue+0.5)))); err != nil {
 							log.Println(err)
 						}
 					}

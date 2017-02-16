@@ -179,7 +179,7 @@ func (s *FirstFitSortedWattsProacCC) startCapping() {
 				if rankedCurrentCapValue > 0.0 {
 					for _, host := range constants.Hosts {
 						// Rounding currentCapValue to the nearest int.
-						if err := rapl.Cap(host, "rapl", int(math.Floor(rankedCurrentCapValue+0.5))); err != nil {
+						if err := rapl.Cap(host, "rapl", float64(int(math.Floor(rankedCurrentCapValue+0.5)))); err != nil {
 							log.Println(err)
 						}
 					}
@@ -203,7 +203,7 @@ func (s *FirstFitSortedWattsProacCC) startRecapping() {
 				if s.isRecapping && rankedRecapValue > 0.0 {
 					for _, host := range constants.Hosts {
 						// Rounding currentCapValue to the nearest int.
-						if err := rapl.Cap(host, "rapl", int(math.Floor(rankedRecapValue+0.5))); err != nil {
+						if err := rapl.Cap(host, "rapl", float64(int(math.Floor(rankedRecapValue+0.5)))); err != nil {
 							log.Println(err)
 						}
 					}

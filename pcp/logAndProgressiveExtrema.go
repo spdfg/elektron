@@ -11,16 +11,26 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
-	"time"
+	"math"
+	"bitbucket.org/sunybingcloud/electron/constants"
 )
 
-func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, prefix string, hiThreshold, loThreshold float64) {
+func round(num float64) int {
+	return int(math.Floor(num + math.Copysign(0.5, num)))
+}
+
+func getNextCapValue(curCapValue float64, precision int) float64 {
+	output := math.Pow(10, float64(precision))
+	return float64(round(curCapValue * output)) / output
+}
+
+func StartPCPLogAndProgressiveExtremaCap(quit chan struct{}, logging *bool, prefix string, hiThreshold, loThreshold float64) {
 	const pcpCommand string = "pmdumptext -m -l -f '' -t 1.0 -d , -c config"
 	cmd := exec.Command("sh", "-c", pcpCommand)
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
 	if hiThreshold < loThreshold {
-		log.Println("High threshold is lower than low threshold!")
+		log.Println("High threshold is lower than the low threshold")
 	}
 
 	logFile, err := os.Create("./" + prefix + ".pcplog")
@@ -71,13 +81,14 @@ func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, prefix s
 		// Throw away first set of results
 		scanner.Scan()
 
-		cappedHosts := make(map[string]bool)
+		//cappedHosts := make(map[string]bool)
+		// Keep track of the capped victims and the corresponding cap value.
+		cappedVictims := make(map[string]float64)
 		orderCapped := make([]string, 0, 8)
 		clusterPowerHist := ring.New(5)
 		seconds := 0
 
 		for scanner.Scan() {
-
 			if *logging {
 				log.Println("Logging PCP...")
 				split := strings.Split(scanner.Text(), ",")
@@ -105,7 +116,7 @@ func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, prefix s
 
 				log.Printf("Total power: %f, %d Sec Avg: %f", clusterPower, clusterPowerHist.Len(), clusterMean)
 
-				if clusterMean > hiThreshold {
+				if clusterMean >= hiThreshold {
 					log.Printf("Need to cap a node")
 					// Create statics for all victims and choose one to cap
 					victims := make([]Victim, 0, 8)
@@ -121,55 +132,45 @@ func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, prefix s
 
 					sort.Sort(VictimSorter(victims)) // Sort by average wattage
 
-					// From  best victim to worst, if everyone is already capped NOOP
-					for _, victim := range victims {
-						// Only cap if host hasn't been capped yet
-						if !cappedHosts[victim.Host] {
-							cappedHosts[victim.Host] = true
-							orderCapped = append(orderCapped, victim.Host)
-							log.Printf("Capping Victim %s Avg. Wattage: %f", victim.Host, victim.Watts*RAPLUnits)
-							if err := rapl.Cap(victim.Host, "rapl", 50); err != nil {
-								log.Print("Error capping host")
+					// Finding the best victim to cap.
+					for i := 0; i < len(victims); i++ {
+						if curCapValue, ok := cappedVictims[victims[i].Host]; ok {
+							// checking whether we can continue to cap this host.
+							// If yes, then we cap it to half the current cap value.
+							// Else, we push it to the orderedCapped and continue.
+							if curCapValue > constants.CapThreshold {
+								newCapValue := getNextCapValue(curCapValue/2.0, 1)
+								if err := rapl.Cap(victims[0].Host, "rapl", newCapValue); err != nil {
+									log.Print("Error capping host")
+								}
+								// Updating the curCapValue in cappedVictims
+								cappedVictims[victims[0].Host] = newCapValue
+								break
+							} else {
+								// deleting entry in cappedVictims
+								delete(cappedVictims, victims[i].Host)
+								// Now this host can be uncapped.
+								orderCapped = append(orderCapped, victims[i].Host)
 							}
-							break // Only cap one machine at at time
 						}
 					}
 
 				} else if clusterMean < loThreshold {
-
 					if len(orderCapped) > 0 {
 						host := orderCapped[len(orderCapped)-1]
 						orderCapped = orderCapped[:len(orderCapped)-1]
-						cappedHosts[host] = false
-						// User RAPL package to send uncap
-						log.Printf("Uncapping host %s", host)
-						if err := rapl.Cap(host, "rapl", 100); err != nil {
-							log.Print("Error uncapping host")
+						// cappedVictims would contain the latest cap value for this host.
+						newCapValue := getNextCapValue(cappedVictims[host]/2.0, 1)
+						if err := rapl.Cap(host, "rapl", newCapValue); err != nil {
+							log.Print("Error capping host")
 						}
+						// Adding entry for the host to cappedVictims
+						cappedVictims[host] = newCapValue // Now this host can be capped again.
 					}
 				}
 			}
-
 			seconds++
 		}
+
 	}(logging, hiThreshold, loThreshold)
-
-	log.Println("PCP logging started")
-
-	if err := cmd.Start(); err != nil {
-		log.Fatal(err)
-	}
-
-	pgid, err := syscall.Getpgid(cmd.Process.Pid)
-
-	select {
-	case <-quit:
-		log.Println("Stopping PCP logging in 5 seconds")
-		time.Sleep(5 * time.Second)
-
-		// http://stackoverflow.com/questions/22470193/why-wont-go-kill-a-child-process-correctly
-		// kill process and all children processes
-		syscall.Kill(-pgid, 15)
-		return
-	}
 }

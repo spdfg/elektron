@@ -157,7 +157,7 @@ var bpMaxMinPistonCappingMutex sync.Mutex
 var bpMaxMinPistonCappingCapValues = make(map[string]float64)
 
 // Storing the previous cap value for each host so as to not repeatedly cap the nodes to the same value. (reduces overhead)
-var bpMaxMinPistonCappingPreviousRoundedCapValues = make(map[string]int)
+var bpMaxMinPistonCappingPreviousRoundedCapValues = make(map[string]float64)
 
 func (s *BPSWMaxMinPistonCapping) startCapping() {
 	go func() {
@@ -167,7 +167,7 @@ func (s *BPSWMaxMinPistonCapping) startCapping() {
 				// Need to cap each node
 				bpMaxMinPistonCappingMutex.Lock()
 				for host, capValue := range bpMaxMinPistonCappingCapValues {
-					roundedCapValue := int(math.Floor(capValue + 0.5))
+					roundedCapValue := float64(int(math.Floor(capValue + 0.5)))
 					// has the cap value changed
 					if previousRoundedCap, ok := bpMaxMinPistonCappingPreviousRoundedCapValues[host]; ok {
 						if previousRoundedCap != roundedCapValue {
