@@ -43,3 +43,6 @@ var Tolerance = 0.70
 
 // Window size for running average
 var ConsiderationWindowSize = 20
+
+// Threshold below which a host should be capped
+var CapThreshold = 12.5
