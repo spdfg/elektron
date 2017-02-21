@@ -7,7 +7,6 @@ To Do:
  * Fix the race condition on 'tasksRunning' in proactiveclusterwidecappingfcfs.go and proactiveclusterwidecappingranked.go
  * **Critical**: Separate the capping strategies from the scheduling algorithms and make it possible to use any capping strategy with any scheduler.
  * Create a package that would contain routines to perform various logging and move helpers.coLocated(...) into that.
- * Move all the common struct members from all schedulers into base.go.
 
 Scheduling Algorithms:
 
