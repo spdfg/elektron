@@ -27,11 +27,11 @@ var classMapWatts = flag.Bool("classMapWatts", false, "Enable mapping of watts t
 func init() {
 	flag.StringVar(master, "m", "xavier:5050", "Location of leading Mesos master (shorthand)")
 	flag.StringVar(tasksFile, "w", "", "JSON file containing task definitions (shorthand)")
-	flag.BoolVar(wattsAsAResource, "waar", false, "Enable Watts as a Resource")
+	flag.BoolVar(wattsAsAResource, "waar", false, "Enable Watts as a Resource (shorthand)")
 	flag.StringVar(pcplogPrefix, "p", "", "Prefix for pcplog (shorthand)")
 	flag.Float64Var(hiThreshold, "ht", 700.0, "Upperbound for when we should start capping (shorthand)")
 	flag.Float64Var(loThreshold, "lt", 400.0, "Lowerbound for when we should start uncapping (shorthand)")
-	flag.BoolVar(classMapWatts, "cmw", false, "Enable mapping of watts to power class of node")
+	flag.BoolVar(classMapWatts, "cmw", false, "Enable mapping of watts to power class of node (shorthand)")
 }
 
 func main() {
