@@ -26,12 +26,6 @@ func getNextCapValue(curCapValue float64, precision int) float64 {
 	return float64(round(curCapValue*output)) / output
 }
 
-func getNextUncapValue(curCapValue float64, precision int) float64 {
-	curCapValue *= 2.0
-	output := math.Pow(10, float64(precision))
-	return float64(round(curCapValue*output)) / output
-}
-
 func StartPCPLogAndProgressiveExtremaCap(quit chan struct{}, logging *bool, prefix string, hiThreshold, loThreshold float64) {
 	log.Println("Inside Log and Progressive Extrema")
 	const pcpCommand string = "pmdumptext -m -l -f '' -t 1.0 -d , -c config"
@@ -128,6 +122,8 @@ func StartPCPLogAndProgressiveExtremaCap(quit chan struct{}, logging *bool, pref
 
 				if clusterMean >= hiThreshold {
 					log.Println("Need to cap a node")
+					log.Println(cappedVictims)
+					log.Println(orderCappedVictims)
 					// Create statics for all victims and choose one to cap
 					victims := make([]Victim, 0, 8)
 
@@ -148,10 +144,8 @@ func StartPCPLogAndProgressiveExtremaCap(quit chan struct{}, logging *bool, pref
 					for i := 0; i < len(victims); i++ {
 						// Try to pick a victim that hasn't been capped yet.
 						if _, ok := cappedVictims[victims[i].Host]; !ok {
-							// If this victim is present in orderCapped, then we move on to find another victim that we can cap.
+							// If this victim can't be capped further, then we move on to find another victim that we can cap.
 							if _, ok := orderCappedVictims[victims[i].Host]; ok {
-								// Adding the host to the alreadyCappedHosts
-								alreadyCappedHosts = append(alreadyCappedHosts, victims[i].Host)
 								continue
 							}
 							// Need to cap this victim and add it to the cappedVictims
@@ -173,90 +167,65 @@ func StartPCPLogAndProgressiveExtremaCap(quit chan struct{}, logging *bool, pref
 					// If no new victim found, then we need to cap the best victim among the already capped victims
 					if !newVictimFound {
 						for i := 0; i < len(alreadyCappedHosts); i++ {
-							// Checking if this node can be uncapped too
-							if capValue, ok := orderCappedVictims[alreadyCappedHosts[i]]; ok {
-								// if capValue is greater than the threshold then cap, else continue
-								if capValue > constants.CapThreshold {
-									newCapValue := getNextCapValue(capValue, 2)
-									if err := rapl.Cap(alreadyCappedHosts[i], "rapl", newCapValue); err != nil {
-										log.Printf("Error capping host %s", alreadyCappedHosts[i])
-									} else {
-										// successful cap
-										log.Printf("Capped host[%s] at %f", alreadyCappedHosts[i], newCapValue)
-										// Checking whether this victim can be capped further
-										if newCapValue <= constants.CapThreshold {
-											// deleting victim from cappedVictims
-											delete(cappedVictims, alreadyCappedHosts[i])
-											// updating the cap value in orderCappedVictims
-											orderCappedVictims[alreadyCappedHosts[i]] = newCapValue
-										} else {
-											// updating the cap value
-											cappedVictims[alreadyCappedHosts[i]] = newCapValue
-											orderCappedVictims[alreadyCappedHosts[i]] = newCapValue
-										}
-										break // exiting only on a successful cap.
-									}
-								} else {
-									// Do nothing
-								}
-							} else {
-								// This host can definitely be capped.
-								// Cap this host to half it's current cap value and update the new cap value in cappedVictims and orderCappedVictims
-								// If we have hit the threshold then we add this host to orderCapped to indicate that it needs to be uncapped.
-								newCapValue := getNextCapValue(cappedVictims[alreadyCappedHosts[i]], 2)
+							// If already capped then the host must be present in orderCappedVictims
+							capValue := orderCappedVictims[alreadyCappedHosts[i]]
+							// if capValue is greater than the threshold then cap, else continue
+							if capValue > constants.CapThreshold {
+								newCapValue := getNextCapValue(capValue, 2)
+								log.Printf("CurrentCapValue for host[%s] is %f", alreadyCappedHosts[i], capValue)
+								log.Printf("NewCapValue for host[%s] is %f", alreadyCappedHosts[i], newCapValue)
 								if err := rapl.Cap(alreadyCappedHosts[i], "rapl", newCapValue); err != nil {
 									log.Printf("Error capping host %s", alreadyCappedHosts[i])
 								} else {
+									// successful cap
 									log.Printf("Capped host[%s] at %f", alreadyCappedHosts[i], newCapValue)
 									// Checking whether this victim can be capped further
 									if newCapValue <= constants.CapThreshold {
 										// deleting victim from cappedVictims
 										delete(cappedVictims, alreadyCappedHosts[i])
-										// staging victim for uncapping
-										orderCapped = append(orderCapped, alreadyCappedHosts[i])
-										orderCappedVictims[alreadyCappedHosts[i]] = constants.CapThreshold
+										// updating the cap value in orderCappedVictims
+										orderCappedVictims[alreadyCappedHosts[i]] = newCapValue
 									} else {
-										// Updating the cap value of the victim
+										// updating the cap value
 										cappedVictims[alreadyCappedHosts[i]] = newCapValue
+										orderCappedVictims[alreadyCappedHosts[i]] = newCapValue
 									}
-									break // exiting only on a successful uncap
+									break // exiting only on a successful cap.
 								}
+							} else {
+								// Do nothing
+								// Continue to find another victim to cap.
+								// If cannot find any victim, then all nodes have been capped to the maximum and we stop capping at that point.
 							}
 						}
 					}
 
 				} else if clusterMean < loThreshold {
 					log.Println("Need to uncap a node")
+					log.Println(cappedVictims)
+					log.Println(orderCappedVictims)
 					if len(orderCapped) > 0 {
 						host := orderCapped[len(orderCapped)-1]
-						// Removing victim from orderCapped only if it has been completely uncapped to 100%
-						if cappedVictims[host] == 100.0 {
-							orderCapped = orderCapped[:len(orderCapped)-1]
-							delete(orderCappedVictims, host)
+						// Uncapping the host and removing it from orderCapped if we cannot uncap it further
+						newUncapValue := orderCappedVictims[host] * 2.0
+						if err := rapl.Cap(host, "rapl", newUncapValue); err != nil {
+							log.Printf("Error uncapping host %s", host)
 						} else {
-							newCapValue := getNextUncapValue(cappedVictims[host], 2)
-							// Uncapping the victim
-							if err := rapl.Cap(host, "rapl", newCapValue); err != nil {
-								log.Printf("Error uncapping host %s", host)
-							} else {
-								// Successful uncap
-								log.Printf("Uncapped host[%s] to %f", host, newCapValue)
-								// If the new cap value is 100, then this node cannot be uncapped
-								if newCapValue == 100.0 {
-									orderCapped = orderCapped[:len(orderCapped)-1]
-									delete(orderCappedVictims, host)
-									// Updating cappedVictims
-									cappedVictims[host] = newCapValue
-								} else if newCapValue > constants.CapThreshold {
-									// This host can be capped
-									cappedVictims[host] = newCapValue
-									// Updating orderCappedVictims
-									orderCappedVictims[host] = newCapValue
-								}
+							// Successful uncap
+							log.Printf("Uncapped host[%s] to %f", host, newUncapValue)
+							if newUncapValue >= 100.0 { // can compare using ==
+								orderCapped = orderCapped[:len(orderCapped)-1]
+								delete(orderCappedVictims, host)
+								// removing entry from cappedVictims as this host is no longer capped
+								delete(cappedVictims, host)
+							} else if newUncapValue > constants.CapThreshold { // this check is unnecessary and can be converted to 'else'
+								// Updating the cap value in orderCappedVictims and cappedVictims
+								orderCappedVictims[host] = newUncapValue
+								cappedVictims[host] = newUncapValue
 							}
 						}
 					} else {
-						// No node has been capped until now.
+						log.Println("No host staged for Uncapping")
 					}
 				}
 			}
