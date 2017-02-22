@@ -32,16 +32,3 @@ func (plist PairList) Len() int {
 func (plist PairList) Less(i, j int) bool {
 	return plist[i].Value < plist[j].Value
 }
-
-// convert a PairList to a map[string]float64
-func OrderedKeys(plist PairList) ([]string, error) {
-	// Validation
-	if plist == nil {
-		return nil, errors.New("Invalid argument: plist")
-	}
-	orderedKeys := make([]string, len(plist))
-	for _, pair := range plist {
-		orderedKeys = append(orderedKeys, pair.Key)
-	}
-	return orderedKeys, nil
-}
