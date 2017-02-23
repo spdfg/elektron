@@ -1,9 +1,5 @@
 package utilities
 
-import (
-	"errors"
-)
-
 /*
 The Pair and PairList have been taken from google groups forum,
 https://groups.google.com/forum/#!topic/golang-nuts/FT7cjmcL7gw
@@ -17,6 +13,15 @@ type Pair struct {
 
 // A slice of pairs that implements the sort.Interface to sort by value.
 type PairList []Pair
+
+// Convert map[string]float64 to PairList
+func GetPairList(m map[string]float64) PairList {
+	pl := PairList{}
+	for k, v := range m {
+		pl = append(pl, Pair{Key: k, Value: v})
+	}
+	return pl
+}
 
 // Swap pairs in the PairList
 func (plist PairList) Swap(i, j int) {
