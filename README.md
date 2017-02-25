@@ -18,6 +18,9 @@ To Do:
  * Make def.Task an interface for further modularization and flexibility.
  * Convert def#WattsToConsider(...) to be a receiver of def.Task and change the name of it to Watts(...).
  * Have a generic sorter for task resources instead of having one for each kind of resource.
+ *  **Critical** -- Add software requirements to the README.md (Mesos version, RAPL version, PCP version, Go version...)
+ * Retrofit to use Go 1.8 sorting techniques. Use def/taskUtils.go for reference.
+ * Retrofit TopHeavy and BottomHeavy schedulers to use the clustering utility for tasks.
 
 **Requires [Performance Co-Pilot](http://pcp.io/) tool pmdumptext to be installed on the
 machine on which electron is launched for logging to work and PCP collector agents installed
