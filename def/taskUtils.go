@@ -15,10 +15,10 @@ type TaskCluster struct {
 // Classification of Tasks using KMeans clustering using the watts consumption observations
 type TasksToClassify []Task
 
-func (tc TasksToClassify) ClassifyTasks(numberOfClusters int) []TaskCluster {
+func (tc TasksToClassify) ClassifyTasks(numberOfClusters int, taskObservation func(task Task) []float64) []TaskCluster {
 	clusters := make(map[int][]Task)
-	observations := getObservations(tc)
-	// TODO: Make the number of rounds configurable based on the size of the workload
+	observations := getObservations(tc, taskObservation)
+	// TODO: Make the number rounds configurable based on the size of the workload
 	if trained, centroids := gokmeans.Train(observations, numberOfClusters, 100); trained {
 		for i := 0; i < len(observations); i++ {
 			observation := observations[i]
@@ -30,47 +30,32 @@ func (tc TasksToClassify) ClassifyTasks(numberOfClusters int) []TaskCluster {
 			}
 		}
 	}
-	return labelAndOrder(clusters, numberOfClusters)
+	return labelAndOrder(clusters, numberOfClusters, taskObservation)
 }
 
-// The watts consumption observations are taken into consideration.
-func getObservations(tasks []Task) []gokmeans.Node {
+// record observations
+func getObservations(tasks []Task, taskObservation func(task Task) []float64) []gokmeans.Node {
 	observations := []gokmeans.Node{}
 	for i := 0; i < len(tasks); i++ {
-		task := tasks[i]
-		// If observations present for the power-classes, then using it
-		if task.ClassToWatts != nil {
-			observation := gokmeans.Node{}
-			for _, watts := range task.ClassToWatts {
-				observation = append(observation, watts)
-			}
-			observations = append(observations, observation)
-		} else {
-			// Using the watts attribute alone
-			observations = append(observations, gokmeans.Node{task.Watts})
-		}
+		observations = append(observations, taskObservation(tasks[i]))
 	}
 	return observations
 }
 
 // Size tasks based on the power consumption
 // TODO: Size the cluster in a better way just taking an aggregate of the watts resource requirement.
-func clusterSize(tasks []Task) float64 {
+func clusterSize(tasks []Task, taskObservation func(task Task) []float64) float64 {
 	size := 0.0
 	for _, task := range tasks {
-		if task.ClassToWatts != nil {
-			for _, powerClassWatts := range task.ClassToWatts {
-				size += powerClassWatts
-			}
-		} else {
-			size += task.Watts
+		for _, observation := range taskObservation(task) {
+			size += observation
 		}
 	}
 	return size
 }
 
 // Order clusters in increasing order of task heaviness
-func labelAndOrder(clusters map[int][]Task, numberOfClusters int) []TaskCluster {
+func labelAndOrder(clusters map[int][]Task, numberOfClusters int, taskObservation func(task Task) []float64) []TaskCluster {
 	// Determine the position of the cluster in the ordered list of clusters
 	sizedClusters := []TaskCluster{}
 
@@ -85,11 +70,11 @@ func labelAndOrder(clusters map[int][]Task, numberOfClusters int) []TaskCluster 
 
 	for i := 0; i < numberOfClusters-1; i++ {
 		// Sizing the current cluster
-		sizeI := clusterSize(clusters[i])
+		sizeI := clusterSize(clusters[i], taskObservation)
 
 		// Comparing with the other clusters
 		for j := i + 1; j < numberOfClusters; j++ {
-			sizeJ := clusterSize(clusters[j])
+			sizeJ := clusterSize(clusters[j], taskObservation)
 			if sizeI > sizeJ {
 				sizedClusters[i].SizeScore++
 			} else {
