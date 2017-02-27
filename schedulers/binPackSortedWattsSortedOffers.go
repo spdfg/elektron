@@ -16,7 +16,8 @@ import (
 )
 
 // Decides if to take an offer or not
-func (s *BinPackSortedWattsSortedOffers) takeOffer(offer *mesos.Offer, task def.Task) bool {
+func (s *BinPackSortedWattsSortedOffers) takeOffer(offer *mesos.Offer, task def.Task,
+	totalCPU, totalRAM, totalWatts float64) bool {
 
 	offerCPU, offerRAM, offerWatts := offerUtils.OfferAgg(offer)
 
@@ -26,7 +27,8 @@ func (s *BinPackSortedWattsSortedOffers) takeOffer(offer *mesos.Offer, task def.
 		// Error in determining wattsConsideration
 		log.Fatal(err)
 	}
-	if offerCPU >= task.CPU && offerRAM >= task.RAM && (!s.wattsAsAResource || (offerWatts >= wattsConsideration)) {
+	if (offerCPU >= (totalCPU + task.CPU))&& (offerRAM >= (totalRAM + task.RAM)) &&
+		(!s.wattsAsAResource || (offerWatts >= (totalWatts + wattsConsideration))) {
 		return true
 	}
 	return false
@@ -161,7 +163,7 @@ func (s *BinPackSortedWattsSortedOffers) ResourceOffers(driver sched.SchedulerDr
 
 			for *task.Instances > 0 {
 				// Does the task fit
-				if s.takeOffer(offer, task) {
+				if s.takeOffer(offer, task, totalCPU, totalRAM, totalWatts) {
 
 					offerTaken = true
 					totalWatts += wattsConsideration
