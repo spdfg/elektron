@@ -21,7 +21,8 @@ import (
 )
 
 // Decides if to take an offer or not
-func (s *BPSWMaxMinProacCC) takeOffer(offer *mesos.Offer, task def.Task) bool {
+func (s *BPSWMaxMinProacCC) takeOffer(offer *mesos.Offer, task def.Task,
+	totalCPU, totalRAM, totalWatts float64) bool {
 	cpus, mem, watts := offerUtils.OfferAgg(offer)
 
 	//TODO: Insert watts calculation here instead of taking them as a parameter
@@ -31,7 +32,8 @@ func (s *BPSWMaxMinProacCC) takeOffer(offer *mesos.Offer, task def.Task) bool {
 		// Error in determining wattsConsideration
 		log.Fatal(err)
 	}
-	if cpus >= task.CPU && mem >= task.RAM && (!s.wattsAsAResource || (watts >= wattsConsideration)) {
+	if (cpus >= (totalCPU + task.CPU)) && (mem >= (totalRAM + task.RAM)) &&
+		(!s.wattsAsAResource || (watts >= (totalWatts + wattsConsideration))) {
 		return true
 	}
 	return false
@@ -241,7 +243,7 @@ func (s *BPSWMaxMinProacCC) CheckFit(
 	totalWatts *float64) (bool, *mesos.TaskInfo) {
 
 	// Does the task fit
-	if s.takeOffer(offer, task) {
+	if s.takeOffer(offer, task, *totalCPU, *totalRAM, *totalWatts) {
 
 		// Capping the cluster if haven't yet started
 		if !s.isCapping {
