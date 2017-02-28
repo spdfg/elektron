@@ -27,7 +27,7 @@ func (s *BinPackSortedWattsSortedOffers) takeOffer(offer *mesos.Offer, task def.
 		// Error in determining wattsConsideration
 		log.Fatal(err)
 	}
-	if (offerCPU >= (totalCPU + task.CPU))&& (offerRAM >= (totalRAM + task.RAM)) &&
+	if (offerCPU >= (totalCPU + task.CPU)) && (offerRAM >= (totalRAM + task.RAM)) &&
 		(!s.wattsAsAResource || (offerWatts >= (totalWatts + wattsConsideration))) {
 		return true
 	}
