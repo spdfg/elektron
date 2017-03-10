@@ -170,6 +170,7 @@ func StartPCPLogAndProgressiveExtremaCap(quit chan struct{}, logging *bool, pref
 					}
 					// If no new victim found, then we need to cap the best victim among the ones that are already capped
 					if !newVictimFound {
+						canCapAlreadyCappedVictim := false
 						for i := 0; i < len(alreadyCappedHosts); i++ {
 							// If already capped then the host must be present in orderCappedVictims
 							capValue := orderCappedVictims[alreadyCappedHosts[i]]
@@ -192,6 +193,7 @@ func StartPCPLogAndProgressiveExtremaCap(quit chan struct{}, logging *bool, pref
 										cappedVictims[alreadyCappedHosts[i]] = newCapValue
 										orderCappedVictims[alreadyCappedHosts[i]] = newCapValue
 									}
+									canCapAlreadyCappedVictim = true
 									break // Breaking only on successful cap.
 								}
 							} else {
@@ -199,6 +201,9 @@ func StartPCPLogAndProgressiveExtremaCap(quit chan struct{}, logging *bool, pref
 								// Continue to find another victim to cap.
 								// If cannot find any victim, then all nodes have been capped to the maximum and we stop capping at this point.
 							}
+						}
+						if (!canCapAlreadyCappedVictim) {
+							log.Println("No Victim left to cap.")
 						}
 					}
 
