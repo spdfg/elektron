@@ -20,7 +20,7 @@ import (
 /*
 Tasks are categorized into small and large tasks based on the watts requirement.
 All the large tasks are packed into offers from agents belonging to power class A and power class B, using BinPacking.
-All the small tasks are spread among the offers from agents belonging to power class C, using FirstFit.
+All the small tasks are spread among the offers from agents belonging to power class C and power class D, using FirstFit.
 
 This was done to give a little more room for the large tasks (power intensive) for execution and reduce the possibility of
 starvation of power intensive tasks.
@@ -274,11 +274,11 @@ func (s *TopHeavy) ResourceOffers(driver sched.SchedulerDriver, offers []*mesos.
 	log.Printf("Received %d resource offers", len(offers))
 
 	// We need to separate the offers into
-	// offers from ClassA and ClassB and offers from ClassC.
+	// offers from ClassA and ClassB and offers from ClassC and ClassD.
 	// Offers from ClassA and ClassB would execute the large tasks.
-	// Offers from ClassC would execute the small tasks.
-	offersClassAB := []*mesos.Offer{}
-	offersClassC := []*mesos.Offer{}
+	// Offers from ClassC and ClassD would execute the small tasks.
+	offersHeavyPowerClasses := []*mesos.Offer{}
+	offersLightPowerClasses := []*mesos.Offer{}
 
 	for _, offer := range offers {
 		select {
@@ -293,25 +293,26 @@ func (s *TopHeavy) ResourceOffers(driver sched.SchedulerDriver, offers []*mesos.
 
 		if constants.PowerClasses["A"][*offer.Hostname] ||
 			constants.PowerClasses["B"][*offer.Hostname] {
-			offersClassAB = append(offersClassAB, offer)
-		} else if constants.PowerClasses["C"][*offer.Hostname] {
-			offersClassC = append(offersClassC, offer)
+			offersHeavyPowerClasses = append(offersHeavyPowerClasses, offer)
+		} else if constants.PowerClasses["C"][*offer.Hostname] ||
+			constants.PowerClasses["D"][*offer.Hostname] {
+			offersLightPowerClasses = append(offersLightPowerClasses, offer)
 		}
 	}
 
-	log.Println("ClassAB Offers:")
-	for _, o := range offersClassAB {
+	log.Println("Spreading Large tasks into ClassAB Offers:")
+	for _, o := range offersHeavyPowerClasses {
 		log.Println(*o.Hostname)
 	}
-	log.Println("ClassC Offers:")
-	for _, o := range offersClassC {
+	log.Println("Packing Small tasks into ClassCD Offers:")
+	for _, o := range offersLightPowerClasses {
 		log.Println(*o.Hostname)
 	}
 
-	// Packing tasks into offersClassC
-	s.pack(offersClassC, driver)
-	// Spreading tasks among offersClassAB
-	s.spread(offersClassAB, driver)
+	// Packing tasks into offersLightPowerClasses
+	s.pack(offersLightPowerClasses, driver)
+	// Spreading tasks among offersHeavyPowerClasses
+	s.spread(offersHeavyPowerClasses, driver)
 }
 
 func (s *TopHeavy) StatusUpdate(driver sched.SchedulerDriver, status *mesos.TaskStatus) {
