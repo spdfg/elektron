@@ -67,19 +67,19 @@ func NewTopHeavy(tasks []def.Task, wattsAsAResource bool, schedTracePrefix strin
 	// Separating small tasks from large tasks.
 	// Classification done based on MMPU watts requirements.
 	tasksToClassify := def.TasksToClassify(tasks)
-	classifiedTasks := tasksToClassify.ClassifyTasks(2, func(task def.Task) float64 {
+	classifiedTasks := tasksToClassify.ClassifyTasks(2, func(task def.Task) []float64 {
 		if task.ClassToWatts != nil {
 			// taking the aggregate
-			observation := 0.0
+			observations := []float64{}
 			for _, watts := range task.ClassToWatts {
-				observation += watts
+				observations = append(observations, watts)
 			}
-			return observation
+			return observations
 		} else if task.Watts != 0.0 {
-			return task.Watts
+			return []float64{task.Watts}
 		} else {
 			log.Fatal("Unable to classify tasks. Missing Watts or ClassToWatts attribute in workload.")
-			return 0.0
+			return []float64{0.0} // won't be here
 		}
 	})
 
