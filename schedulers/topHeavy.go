@@ -11,7 +11,6 @@ import (
 	"github.com/mesos/mesos-go/mesosutil"
 	sched "github.com/mesos/mesos-go/scheduler"
 	"log"
-	"math"
 	"os"
 	"sort"
 	"time"
@@ -67,7 +66,23 @@ func NewTopHeavy(tasks []def.Task, wattsAsAResource bool, schedTracePrefix strin
 
 	// Separating small tasks from large tasks.
 	// Classification done based on MMPU watts requirements.
-	mid := int(math.Floor((float64(len(tasks)) / 2.0) + 0.5))
+	tasksToClassify := def.TasksToClassify(tasks)
+	classifiedTasks := tasksToClassify.ClassifyTasks(2, func(task def.Task) float64 {
+		if task.ClassToWatts != nil {
+			// taking the aggregate
+			observation := 0.0
+			for _, watts := range task.ClassToWatts {
+				observation += watts
+			}
+			return observation
+		} else if task.Watts != 0.0 {
+			return task.Watts
+		} else {
+			log.Fatal("Unable to classify tasks. Missing Watts or ClassToWatts attribute in workload.")
+			return 0.0
+		}
+	})
+
 	s := &TopHeavy{
 		base: base{
 			wattsAsAResource: wattsAsAResource,
@@ -79,8 +94,8 @@ func NewTopHeavy(tasks []def.Task, wattsAsAResource bool, schedTracePrefix strin
 			RecordPCP:        false,
 			schedTrace:       log.New(logFile, "", log.LstdFlags),
 		},
-		smallTasks: tasks[:mid],
-		largeTasks: tasks[mid+1:],
+		smallTasks: classifiedTasks[0].Tasks,
+		largeTasks: classifiedTasks[1].Tasks,
 	}
 	return s
 }
