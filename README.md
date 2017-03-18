@@ -17,6 +17,7 @@ To Do:
  * Have a centralised logFile that can be filtered by identifier. All electron logs should go into this file.
  * Make def.Task an interface for further modularization and flexibility.
  * Convert def#WattsToConsider(...) to be a receiver of def.Task and change the name of it to Watts(...).
+ * Have a generic sorter for task resources instead of having one for each kind of resource.
 
 **Requires [Performance Co-Pilot](http://pcp.io/) tool pmdumptext to be installed on the
 machine on which electron is launched for logging to work and PCP collector agents installed

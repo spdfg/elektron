@@ -5,7 +5,6 @@ import (
 	"bufio"
 	"container/ring"
 	"log"
-	"math"
 	"os"
 	"os/exec"
 	"sort"
@@ -14,49 +13,6 @@ import (
 	"syscall"
 	"time"
 )
-
-var RAPLUnits = math.Pow(2, -32)
-
-func averageNodePowerHistory(history *ring.Ring) float64 {
-
-	total := 0.0
-	count := 0.0
-
-	history.Do(func(x interface{}) {
-		if val, ok := x.(float64); ok { //Add it if we can get a float
-			total += val
-			count++
-		}
-	})
-
-	if count == 0.0 {
-		return 0.0
-	}
-
-	count /= 4 // two PKGs, two DRAM for all nodes currently
-
-	return (total / count)
-}
-
-// TODO: Figure a way to merge this and avgpower
-func averageClusterPowerHistory(history *ring.Ring) float64 {
-
-	total := 0.0
-	count := 0.0
-
-	history.Do(func(x interface{}) {
-		if val, ok := x.(float64); ok { //Add it if we can get a float
-			total += val
-			count++
-		}
-	})
-
-	if count == 0.0 {
-		return 0.0
-	}
-
-	return (total / count)
-}
 
 func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, prefix string, hiThreshold, loThreshold float64) {
 	const pcpCommand string = "pmdumptext -m -l -f '' -t 1.0 -d , -c config"

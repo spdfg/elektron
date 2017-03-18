@@ -6,7 +6,7 @@ import (
 	"strconv"
 )
 
-func Cap(host, username string, percentage int) error {
+func Cap(host, username string, percentage float64) error {
 
 	if percentage > 100 || percentage < 0 {
 		return errors.New("Percentage is out of range")
@@ -31,7 +31,7 @@ func Cap(host, username string, percentage int) error {
 		return errors.Wrap(err, "Failed to create session")
 	}
 
-	err = session.Run("sudo /misc/shared_data/rdelval1/RAPL_PKG_Throttle.py " + strconv.Itoa(percentage))
+	err = session.Run("sudo /misc/shared_data/rdelval1/RAPL_PKG_Throttle.py " + strconv.FormatFloat(percentage, 'f', 2, 64))
 	if err != nil {
 		return errors.Wrap(err, "Failed to run RAPL script")
 	}

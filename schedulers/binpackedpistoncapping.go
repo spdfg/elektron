@@ -157,7 +157,7 @@ func (s *BinPackedPistonCapper) Disconnected(sched.SchedulerDriver) {
 var bpPistonCapValues = make(map[string]float64)
 
 // Storing the previous cap value for each host so as to not repeatedly cap the nodes to the same value. (reduces overhead)
-var bpPistonPreviousRoundedCapValues = make(map[string]int)
+var bpPistonPreviousRoundedCapValues = make(map[string]float64)
 
 func (s *BinPackedPistonCapper) startCapping() {
 	go func() {
@@ -167,7 +167,7 @@ func (s *BinPackedPistonCapper) startCapping() {
 				// Need to cap each node
 				bpPistonMutex.Lock()
 				for host, capValue := range bpPistonCapValues {
-					roundedCapValue := int(math.Floor(capValue + 0.5))
+					roundedCapValue := float64(int(math.Floor(capValue + 0.5)))
 					// has the cap value changed
 					if prevRoundedCap, ok := bpPistonPreviousRoundedCapValues[host]; ok {
 						if prevRoundedCap != roundedCapValue {
