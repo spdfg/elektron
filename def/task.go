@@ -43,7 +43,7 @@ func TasksFromJSON(uri string) ([]Task, error) {
 func (tsk *Task) UpdateHost(newHost string) bool {
 	// Validation
 	isCorrectHost := false
-	for _, existingHost := range constants.Hosts {
+	for existingHost, _ := range constants.Hosts {
 		if newHost == existingHost {
 			isCorrectHost = true
 		}

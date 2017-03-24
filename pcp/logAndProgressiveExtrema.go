@@ -3,6 +3,7 @@ package pcp
 import (
 	"bitbucket.org/sunybingcloud/electron/constants"
 	"bitbucket.org/sunybingcloud/electron/rapl"
+	"bitbucket.org/sunybingcloud/electron/utilities"
 	"bufio"
 	"container/ring"
 	"log"
@@ -14,7 +15,6 @@ import (
 	"strings"
 	"syscall"
 	"time"
-	"bitbucket.org/sunybingcloud/electron/utilities"
 )
 
 func round(num float64) int {
@@ -202,7 +202,7 @@ func StartPCPLogAndProgressiveExtremaCap(quit chan struct{}, logging *bool, pref
 								// If cannot find any victim, then all nodes have been capped to the maximum and we stop capping at this point.
 							}
 						}
-						if (!canCapAlreadyCappedVictim) {
+						if !canCapAlreadyCappedVictim {
 							log.Println("No Victim left to cap.")
 						}
 					}
