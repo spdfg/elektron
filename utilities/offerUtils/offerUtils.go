@@ -70,7 +70,7 @@ func AddHostIfNew(offer *mesos.Offer) {
 	var host = offer.GetHostname()
 	// If this host is not present in the set of hosts.
 	if _, ok := constants.Hosts[host]; !ok {
-		log.Printf("New host found. Adding host [%s]", host)
+		log.Printf("New host detected. Adding host [%s]", host)
 		// Add this host.
 		constants.Hosts[host] = struct{}{}
 		// Get the power class of this host.
