@@ -300,10 +300,10 @@ func (s *BottomHeavy) ResourceOffers(driver sched.SchedulerDriver, offers []*mes
 			offersHeavyPowerClasses = append(offersHeavyPowerClasses, offer)
 		}
 		if _, ok := constants.PowerClasses["C"][*offer.Hostname]; ok {
-			offersHeavyPowerClasses = append(offersLightPowerClasses, offer)
+			offersLightPowerClasses = append(offersLightPowerClasses, offer)
 		}
 		if _, ok := constants.PowerClasses["D"][*offer.Hostname]; ok {
-			offersHeavyPowerClasses = append(offersLightPowerClasses, offer)
+			offersLightPowerClasses = append(offersLightPowerClasses, offer)
 		}
 
 	}
