@@ -177,7 +177,7 @@ func (s *FirstFitSortedWattsProacCC) startCapping() {
 				// Need to cap the cluster to the rankedCurrentCapValue.
 				rankedMutex.Lock()
 				if rankedCurrentCapValue > 0.0 {
-					for _, host := range constants.Hosts {
+					for host, _ := range constants.Hosts {
 						// Rounding currentCapValue to the nearest int.
 						if err := rapl.Cap(host, "rapl", float64(int(math.Floor(rankedCurrentCapValue+0.5)))); err != nil {
 							log.Println(err)
@@ -201,7 +201,7 @@ func (s *FirstFitSortedWattsProacCC) startRecapping() {
 				rankedMutex.Lock()
 				// If stopped performing cluster wide capping then we need to explicitly cap the entire cluster.
 				if s.isRecapping && rankedRecapValue > 0.0 {
-					for _, host := range constants.Hosts {
+					for host, _ := range constants.Hosts {
 						// Rounding currentCapValue to the nearest int.
 						if err := rapl.Cap(host, "rapl", float64(int(math.Floor(rankedRecapValue+0.5)))); err != nil {
 							log.Println(err)
@@ -246,6 +246,10 @@ func (s *FirstFitSortedWattsProacCC) ResourceOffers(driver sched.SchedulerDriver
 
 	// retrieving the available power for all the hosts in the offers.
 	for _, offer := range offers {
+		if _, ok := constants.Hosts[offer.GetHostname()]; !ok {
+			log.Printf("New host found. Adding host [%s]", offer.GetHostname())
+			constants.Hosts[offer.GetHostname()] = struct{}{}
+		}
 		_, _, offer_watts := offerUtils.OfferAgg(offer)
 		s.availablePower[*offer.Hostname] = offer_watts
 		// setting total power if the first time.

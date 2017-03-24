@@ -1,6 +1,7 @@
 package schedulers
 
 import (
+	"bitbucket.org/sunybingcloud/electron/constants"
 	"bitbucket.org/sunybingcloud/electron/def"
 	"bitbucket.org/sunybingcloud/electron/utilities/mesosUtils"
 	"bitbucket.org/sunybingcloud/electron/utilities/offerUtils"
@@ -122,6 +123,10 @@ func (s *FirstFitSortedWatts) ResourceOffers(driver sched.SchedulerDriver, offer
 	log.Printf("Received %d resource offers", len(offers))
 
 	for _, offer := range offers {
+		if _, ok := constants.Hosts[offer.GetHostname()]; !ok {
+			log.Printf("New host found. Adding host [%s]", offer.GetHostname())
+			constants.Hosts[offer.GetHostname()] = struct{}{}
+		}
 		select {
 		case <-s.Shutdown:
 			log.Println("Done scheduling tasks: declining offer on [", offer.GetHostname(), "]")

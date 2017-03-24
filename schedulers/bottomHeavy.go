@@ -282,6 +282,10 @@ func (s *BottomHeavy) ResourceOffers(driver sched.SchedulerDriver, offers []*mes
 	offersLightPowerClasses := []*mesos.Offer{}
 
 	for _, offer := range offers {
+		if _, ok := constants.Hosts[offer.GetHostname()]; !ok {
+			log.Printf("New host found. Adding host [%s]", offer.GetHostname())
+			constants.Hosts[offer.GetHostname()] = struct{}{}
+		}
 		select {
 		case <-s.Shutdown:
 			log.Println("Done scheduling tasks: declining offer on [", offer.GetHostname(), "]")

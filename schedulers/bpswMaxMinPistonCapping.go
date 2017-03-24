@@ -261,6 +261,10 @@ func (s *BPSWMaxMinPistonCapping) ResourceOffers(driver sched.SchedulerDriver, o
 	log.Printf("Received %d resource offers", len(offers))
 
 	for _, offer := range offers {
+		if _, ok := constants.Hosts[offer.GetHostname()]; !ok {
+			log.Printf("New host found. Adding host [%s]", offer.GetHostname())
+			constants.Hosts[offer.GetHostname()] = struct{}{}
+		}
 		select {
 		case <-s.Shutdown:
 			log.Println("Done scheduling tasks: declining offer on [", offer.GetHostname(), "]")

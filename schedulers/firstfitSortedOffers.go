@@ -1,6 +1,7 @@
 package schedulers
 
 import (
+	"bitbucket.org/sunybingcloud/electron/constants"
 	"bitbucket.org/sunybingcloud/electron/def"
 	"bitbucket.org/sunybingcloud/electron/utilities/mesosUtils"
 	"bitbucket.org/sunybingcloud/electron/utilities/offerUtils"
@@ -126,6 +127,10 @@ func (s *FirstFitSortedOffers) ResourceOffers(driver sched.SchedulerDriver, offe
 	log.Println("Sorted Offers:")
 	for i := 0; i < len(offers); i++ {
 		offer := offers[i]
+		if _, ok := constants.Hosts[offer.GetHostname()]; !ok {
+			log.Printf("New host found. Adding host [%s]", offer.GetHostname())
+			constants.Hosts[offer.GetHostname()] = struct{}{}
+		}
 		offerCPU, _, _ := offerUtils.OfferAgg(offer)
 		log.Printf("Offer[%s].CPU = %f\n", offer.GetHostname(), offerCPU)
 	}
