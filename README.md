@@ -8,7 +8,7 @@ To Do:
  * Add ability to use constraints
  * Running average calculations https://en.wikipedia.org/wiki/Moving_average#Exponential_moving_average
  * Make parameters corresponding to each scheduler configurable (possible to have a config template for each scheduler?)
- * TODO : Adding type of scheduler to be used, to be picked from a config file, along with it's configurable parameters.
+ * Adding type of scheduler to be used, to be picked from a config file, along with it's configurable parameters.
  * Write test code for each scheduler (This should be after the design change)
    Possible to setup the constants at runtime based on the environment?
  * Log fix for declining offer -- different reason when insufficient resources as compared to when there are no
