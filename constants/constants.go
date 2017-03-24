@@ -7,10 +7,7 @@ TODO: Clean this up and use Mesos Attributes instead.
 */
 package constants
 
-var Hosts = []string{"stratos-001.cs.binghamton.edu", "stratos-002.cs.binghamton.edu",
-	"stratos-003.cs.binghamton.edu", "stratos-004.cs.binghamton.edu",
-	"stratos-005.cs.binghamton.edu", "stratos-006.cs.binghamton.edu",
-	"stratos-007.cs.binghamton.edu", "stratos-008.cs.binghamton.edu"}
+var Hosts = make(map[string]struct{})
 
 /*
  Classification of the nodes in the cluster based on their Thermal Design Power (TDP).
