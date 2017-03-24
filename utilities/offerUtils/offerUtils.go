@@ -1,11 +1,11 @@
 package offerUtils
 
 import (
+	"bitbucket.org/sunybingcloud/electron-archive/utilities/offerUtils"
 	"bitbucket.org/sunybingcloud/electron/constants"
 	mesos "github.com/mesos/mesos-go/mesosproto"
-	"strings"
 	"log"
-	"bitbucket.org/sunybingcloud/electron-archive/utilities/offerUtils"
+	"strings"
 )
 
 func OfferAgg(offer *mesos.Offer) (float64, float64, float64) {
@@ -81,7 +81,7 @@ func AddHostIfNew(offer *mesos.Offer) {
 			constants.PowerClasses[class] = make(map[string]struct{})
 		}
 		// If the host of this class is not yet present in PowerClasses[class], add it.
-		if _, ok:= constants.PowerClasses[class][host]; !ok {
+		if _, ok := constants.PowerClasses[class][host]; !ok {
 			constants.PowerClasses[class][host] = struct{}{}
 		}
 	}
