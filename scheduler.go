@@ -43,7 +43,7 @@ func main() {
 	}
 
 	if *hiThreshold < *loThreshold {
-		fmt.Println("High threshold is of a lower value than low threhold.")
+		fmt.Println("High threshold is of a lower value than low threshold.")
 		os.Exit(1)
 	}
 
@@ -74,12 +74,12 @@ func main() {
 		return
 	}
 
-	//go pcp.Start(scheduler.PCPLog, &scheduler.RecordPCP, logPrefix)
+	go pcp.Start(scheduler.PCPLog, &scheduler.RecordPCP, logPrefix)
 	//go pcp.StartPCPLogAndExtremaDynamicCap(scheduler.PCPLog, &scheduler.RecordPCP, logPrefix, *hiThreshold, *loThreshold)
-	go pcp.StartPCPLogAndProgressiveExtremaCap(scheduler.PCPLog, &scheduler.RecordPCP, logPrefix, *hiThreshold, *loThreshold)
+	//go pcp.StartPCPLogAndProgressiveExtremaCap(scheduler.PCPLog, &scheduler.RecordPCP, logPrefix, *hiThreshold, *loThreshold)
 	time.Sleep(1 * time.Second) // Take a second between starting PCP log and continuing
 
-	// Attempt to handle signint to not leave pmdumptext running
+	// Attempt to handle SIGINT to not leave pmdumptext running
 	// Catch interrupt
 	go func() {
 		c := make(chan os.Signal, 1)
