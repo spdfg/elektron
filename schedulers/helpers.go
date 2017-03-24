@@ -18,7 +18,7 @@ func coLocated(tasks map[string]bool) {
 // Get the powerClass of the given hostname
 func hostToPowerClass(hostName string) string {
 	for powerClass, hosts := range constants.PowerClasses {
-		if ok := hosts[hostName]; ok {
+		if _, ok := hosts[hostName]; ok {
 			return powerClass
 		}
 	}

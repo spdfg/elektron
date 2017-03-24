@@ -246,10 +246,7 @@ func (s *FirstFitSortedWattsProacCC) ResourceOffers(driver sched.SchedulerDriver
 
 	// retrieving the available power for all the hosts in the offers.
 	for _, offer := range offers {
-		if _, ok := constants.Hosts[offer.GetHostname()]; !ok {
-			log.Printf("New host found. Adding host [%s]", offer.GetHostname())
-			constants.Hosts[offer.GetHostname()] = struct{}{}
-		}
+		offerUtils.AddHostIfNew(offer)
 		_, _, offer_watts := offerUtils.OfferAgg(offer)
 		s.availablePower[*offer.Hostname] = offer_watts
 		// setting total power if the first time.

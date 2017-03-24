@@ -281,6 +281,7 @@ func (s *TopHeavy) ResourceOffers(driver sched.SchedulerDriver, offers []*mesos.
 	offersLightPowerClasses := []*mesos.Offer{}
 
 	for _, offer := range offers {
+		offerUtils.AddHostIfNew(offer)
 		select {
 		case <-s.Shutdown:
 			log.Println("Done scheduling tasks: declining offer on [", offer.GetHostname(), "]")
@@ -291,12 +292,17 @@ func (s *TopHeavy) ResourceOffers(driver sched.SchedulerDriver, offers []*mesos.
 		default:
 		}
 
-		if constants.PowerClasses["A"][*offer.Hostname] ||
-			constants.PowerClasses["B"][*offer.Hostname] {
+		if _, ok := constants.PowerClasses["A"][*offer.Hostname]; ok{
 			offersHeavyPowerClasses = append(offersHeavyPowerClasses, offer)
-		} else if constants.PowerClasses["C"][*offer.Hostname] ||
-			constants.PowerClasses["D"][*offer.Hostname] {
-			offersLightPowerClasses = append(offersLightPowerClasses, offer)
+		}
+		if _, ok := constants.PowerClasses["B"][*offer.Hostname]; ok{
+			offersHeavyPowerClasses = append(offersHeavyPowerClasses, offer)
+		}
+		if _, ok := constants.PowerClasses["C"][*offer.Hostname]; ok{
+			offersHeavyPowerClasses = append(offersLightPowerClasses, offer)
+		}
+		if _, ok := constants.PowerClasses["D"][*offer.Hostname]; ok{
+			offersHeavyPowerClasses = append(offersLightPowerClasses, offer)
 		}
 	}
 
