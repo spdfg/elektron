@@ -25,7 +25,7 @@ var PowerClasses = map[string]map[string]bool{
 	"C": map[string]bool{
 		"stratos-008.cs.binghamton.edu": true,
 	},
-	"D": map[string]bool {
+	"D": map[string]bool{
 		"stratos-001.cs.binghamton.edu": true,
 		"stratos-002.cs.binghamton.edu": true,
 		"stratos-003.cs.binghamton.edu": true,
