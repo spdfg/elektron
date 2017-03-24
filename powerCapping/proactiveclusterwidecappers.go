@@ -110,7 +110,7 @@ func (capper ClusterwideCapper) CleverRecap(totalPower map[string]float64,
 	wattsUsages := make(map[string][]float64)
 	hostOfFinishedTask := ""
 	indexOfFinishedTask := -1
-	for _, host := range constants.Hosts {
+	for host, _ := range constants.Hosts {
 		wattsUsages[host] = []float64{0.0}
 	}
 	for host, tasks := range taskMonitor {
