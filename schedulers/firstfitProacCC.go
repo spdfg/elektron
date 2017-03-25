@@ -233,7 +233,7 @@ func (s *FirstFitProacCC) ResourceOffers(driver sched.SchedulerDriver, offers []
 
 	// retrieving the available power for all the hosts in the offers.
 	for _, offer := range offers {
-		offerUtils.AddHostIfNew(offer)
+		offerUtils.UpdateEnvironment(offer)
 		_, _, offer_watts := offerUtils.OfferAgg(offer)
 		s.availablePower[*offer.Hostname] = offer_watts
 		// setting total power if the first time.

@@ -122,7 +122,7 @@ func (s *FirstFitSortedWatts) ResourceOffers(driver sched.SchedulerDriver, offer
 	log.Printf("Received %d resource offers", len(offers))
 
 	for _, offer := range offers {
-		offerUtils.AddHostIfNew(offer)
+		offerUtils.UpdateEnvironment(offer)
 		select {
 		case <-s.Shutdown:
 			log.Println("Done scheduling tasks: declining offer on [", offer.GetHostname(), "]")

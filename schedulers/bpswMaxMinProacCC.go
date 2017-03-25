@@ -300,7 +300,7 @@ func (s *BPSWMaxMinProacCC) ResourceOffers(driver sched.SchedulerDriver, offers 
 
 	// retrieving the available power for all the hosts in the offers.
 	for _, offer := range offers {
-		offerUtils.AddHostIfNew(offer)
+		offerUtils.UpdateEnvironment(offer)
 		_, _, offerWatts := offerUtils.OfferAgg(offer)
 		s.availablePower[*offer.Hostname] = offerWatts
 		// setting total power if the first time
