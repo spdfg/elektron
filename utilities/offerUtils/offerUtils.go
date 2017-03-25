@@ -66,7 +66,7 @@ func HostMismatch(offerHost string, taskHost string) bool {
 
 // If the host in the offer is a new host, add the host to the set of Hosts and
 // register the powerclass of this host.
-func AddHostIfNew(offer *mesos.Offer) {
+func UpdateEnvironment(offer *mesos.Offer) {
 	var host = offer.GetHostname()
 	// If this host is not present in the set of hosts.
 	if _, ok := constants.Hosts[host]; !ok {
@@ -74,9 +74,9 @@ func AddHostIfNew(offer *mesos.Offer) {
 		// Add this host.
 		constants.Hosts[host] = struct{}{}
 		// Get the power class of this host.
-		var class = offerUtils.PowerClass(offer)
+		class := offerUtils.PowerClass(offer)
 		log.Printf("Registering the power class of this host [%s] --> [%s]", host, class)
-		// If this class is a new power class, create a map for this class.
+		// If new power class, register the power class.
 		if _, ok := constants.PowerClasses[class]; !ok {
 			constants.PowerClasses[class] = make(map[string]struct{})
 		}
