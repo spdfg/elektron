@@ -19,8 +19,8 @@ import (
 
 /*
 Tasks are categorized into small and large tasks based on the watts requirement.
-All the large tasks are packed into offers from agents belonging to power class A and power class B, using BinPacking.
-All the small tasks are spread among the offers from agents belonging to power class C and power class D, using FirstFit.
+All the small tasks are packed into offers from agents belonging to power class C and power class D, using BinPacking.
+All the large tasks are spread among the offers from agents belonging to power class A and power class B, using FirstFit.
 
 This was done to give a little more room for the large tasks (power intensive) for execution and reduce the possibility of
 starvation of power intensive tasks.
@@ -281,6 +281,7 @@ func (s *TopHeavy) ResourceOffers(driver sched.SchedulerDriver, offers []*mesos.
 	offersLightPowerClasses := []*mesos.Offer{}
 
 	for _, offer := range offers {
+		offerUtils.UpdateEnvironment(offer)
 		select {
 		case <-s.Shutdown:
 			log.Println("Done scheduling tasks: declining offer on [", offer.GetHostname(), "]")
@@ -291,11 +292,16 @@ func (s *TopHeavy) ResourceOffers(driver sched.SchedulerDriver, offers []*mesos.
 		default:
 		}
 
-		if constants.PowerClasses["A"][*offer.Hostname] ||
-			constants.PowerClasses["B"][*offer.Hostname] {
+		if _, ok := constants.PowerClasses["A"][*offer.Hostname]; ok {
 			offersHeavyPowerClasses = append(offersHeavyPowerClasses, offer)
-		} else if constants.PowerClasses["C"][*offer.Hostname] ||
-			constants.PowerClasses["D"][*offer.Hostname] {
+		}
+		if _, ok := constants.PowerClasses["B"][*offer.Hostname]; ok {
+			offersHeavyPowerClasses = append(offersHeavyPowerClasses, offer)
+		}
+		if _, ok := constants.PowerClasses["C"][*offer.Hostname]; ok {
+			offersLightPowerClasses = append(offersLightPowerClasses, offer)
+		}
+		if _, ok := constants.PowerClasses["D"][*offer.Hostname]; ok {
 			offersLightPowerClasses = append(offersLightPowerClasses, offer)
 		}
 	}

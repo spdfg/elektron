@@ -18,12 +18,12 @@ import (
 )
 
 /*
-Tasks are categorized into small and large tasks based on the watts requirement.
-All the small tasks are packed into offers from agents belonging to power class C and power class D, using BinPacking.
-All the large tasks are spread among the offers from agents belonging to power class A and power class B, using FirstFit.
+Tasks are categorized into small and large tasks based on watts requirements.
+All the large tasks are packed into offers from agents belonging to power classes A and B, using Bin-Packing.
+All the small tasks are spread among offers from agents belonging to power class C and D, using First-Fit.
 
-BinPacking has the most effect when co-scheduling of tasks is increased. Large tasks typically utilize more resources and hence,
-	co-scheduling them has a great impact on the total power utilization.
+Bin-Packing has the most effect when co-scheduling of tasks is increased. Large tasks typically utilize more resources and hence,
+co-scheduling them has a great impact on the total power utilization.
 */
 
 func (s *BottomHeavy) takeOfferBinPack(offer *mesos.Offer, totalCPU, totalRAM, totalWatts,
@@ -159,7 +159,7 @@ func (s *BottomHeavy) createTaskInfoAndLogSchedTrace(offer *mesos.Offer, task de
 	return taskToSchedule
 }
 
-// Using BinPacking to pack small tasks into this offer.
+// Using BinPacking to pack large tasks into the given offers.
 func (s *BottomHeavy) pack(offers []*mesos.Offer, driver sched.SchedulerDriver) {
 	for _, offer := range offers {
 		select {
@@ -221,7 +221,7 @@ func (s *BottomHeavy) pack(offers []*mesos.Offer, driver sched.SchedulerDriver) 
 	}
 }
 
-// Using first fit to spread large tasks into these offers.
+// Using First-Fit to spread small tasks among the given offers.
 func (s *BottomHeavy) spread(offers []*mesos.Offer, driver sched.SchedulerDriver) {
 	for _, offer := range offers {
 		select {
@@ -282,6 +282,7 @@ func (s *BottomHeavy) ResourceOffers(driver sched.SchedulerDriver, offers []*mes
 	offersLightPowerClasses := []*mesos.Offer{}
 
 	for _, offer := range offers {
+		offerUtils.UpdateEnvironment(offer)
 		select {
 		case <-s.Shutdown:
 			log.Println("Done scheduling tasks: declining offer on [", offer.GetHostname(), "]")
@@ -292,13 +293,19 @@ func (s *BottomHeavy) ResourceOffers(driver sched.SchedulerDriver, offers []*mes
 		default:
 		}
 
-		if constants.PowerClasses["A"][*offer.Hostname] ||
-			constants.PowerClasses["B"][*offer.Hostname] {
+		if _, ok := constants.PowerClasses["A"][*offer.Hostname]; ok {
 			offersHeavyPowerClasses = append(offersHeavyPowerClasses, offer)
-		} else if constants.PowerClasses["C"][*offer.Hostname] ||
-			constants.PowerClasses["D"][*offer.Hostname] {
+		}
+		if _, ok := constants.PowerClasses["B"][*offer.Hostname]; ok {
+			offersHeavyPowerClasses = append(offersHeavyPowerClasses, offer)
+		}
+		if _, ok := constants.PowerClasses["C"][*offer.Hostname]; ok {
 			offersLightPowerClasses = append(offersLightPowerClasses, offer)
 		}
+		if _, ok := constants.PowerClasses["D"][*offer.Hostname]; ok {
+			offersLightPowerClasses = append(offersLightPowerClasses, offer)
+		}
+
 	}
 
 	log.Println("Packing Large tasks into ClassAB offers:")

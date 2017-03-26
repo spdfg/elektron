@@ -126,6 +126,7 @@ func (s *FirstFitSortedOffers) ResourceOffers(driver sched.SchedulerDriver, offe
 	log.Println("Sorted Offers:")
 	for i := 0; i < len(offers); i++ {
 		offer := offers[i]
+		offerUtils.UpdateEnvironment(offer)
 		offerCPU, _, _ := offerUtils.OfferAgg(offer)
 		log.Printf("Offer[%s].CPU = %f\n", offer.GetHostname(), offerCPU)
 	}

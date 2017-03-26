@@ -164,6 +164,7 @@ func (s *BPSWMaxMinWatts) ResourceOffers(driver sched.SchedulerDriver, offers []
 	log.Printf("Received %d resource offers", len(offers))
 
 	for _, offer := range offers {
+		offerUtils.UpdateEnvironment(offer)
 		select {
 		case <-s.Shutdown:
 			log.Println("Done scheduling tasks: declining offer on [", offer.GetHostname(), "]")

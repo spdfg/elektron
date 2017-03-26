@@ -7,34 +7,14 @@ TODO: Clean this up and use Mesos Attributes instead.
 */
 package constants
 
-var Hosts = []string{"stratos-001.cs.binghamton.edu", "stratos-002.cs.binghamton.edu",
-	"stratos-003.cs.binghamton.edu", "stratos-004.cs.binghamton.edu",
-	"stratos-005.cs.binghamton.edu", "stratos-006.cs.binghamton.edu",
-	"stratos-007.cs.binghamton.edu", "stratos-008.cs.binghamton.edu"}
+var Hosts = make(map[string]struct{})
 
 /*
  Classification of the nodes in the cluster based on their Thermal Design Power (TDP).
  The power classes are labelled in the decreasing order of the corresponding TDP, with class A nodes
  	having the highest TDP and class C nodes having the lowest TDP.
 */
-var PowerClasses = map[string]map[string]bool{
-	"A": map[string]bool{
-		"stratos-005.cs.binghamton.edu": true,
-		"stratos-006.cs.binghamton.edu": true,
-	},
-	"B": map[string]bool{
-		"stratos-007.cs.binghamton.edu": true,
-	},
-	"C": map[string]bool{
-		"stratos-008.cs.binghamton.edu": true,
-	},
-	"D": map[string]bool {
-		"stratos-001.cs.binghamton.edu": true,
-		"stratos-002.cs.binghamton.edu": true,
-		"stratos-003.cs.binghamton.edu": true,
-		"stratos-004.cs.binghamton.edu": true,
-	},
-}
+var PowerClasses = make(map[string]map[string]struct{})
 
 /*
   Margin with respect to the required power for a job.

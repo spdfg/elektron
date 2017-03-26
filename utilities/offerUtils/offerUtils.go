@@ -1,7 +1,10 @@
 package offerUtils
 
 import (
+	"bitbucket.org/sunybingcloud/electron-archive/utilities/offerUtils"
+	"bitbucket.org/sunybingcloud/electron/constants"
 	mesos "github.com/mesos/mesos-go/mesosproto"
+	"log"
 	"strings"
 )
 
@@ -59,4 +62,27 @@ func HostMismatch(offerHost string, taskHost string) bool {
 		return true
 	}
 	return false
+}
+
+// If the host in the offer is a new host, add the host to the set of Hosts and
+// register the powerclass of this host.
+func UpdateEnvironment(offer *mesos.Offer) {
+	var host = offer.GetHostname()
+	// If this host is not present in the set of hosts.
+	if _, ok := constants.Hosts[host]; !ok {
+		log.Printf("New host detected. Adding host [%s]", host)
+		// Add this host.
+		constants.Hosts[host] = struct{}{}
+		// Get the power class of this host.
+		class := offerUtils.PowerClass(offer)
+		log.Printf("Registering the power class... Host [%s] --> PowerClass [%s]", host, class)
+		// If new power class, register the power class.
+		if _, ok := constants.PowerClasses[class]; !ok {
+			constants.PowerClasses[class] = make(map[string]struct{})
+		}
+		// If the host of this class is not yet present in PowerClasses[class], add it.
+		if _, ok := constants.PowerClasses[class][host]; !ok {
+			constants.PowerClasses[class][host] = struct{}{}
+		}
+	}
 }

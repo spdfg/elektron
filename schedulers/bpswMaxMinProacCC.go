@@ -164,7 +164,7 @@ func (s *BPSWMaxMinProacCC) startCapping() {
 						// updating cap value
 						bpMaxMinProacCCCapValue = bpMaxMinProacCCNewCapValue
 						if bpMaxMinProacCCCapValue > 0.0 {
-							for _, host := range constants.Hosts {
+							for host, _ := range constants.Hosts {
 								// Rounding cap value to nearest int
 								if err := rapl.Cap(host, "rapl", float64(int(math.Floor(bpMaxMinProacCCCapValue+0.5)))); err != nil {
 									log.Println(err)
@@ -190,7 +190,7 @@ func (s *BPSWMaxMinProacCC) startRecapping() {
 				bpMaxMinProacCCMutex.Lock()
 				// If stopped performing cluster-wide capping, then we need to recap.
 				if s.isRecapping && bpMaxMinProacCCRecapValue > 0.0 {
-					for _, host := range constants.Hosts {
+					for host, _ := range constants.Hosts {
 						// Rounding the recap value to the nearest int
 						if err := rapl.Cap(host, "rapl", float64(int(math.Floor(bpMaxMinProacCCRecapValue+0.5)))); err != nil {
 							log.Println(err)
@@ -300,6 +300,7 @@ func (s *BPSWMaxMinProacCC) ResourceOffers(driver sched.SchedulerDriver, offers 
 
 	// retrieving the available power for all the hosts in the offers.
 	for _, offer := range offers {
+		offerUtils.UpdateEnvironment(offer)
 		_, _, offerWatts := offerUtils.OfferAgg(offer)
 		s.availablePower[*offer.Hostname] = offerWatts
 		// setting total power if the first time
