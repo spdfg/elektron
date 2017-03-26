@@ -1,7 +1,6 @@
 package offerUtils
 
 import (
-	"bitbucket.org/sunybingcloud/electron-archive/utilities/offerUtils"
 	"bitbucket.org/sunybingcloud/electron/constants"
 	mesos "github.com/mesos/mesos-go/mesosproto"
 	"log"
@@ -74,7 +73,7 @@ func UpdateEnvironment(offer *mesos.Offer) {
 		// Add this host.
 		constants.Hosts[host] = struct{}{}
 		// Get the power class of this host.
-		class := offerUtils.PowerClass(offer)
+		class := PowerClass(offer)
 		log.Printf("Registering the power class... Host [%s] --> PowerClass [%s]", host, class)
 		// If new power class, register the power class.
 		if _, ok := constants.PowerClasses[class]; !ok {
