@@ -75,7 +75,7 @@ func UpdateEnvironment(offer *mesos.Offer) {
 		constants.Hosts[host] = struct{}{}
 		// Get the power class of this host.
 		class := offerUtils.PowerClass(offer)
-		log.Printf("Registering the power class of this host [%s] --> [%s]", host, class)
+		log.Printf("Registering the power class... Host [%s] --> PowerClass [%s]", host, class)
 		// If new power class, register the power class.
 		if _, ok := constants.PowerClasses[class]; !ok {
 			constants.PowerClasses[class] = make(map[string]struct{})
