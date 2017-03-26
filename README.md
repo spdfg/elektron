@@ -17,7 +17,7 @@ To Do:
  * Make def.Task an interface for further modularization and flexibility.
  * Convert def#WattsToConsider(...) to be a receiver of def.Task and change the name of it to Watts(...).
  * Have a generic sorter for task resources instead of having one for each kind of resource.
- * Handle Powerclass not configured on a node condition. As of now, an assumption is made that the powerclass is configured
+ * Handle powerclass not configured on a node condition. As of now, an assumption is made that the powerclass is configured
    for all the nodes.
 
 **Requires [Performance Co-Pilot](http://pcp.io/) tool pmdumptext to be installed on the
