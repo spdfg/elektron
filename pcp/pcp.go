@@ -37,15 +37,6 @@ func Start(quit chan struct{}, logging *bool, prefix string) {
 		// Write to logfile
 		logFile.WriteString(scanner.Text() + "\n")
 
-		/*
-			headers := strings.Split(scanner.Text(), ",")
-
-			for _, hostMetric := range headers {
-				split := strings.Split(hostMetric, ":")
-				fmt.Printf("Host %s: Metric: %s\n", split[0], split[1])
-			}
-		*/
-
 		// Throw away first set of results
 		scanner.Scan()
 
@@ -57,15 +48,7 @@ func Start(quit chan struct{}, logging *bool, prefix string) {
 				logFile.WriteString(scanner.Text() + "\n")
 			}
 
-			/*
-				fmt.Printf("Second: %d\n", seconds)
-				for i, val := range strings.Split(scanner.Text(), ",") {
-					fmt.Printf("host metric: %s val: %s\n", headers[i], val)
-				}*/
-
 			seconds++
-
-			// fmt.Println("--------------------------------")
 		}
 	}(logging)
 

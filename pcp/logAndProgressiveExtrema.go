@@ -3,6 +3,7 @@ package pcp
 import (
 	"bitbucket.org/sunybingcloud/electron/constants"
 	"bitbucket.org/sunybingcloud/electron/rapl"
+	"bitbucket.org/sunybingcloud/electron/utilities"
 	"bufio"
 	"container/ring"
 	"log"
@@ -14,7 +15,6 @@ import (
 	"strings"
 	"syscall"
 	"time"
-	"bitbucket.org/sunybingcloud/electron/utilities"
 )
 
 func round(num float64) int {
@@ -170,11 +170,12 @@ func StartPCPLogAndProgressiveExtremaCap(quit chan struct{}, logging *bool, pref
 					}
 					// If no new victim found, then we need to cap the best victim among the ones that are already capped
 					if !newVictimFound {
+						canCapAlreadyCappedVictim := false
 						for i := 0; i < len(alreadyCappedHosts); i++ {
 							// If already capped then the host must be present in orderCappedVictims
 							capValue := orderCappedVictims[alreadyCappedHosts[i]]
 							// If capValue is greater than the threshold then cap, else continue
-							if capValue > constants.CapThreshold {
+							if capValue > constants.LowerCapLimit {
 								newCapValue := getNextCapValue(capValue, 2)
 								if err := rapl.Cap(alreadyCappedHosts[i], "rapl", newCapValue); err != nil {
 									log.Printf("Error capping host[%s]", alreadyCappedHosts[i])
@@ -182,7 +183,7 @@ func StartPCPLogAndProgressiveExtremaCap(quit chan struct{}, logging *bool, pref
 									// Successful cap
 									log.Printf("Capped host[%s] at %f", alreadyCappedHosts[i], newCapValue)
 									// Checking whether this victim can be capped further
-									if newCapValue <= constants.CapThreshold {
+									if newCapValue <= constants.LowerCapLimit {
 										// Deleting victim from cappedVictims
 										delete(cappedVictims, alreadyCappedHosts[i])
 										// Updating the cap value in orderCappedVictims
@@ -192,6 +193,7 @@ func StartPCPLogAndProgressiveExtremaCap(quit chan struct{}, logging *bool, pref
 										cappedVictims[alreadyCappedHosts[i]] = newCapValue
 										orderCappedVictims[alreadyCappedHosts[i]] = newCapValue
 									}
+									canCapAlreadyCappedVictim = true
 									break // Breaking only on successful cap.
 								}
 							} else {
@@ -199,6 +201,9 @@ func StartPCPLogAndProgressiveExtremaCap(quit chan struct{}, logging *bool, pref
 								// Continue to find another victim to cap.
 								// If cannot find any victim, then all nodes have been capped to the maximum and we stop capping at this point.
 							}
+						}
+						if !canCapAlreadyCappedVictim {
+							log.Println("No Victim left to cap.")
 						}
 					}
 
@@ -211,7 +216,8 @@ func StartPCPLogAndProgressiveExtremaCap(quit chan struct{}, logging *bool, pref
 						orderCappedToSort := utilities.GetPairList(orderCappedVictims)
 						sort.Sort(orderCappedToSort) // Sorted hosts in non-decreasing order of capped states
 						hostToUncap := orderCappedToSort[0].Key
-						// Uncapping the host
+						// Uncapping the host.
+						// This is a floating point operation and might suffer from precision loss.
 						newUncapValue := orderCappedVictims[hostToUncap] * 2.0
 						if err := rapl.Cap(hostToUncap, "rapl", newUncapValue); err != nil {
 							log.Printf("Error uncapping host[%s]", hostToUncap)
@@ -231,7 +237,7 @@ func StartPCPLogAndProgressiveExtremaCap(quit chan struct{}, logging *bool, pref
 								delete(orderCappedVictims, hostToUncap)
 								// Removing entry from cappedVictims as this host is no longer capped
 								delete(cappedVictims, hostToUncap)
-							} else if newUncapValue > constants.CapThreshold { // this check is unnecessary and can be converted to 'else'
+							} else if newUncapValue > constants.LowerCapLimit { // this check is unnecessary and can be converted to 'else'
 								// Updating the cap value
 								orderCappedVictims[hostToUncap] = newUncapValue
 								cappedVictims[hostToUncap] = newUncapValue

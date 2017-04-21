@@ -210,6 +210,7 @@ func (s *BinPackedPistonCapper) ResourceOffers(driver sched.SchedulerDriver, off
 
 	// retrieving the total power for each host in the offers
 	for _, offer := range offers {
+		offerUtils.UpdateEnvironment(offer)
 		if _, ok := s.totalPower[*offer.Hostname]; !ok {
 			_, _, offerWatts := offerUtils.OfferAgg(offer)
 			s.totalPower[*offer.Hostname] = offerWatts
