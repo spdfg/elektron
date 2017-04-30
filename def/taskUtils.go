@@ -18,7 +18,9 @@ type TasksToClassify []Task
 func (tc TasksToClassify) ClassifyTasks(numberOfClusters int, taskObservation func(task Task) []float64) []TaskCluster {
 	clusters := make(map[int][]Task)
 	observations := getObservations(tc, taskObservation)
-	// TODO: Make the number rounds configurable based on the size of the workload
+	// TODO: Make the max number of rounds configurable based on the size of the workload
+	// The max number of rounds (currently defaulted to 100) is the number of iterations performed to obtain
+	// distinct clusters. When the data size becomes very large, we would need more iterations for clustering.
 	if trained, centroids := gokmeans.Train(observations, numberOfClusters, 100); trained {
 		for i := 0; i < len(observations); i++ {
 			observation := observations[i]
@@ -43,7 +45,7 @@ func getObservations(tasks []Task, taskObservation func(task Task) []float64) []
 }
 
 // Size tasks based on the power consumption
-// TODO: Size the cluster in a better way just taking an aggregate of the watts resource requirement.
+// TODO: Size the cluster in a better way other than just taking an aggregate of the watts resource requirement.
 func clusterSize(tasks []Task, taskObservation func(task Task) []float64) float64 {
 	size := 0.0
 	for _, task := range tasks {
