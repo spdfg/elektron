@@ -65,24 +65,8 @@ func NewBottomHeavy(tasks []def.Task, wattsAsAResource bool, schedTracePrefix st
 		log.Fatal(err)
 	}
 
-	// Separating small tasks from large tasks.
-	// Classification done based on MMPU watts requirements.
-	tasksToClassify := def.TasksToClassify(tasks)
-	classifiedTasks := tasksToClassify.ClassifyTasks(2, func(task def.Task) []float64 {
-		if task.ClassToWatts != nil {
-			// taking the aggregate
-			observations := []float64{}
-			for _, watts := range task.ClassToWatts {
-				observations = append(observations, watts)
-			}
-			return observations
-		} else if task.Watts != 0.0 {
-			return []float64{task.Watts}
-		} else {
-			log.Fatal("Unable to classify tasks. Missing Watts or ClassToWatts attribute in workload.")
-			return []float64{0.0} // won't reach here
-		}
-	})
+	// Classification done based on MMPU watts requirements, into 2 clusters.
+	classifiedTasks := def.ClassifyTasks(tasks, 2)
 
 	s := &BottomHeavy{
 		base: base{
@@ -95,6 +79,7 @@ func NewBottomHeavy(tasks []def.Task, wattsAsAResource bool, schedTracePrefix st
 			RecordPCP:        false,
 			schedTrace:       log.New(logFile, "", log.LstdFlags),
 		},
+		// Separating small tasks from large tasks.
 		smallTasks: classifiedTasks[0].Tasks,
 		largeTasks: classifiedTasks[1].Tasks,
 	}

@@ -3,6 +3,7 @@ package def
 import (
 	"github.com/mdesenfants/gokmeans"
 	"sort"
+	"log"
 )
 
 // Information about a cluster of tasks
@@ -15,7 +16,29 @@ type TaskCluster struct {
 // Classification of Tasks using KMeans clustering using the watts consumption observations
 type TasksToClassify []Task
 
-func (tc TasksToClassify) ClassifyTasks(numberOfClusters int, taskObservation func(task Task) []float64) []TaskCluster {
+// Basic taskObservation calculator. This returns an array consisting of the MMPU requirements of a task.
+func (tc TasksToClassify) taskObservationCalculator(task Task) []float64 {
+	if task.ClassToWatts != nil {
+		// taking the aggregate
+		observations := []float64{}
+		for _, watts := range task.ClassToWatts {
+			observations = append(observations, watts)
+		}
+		return observations
+	} else if task.Watts != 0.0 {
+		return []float64{task.Watts}
+	} else {
+		log.Fatal("Unable to classify tasks. Missing Watts or ClassToWatts attribute in workload.")
+		return []float64{0.0} // won't reach here
+	}
+}
+
+func ClassifyTasks(tasks []Task, numberOfClusters int) []TaskCluster {
+	tc := TasksToClassify(tasks)
+	return tc.classify(numberOfClusters, tc.taskObservationCalculator)
+}
+
+func (tc TasksToClassify) classify(numberOfClusters int, taskObservation func(task Task) []float64) []TaskCluster {
 	clusters := make(map[int][]Task)
 	observations := getObservations(tc, taskObservation)
 	// TODO: Make the number rounds configurable based on the size of the workload
