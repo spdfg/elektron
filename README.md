@@ -20,6 +20,7 @@ To Do:
  *  **Critical** -- Add software requirements to the README.md (Mesos version, RAPL version, PCP version, Go version...)
  *  **Critical** -- Retrofit to use Go 1.8 sorting techniques. Use def/taskUtils.go for reference.
  * Handle powerclass not configured on a node condition. As of now, an assumption is made that the powerclass is configured
+ * Refine the sorting algorithm that sorts the clusters of tasks retrieved using the kmeans algorithm. This also involves the reduction in time complexity of the same.
    for all the nodes.
 
 **Requires [Performance Co-Pilot](http://pcp.io/) tool pmdumptext to be installed on the

@@ -7,7 +7,6 @@ To Do:
  * Fix the race condition on 'tasksRunning' in proactiveclusterwidecappingfcfs.go and proactiveclusterwidecappingranked.go
  * **Critical**: Separate the capping strategies from the scheduling algorithms and make it possible to use any capping strategy with any scheduler.
  * Create a package that would contain routines to perform various logging and move helpers.coLocated(...) into that.
- * Refine the sorting algorithm that sorts the clusters of tasks retrieved using the kmeans algorithm. This also involves the reduction in time complexity of the same.
 
 Scheduling Algorithms:
 
