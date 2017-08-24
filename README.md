@@ -21,6 +21,7 @@ To Do:
  *  **Critical** -- Retrofit to use Go 1.8 sorting techniques. Use def/taskUtils.go for reference.
  * Handle powerclass not configured on a node condition. As of now, an assumption is made that the powerclass is configured
  * Refine the sorting algorithm that sorts the clusters of tasks retrieved using the kmeans algorithm. This also involves the reduction in time complexity of the same.
+ * Use the generic task sorter in def/taskUtils.go to sort the tasks based on CPU or RAM etc. Remove the existing sorters present in def/task.go.
    for all the nodes.
 
 **Requires [Performance Co-Pilot](http://pcp.io/) tool pmdumptext to be installed on the
