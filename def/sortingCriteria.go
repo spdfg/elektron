@@ -1,21 +1,21 @@
 package def
 
 // Creating an enumeration of the resources in def.Task.
-var TaskResourceNames []string
+var taskResourceNames []string
 
-type SortCriteria int
+type sortCriteria int
 
 // Map a task's resource name to the sorting criteria (an integer corresponding to the enumeration).
-func resourceToSortCriteria(resourceName string) SortCriteria {
+func resourceToSortCriteria(resourceName string) sortCriteria {
 	// Appending resourceName to TaskResourceNames.
-	TaskResourceNames = append(TaskResourceNames, resourceName)
+	taskResourceNames = append(taskResourceNames, resourceName)
 
 	// Considering index of resource in TaskResourceNames to be the int mapping.
-	return SortCriteria(len(TaskResourceNames) - 1)
+	return sortCriteria(len(taskResourceNames) - 1)
 }
 
-func (sc SortCriteria) String() string {
-	return TaskResourceNames[int(sc)]
+func (sc sortCriteria) String() string {
+	return taskResourceNames[int(sc)]
 }
 
 // Possible Sorting Criteria

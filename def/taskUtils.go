@@ -120,7 +120,7 @@ func labelAndOrder(clusters map[int][]Task, numberOfClusters int, taskObservatio
 // Be able to sort an array of tasks based on any of the tasks' resources.
 
 // Retrieve a sorter (same signature as 'Less' function in sort.Interface) for the given sorting criteria.
-func TaskSorter(sc SortCriteria, tasks []Task) func (i, j int) bool {
+func TaskSorter(sc sortCriteria, tasks []Task) func (i, j int) bool {
 	return func (i, j int) bool {
 		taskIFields := reflect.Indirect(reflect.ValueOf(tasks[i]))
 		tasksJFields := reflect.Indirect(reflect.ValueOf(tasks[j]))
