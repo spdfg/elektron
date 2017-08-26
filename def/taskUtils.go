@@ -4,7 +4,6 @@ import (
 	"github.com/mdesenfants/gokmeans"
 	"sort"
 	"log"
-	"reflect"
 )
 
 // Information about a cluster of tasks
@@ -120,12 +119,9 @@ func labelAndOrder(clusters map[int][]Task, numberOfClusters int, taskObservatio
 // Be able to sort an array of tasks based on any of the tasks' resources.
 
 // Retrieve a sorter (same signature as 'Less' function in sort.Interface) for the given sorting criteria.
-func TaskSorter(sc sortCriteria, tasks []Task) func (i, j int) bool {
+type TasksToSort []Task
+func (ts TasksToSort) TaskSorter(sb sortBy) func (i, j int) bool {
 	return func (i, j int) bool {
-		taskIFields := reflect.Indirect(reflect.ValueOf(tasks[i]))
-		tasksJFields := reflect.Indirect(reflect.ValueOf(tasks[j]))
-		resourceI := taskIFields.FieldByName(sc.String()).Float()
-		resourceJ := tasksJFields.FieldByName(sc.String()).Float()
-		return resourceI <= resourceJ
+		return sb(&ts[i]) <= sb(&ts[j])
 	}
 }
