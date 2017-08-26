@@ -117,8 +117,6 @@ func labelAndOrder(clusters map[int][]Task, numberOfClusters int, taskObservatio
 
 // Generic Task Sorter.
 // Be able to sort an array of tasks based on any of the tasks' resources.
-
-// Retrieve a sorter (same signature as 'Less' function in sort.Interface) for the given sorting criteria.
 func SortTasks(ts []Task, sb sortBy) {
 	sort.SliceStable(ts, func (i, j int) bool {
 		return sb(&ts[i]) <= sb(&ts[j])
