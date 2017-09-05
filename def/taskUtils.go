@@ -2,8 +2,8 @@ package def
 
 import (
 	"github.com/mdesenfants/gokmeans"
-	"sort"
 	"log"
+	"sort"
 )
 
 // Information about a cluster of tasks
@@ -113,4 +113,12 @@ func labelAndOrder(clusters map[int][]Task, numberOfClusters int, taskObservatio
 		return sizedClusters[i].SizeScore <= sizedClusters[j].SizeScore
 	})
 	return sizedClusters
+}
+
+// Generic Task Sorter.
+// Be able to sort an array of tasks based on any of the tasks' resources.
+func SortTasks(ts []Task, sb sortBy) {
+	sort.SliceStable(ts, func(i, j int) bool {
+		return sb(&ts[i]) <= sb(&ts[j])
+	})
 }

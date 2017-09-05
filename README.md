@@ -16,11 +16,11 @@ To Do:
  * Have a centralised logFile that can be filtered by identifier. All electron logs should go into this file.
  * Make def.Task an interface for further modularization and flexibility.
  * Convert def#WattsToConsider(...) to be a receiver of def.Task and change the name of it to Watts(...).
- * Have a generic sorter for task resources instead of having one for each kind of resource.
  *  **Critical** -- Add software requirements to the README.md (Mesos version, RAPL version, PCP version, Go version...)
  *  **Critical** -- Retrofit to use Go 1.8 sorting techniques. Use def/taskUtils.go for reference.
  * Handle powerclass not configured on a node condition. As of now, an assumption is made that the powerclass is configured
  * Refine the sorting algorithm that sorts the clusters of tasks retrieved using the kmeans algorithm. This also involves the reduction in time complexity of the same.
+ * Use the generic task sorter in def/taskUtils.go to sort the tasks based on CPU or RAM etc. Remove the existing sorters present in def/task.go.
    for all the nodes.
 
 **Requires [Performance Co-Pilot](http://pcp.io/) tool pmdumptext to be installed on the
