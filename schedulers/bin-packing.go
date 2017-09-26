@@ -15,7 +15,7 @@ import (
 )
 
 // Decides if to take an offer or not
-func (s *BinPackSortedWatts) takeOffer(offer *mesos.Offer, task def.Task, totalCPU, totalRAM, totalWatts float64) bool {
+func (s *BinPacking) takeOffer(offer *mesos.Offer, task def.Task, totalCPU, totalRAM, totalWatts float64) bool {
 
 	cpus, mem, watts := offerUtils.OfferAgg(offer)
 
@@ -33,12 +33,12 @@ func (s *BinPackSortedWatts) takeOffer(offer *mesos.Offer, task def.Task, totalC
 	return false
 }
 
-type BinPackSortedWatts struct {
+type BinPacking struct {
 	base // Type embedded to inherit common functions
 }
 
 // New elektron scheduler
-func NewBinPackSortedWatts(tasks []def.Task, wattsAsAResource bool, schedTracePrefix string, classMapWatts bool) *BinPackSortedWatts {
+func NewBinPacking(tasks []def.Task, wattsAsAResource bool, schedTracePrefix string, classMapWatts bool) *BinPacking {
 	def.SortTasks(tasks, def.SortByWatts)
 
 	logFile, err := os.Create("./" + schedTracePrefix + "_schedTrace.log")
@@ -46,7 +46,7 @@ func NewBinPackSortedWatts(tasks []def.Task, wattsAsAResource bool, schedTracePr
 		log.Fatal(err)
 	}
 
-	s := &BinPackSortedWatts{
+	s := &BinPacking{
 		base: base{
 			tasks:            tasks,
 			wattsAsAResource: wattsAsAResource,
@@ -62,7 +62,7 @@ func NewBinPackSortedWatts(tasks []def.Task, wattsAsAResource bool, schedTracePr
 	return s
 }
 
-func (s *BinPackSortedWatts) newTask(offer *mesos.Offer, task def.Task) *mesos.TaskInfo {
+func (s *BinPacking) newTask(offer *mesos.Offer, task def.Task) *mesos.TaskInfo {
 	taskName := fmt.Sprintf("%s-%d", task.Name, *task.Instances)
 	s.tasksCreated++
 
@@ -115,7 +115,7 @@ func (s *BinPackSortedWatts) newTask(offer *mesos.Offer, task def.Task) *mesos.T
 	}
 }
 
-func (s *BinPackSortedWatts) ResourceOffers(driver sched.SchedulerDriver, offers []*mesos.Offer) {
+func (s *BinPacking) ResourceOffers(driver sched.SchedulerDriver, offers []*mesos.Offer) {
 	log.Printf("Received %d resource offers", len(offers))
 
 	for _, offer := range offers {
@@ -196,7 +196,7 @@ func (s *BinPackSortedWatts) ResourceOffers(driver sched.SchedulerDriver, offers
 	}
 }
 
-func (s *BinPackSortedWatts) StatusUpdate(driver sched.SchedulerDriver, status *mesos.TaskStatus) {
+func (s *BinPacking) StatusUpdate(driver sched.SchedulerDriver, status *mesos.TaskStatus) {
 	log.Printf("Received task status [%s] for task [%s]", NameFor(status.State), *status.TaskId.Value)
 
 	if *status.State == mesos.TaskState_TASK_RUNNING {

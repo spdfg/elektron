@@ -15,23 +15,26 @@ import (
 	"time"
 )
 
-var master = flag.String("master", "xavier:5050", "Location of leading Mesos master")
+var master = flag.String("master", "<mesos-master>:5050", "Location of leading Mesos master")
 var tasksFile = flag.String("workload", "", "JSON file containing task definitions")
-var wattsAsAResource = flag.Bool("wattsAsAResource", false, "Enable Watts as a Resource")
-var pcplogPrefix = flag.String("logPrefix", "", "Prefix for pcplog")
-var hiThreshold = flag.Float64("hiThreshold", 0.0, "Upperbound for when we should start capping")
-var loThreshold = flag.Float64("loThreshold", 0.0, "Lowerbound for when we should start uncapping")
-var classMapWatts = flag.Bool("classMapWatts", false, "Enable mapping of watts to power class of node")
+var wattsAsAResource = flag.Bool("wattsAsAResource", false, "Enable Watts as a Resource. This allows the usage of the Watts attribute (if present) in the workload definition during offer matching.")
+var pcplogPrefix = flag.String("logPrefix", "", "Prefix for PCP log file")
+var hiThreshold = flag.Float64("hiThreshold", 0.0, "Upperbound for Cluster average historical power consumption, beyond which extrema/progressive-extrema would start power-capping")
+var loThreshold = flag.Float64("loThreshold", 0.0, "Lowerbound for Cluster average historical power consumption, below which extrema/progressive-extrema would stop power-capping")
+var classMapWatts = flag.Bool("classMapWatts", false, "Enable mapping of watts to powerClass of node")
 
 // Short hand args
 func init() {
-	flag.StringVar(master, "m", "xavier:5050", "Location of leading Mesos master (shorthand)")
+	flag.StringVar(master, "m", "<mesos-master>:5050", "Location of leading Mesos master (shorthand)")
 	flag.StringVar(tasksFile, "w", "", "JSON file containing task definitions (shorthand)")
-	flag.BoolVar(wattsAsAResource, "waar", false, "Enable Watts as a Resource (shorthand)")
-	flag.StringVar(pcplogPrefix, "p", "", "Prefix for pcplog (shorthand)")
-	flag.Float64Var(hiThreshold, "ht", 700.0, "Upperbound for when we should start capping (shorthand)")
-	flag.Float64Var(loThreshold, "lt", 400.0, "Lowerbound for when we should start uncapping (shorthand)")
-	flag.BoolVar(classMapWatts, "cmw", false, "Enable mapping of watts to power class of node (shorthand)")
+	flag.BoolVar(wattsAsAResource, "waar", false, "Enable Watts as a Resource. " +
+		"This allows the usage of the Watts attribute (if present) in the workload definition during offer matching. (shorthand)")
+	flag.StringVar(pcplogPrefix, "p", "", "Prefix for PCP log file (shorthand)")
+	flag.Float64Var(hiThreshold, "ht", 700.0, "Upperbound for Cluster average historical power consumption, " +
+		"beyond which extrema/progressive-extrema would start power-capping (shorthand)")
+	flag.Float64Var(loThreshold, "lt", 400.0, "Lowerbound for Cluster average historical power consumption, " +
+		"below which extrema/progressive-extrema would stop power-capping (shorthand)")
+	flag.BoolVar(classMapWatts, "cmw", false, "Enable mapping of watts to powerClass of node (shorthand)")
 }
 
 func main() {
@@ -64,7 +67,7 @@ func main() {
 	driver, err := sched.NewMesosSchedulerDriver(sched.DriverConfig{
 		Master: *master,
 		Framework: &mesos.FrameworkInfo{
-			Name: proto.String("Electron"),
+			Name: proto.String("Elektron"),
 			User: proto.String(""),
 		},
 		Scheduler: scheduler,

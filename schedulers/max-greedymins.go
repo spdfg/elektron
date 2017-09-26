@@ -15,7 +15,7 @@ import (
 )
 
 // Decides if to take an offer or not
-func (s *BPSWMaxMinWatts) takeOffer(offer *mesos.Offer, task def.Task,
+func (s *MaxGreedyMins) takeOffer(offer *mesos.Offer, task def.Task,
 	totalCPU, totalRAM, totalWatts float64) bool {
 
 	cpus, mem, watts := offerUtils.OfferAgg(offer)
@@ -34,12 +34,12 @@ func (s *BPSWMaxMinWatts) takeOffer(offer *mesos.Offer, task def.Task,
 	return false
 }
 
-type BPSWMaxMinWatts struct {
+type MaxGreedyMins struct {
 	base //Type embedding to inherit common functions
 }
 
 // New elektron scheduler
-func NewBPSWMaxMinWatts(tasks []def.Task, wattsAsAResource bool, schedTracePrefix string, classMapWatts bool) *BPSWMaxMinWatts {
+func NewMaxGreedyMins(tasks []def.Task, wattsAsAResource bool, schedTracePrefix string, classMapWatts bool) *MaxGreedyMins {
 	def.SortTasks(tasks, def.SortByWatts)
 
 	logFile, err := os.Create("./" + schedTracePrefix + "_schedTrace.log")
@@ -47,7 +47,7 @@ func NewBPSWMaxMinWatts(tasks []def.Task, wattsAsAResource bool, schedTracePrefi
 		log.Fatal(err)
 	}
 
-	s := &BPSWMaxMinWatts{
+	s := &MaxGreedyMins{
 		base: base{
 			tasks:            tasks,
 			wattsAsAResource: wattsAsAResource,
@@ -63,7 +63,7 @@ func NewBPSWMaxMinWatts(tasks []def.Task, wattsAsAResource bool, schedTracePrefi
 	return s
 }
 
-func (s *BPSWMaxMinWatts) newTask(offer *mesos.Offer, task def.Task) *mesos.TaskInfo {
+func (s *MaxGreedyMins) newTask(offer *mesos.Offer, task def.Task) *mesos.TaskInfo {
 	taskName := fmt.Sprintf("%s-%d", task.Name, *task.Instances)
 	s.tasksCreated++
 
@@ -119,7 +119,7 @@ func (s *BPSWMaxMinWatts) newTask(offer *mesos.Offer, task def.Task) *mesos.Task
 
 // Determine if the remaining space inside of the offer is enough for this
 // the task we need to create. If it is, create a TaskInfo and return it.
-func (s *BPSWMaxMinWatts) CheckFit(
+func (s *MaxGreedyMins) CheckFit(
 	i int,
 	task def.Task,
 	wattsConsideration float64,
@@ -159,7 +159,7 @@ func (s *BPSWMaxMinWatts) CheckFit(
 	return false, nil
 }
 
-func (s *BPSWMaxMinWatts) ResourceOffers(driver sched.SchedulerDriver, offers []*mesos.Offer) {
+func (s *MaxGreedyMins) ResourceOffers(driver sched.SchedulerDriver, offers []*mesos.Offer) {
 	log.Printf("Received %d resource offers", len(offers))
 
 	for _, offer := range offers {
@@ -253,7 +253,7 @@ func (s *BPSWMaxMinWatts) ResourceOffers(driver sched.SchedulerDriver, offers []
 	}
 }
 
-func (s *BPSWMaxMinWatts) StatusUpdate(driver sched.SchedulerDriver, status *mesos.TaskStatus) {
+func (s *MaxGreedyMins) StatusUpdate(driver sched.SchedulerDriver, status *mesos.TaskStatus) {
 	log.Printf("Received task status [%s] for task [%s]", NameFor(status.State), *status.TaskId.Value)
 
 	if *status.State == mesos.TaskState_TASK_RUNNING {
