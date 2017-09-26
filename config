@@ -1,72 +1,33 @@
-stratos-001:kernel.all.load[5]
-stratos-002:kernel.all.load[5]
-stratos-003:kernel.all.load[5]
-stratos-004:kernel.all.load[5]
-stratos-005:kernel.all.load[5]
-stratos-006:kernel.all.load[5]
-stratos-007:kernel.all.load[5]
-stratos-008:kernel.all.load[5]
+<<hostname1>>:kernel.all.load[5]
+<<hostname2>>:kernel.all.load[5]
+...
 
-stratos-001:kernel.all.cpu.user
-stratos-002:kernel.all.cpu.user
-stratos-003:kernel.all.cpu.user
-stratos-004:kernel.all.cpu.user
-stratos-005:kernel.all.cpu.user
-stratos-006:kernel.all.cpu.user
-stratos-007:kernel.all.cpu.user
-stratos-008:kernel.all.cpu.user
+<hostname1>:kernel.all.cpu.user
+<hostname2>:kernel.all.cpu.user
+...
 
-stratos-001:kernel.all.cpu.sys
-stratos-002:kernel.all.cpu.sys
-stratos-003:kernel.all.cpu.sys
-stratos-004:kernel.all.cpu.sys
-stratos-005:kernel.all.cpu.sys
-stratos-006:kernel.all.cpu.sys
-stratos-007:kernel.all.cpu.sys
-stratos-008:kernel.all.cpu.sys
+<hostname1>:kernel.all.cpu.sys
+<hostname2>:kernel.all.cpu.sys
+...
 
-stratos-001:kernel.all.cpu.idle
-stratos-002:kernel.all.cpu.idle
-stratos-003:kernel.all.cpu.idle
-stratos-004:kernel.all.cpu.idle
-stratos-005:kernel.all.cpu.idle
-stratos-006:kernel.all.cpu.idle
-stratos-007:kernel.all.cpu.idle
-stratos-008:kernel.all.cpu.idle
+<hostname1>:kernel.all.cpu.idle
+<hostname2>:kernel.all.cpu.idle
+...
 
-stratos-001:mem.util.free
-stratos-002:mem.util.free
-stratos-003:mem.util.free
-stratos-004:mem.util.free
-stratos-005:mem.util.free
-stratos-006:mem.util.free
-stratos-007:mem.util.free
-stratos-008:mem.util.free
+<hostname1>:mem.util.free
+<hostname2>:mem.util.free
+...
 
-stratos-001:mem.util.used
-stratos-002:mem.util.used
-stratos-003:mem.util.used
-stratos-004:mem.util.used
-stratos-005:mem.util.used
-stratos-006:mem.util.used
-stratos-007:mem.util.used
-stratos-008:mem.util.used
+<hostname1>:mem.util.used
+<hostname2>:mem.util.used
+...
 
 #RAPL CPU PKG
-stratos-001:perfevent.hwcounters.rapl__RAPL_ENERGY_PKG.value
-stratos-002:perfevent.hwcounters.rapl__RAPL_ENERGY_PKG.value
-stratos-003:perfevent.hwcounters.rapl__RAPL_ENERGY_PKG.value
-stratos-004:perfevent.hwcounters.rapl__RAPL_ENERGY_PKG.value
-stratos-005:perfevent.hwcounters.rapl__RAPL_ENERGY_PKG.value
-stratos-006:perfevent.hwcounters.rapl__RAPL_ENERGY_PKG.value
-stratos-007:perfevent.hwcounters.rapl__RAPL_ENERGY_PKG.value
-stratos-008:perfevent.hwcounters.rapl__RAPL_ENERGY_PKG.value
+<hostname1>:perfevent.hwcounters.rapl__RAPL_ENERGY_PKG.value
+<hostname2>:perfevent.hwcounters.rapl__RAPL_ENERGY_PKG.value
+...
+
 #RAPL DRAM
-stratos-001:perfevent.hwcounters.rapl__RAPL_ENERGY_DRAM.value
-stratos-002:perfevent.hwcounters.rapl__RAPL_ENERGY_DRAM.value
-stratos-003:perfevent.hwcounters.rapl__RAPL_ENERGY_DRAM.value
-stratos-004:perfevent.hwcounters.rapl__RAPL_ENERGY_DRAM.value
-stratos-005:perfevent.hwcounters.rapl__RAPL_ENERGY_DRAM.value
-stratos-006:perfevent.hwcounters.rapl__RAPL_ENERGY_DRAM.value
-stratos-007:perfevent.hwcounters.rapl__RAPL_ENERGY_DRAM.value
-stratos-008:perfevent.hwcounters.rapl__RAPL_ENERGY_DRAM.value
+<hostname1>:perfevent.hwcounters.rapl__RAPL_ENERGY_DRAM.value
+<hostname2>:perfevent.hwcounters.rapl__RAPL_ENERGY_DRAM.value
+...
