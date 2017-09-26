@@ -1,17 +1,32 @@
 [
-   {
-      "name" : "minfe",
-      "cpu": 3.0,
-      "ram": 4096,
-      "watts": 50,
-      "image": "gouravr/minife:v5",
-      "cmd": "cd src && mpirun -np 1 miniFE.x -nx 100 -ny 100 -nz 100",
-      "inst": 10,
-      "class_to_watts" : {
-         "A": 30.2475289996,
-         "B": 35.6491229228,
-         "C": 24.0476734352
-      }
-   }
-
+  {
+    "name": "minife",
+    "cpu": 3.0,
+    "ram": 4096,
+    "watts": 63.141,
+    "class_to_watts": {
+      "A": 93.062,
+      "B": 65.552,
+      "C": 57.897,
+      "D": 60.729
+    },
+    "image": "rdelvalle/minife:electron1",
+    "cmd": "cd src && mpirun -np 3 miniFE.x -nx 100 -ny 100 -nz 100",
+    "inst": 10
+  },
+  {
+    "name": "dgemm",
+    "cpu": 3.0,
+    "ram": 32,
+    "watts": 85.903,
+    "class_to_watts": {
+      "A": 114.789,
+      "B": 89.133,
+      "C": 82.672,
+      "D": 81.944
+    },
+    "image": "rdelvalle/dgemm:electron1",
+    "cmd": "/./mt-dgemm 1024",
+    "inst": 10
+  }
 ]
