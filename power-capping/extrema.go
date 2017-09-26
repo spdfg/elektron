@@ -2,6 +2,7 @@ package pcp
 
 import (
 	"bitbucket.org/sunybingcloud/elektron/rapl"
+	"bitbucket.org/sunybingcloud/elektron/pcp"
 	"bufio"
 	"container/ring"
 	"log"
@@ -92,34 +93,34 @@ func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, prefix s
 					powerHistories[host].Value = power
 					powerHistories[host] = powerHistories[host].Next()
 
-					log.Printf("Host: %s, Power: %f", indexToHost[powerIndex], (power * RAPLUnits))
+					log.Printf("Host: %s, Power: %f", indexToHost[powerIndex], (power * pcp.RAPLUnits))
 
 					totalPower += power
 				}
-				clusterPower := totalPower * RAPLUnits
+				clusterPower := totalPower * pcp.RAPLUnits
 
 				clusterPowerHist.Value = clusterPower
 				clusterPowerHist = clusterPowerHist.Next()
 
-				clusterMean := averageClusterPowerHistory(clusterPowerHist)
+				clusterMean := pcp.AverageClusterPowerHistory(clusterPowerHist)
 
 				log.Printf("Total power: %f, %d Sec Avg: %f", clusterPower, clusterPowerHist.Len(), clusterMean)
 
 				if clusterMean > hiThreshold {
 					log.Printf("Need to cap a node")
 					// Create statics for all victims and choose one to cap
-					victims := make([]Victim, 0, 8)
+					victims := make([]pcp.Victim, 0, 8)
 
 					// TODO: Just keep track of the largest to reduce fron nlogn to n
 					for name, history := range powerHistories {
 
-						histMean := averageNodePowerHistory(history)
+						histMean := pcp.AverageNodePowerHistory(history)
 
 						// Consider doing mean calculations using go routines if we need to speed up
-						victims = append(victims, Victim{Watts: histMean, Host: name})
+						victims = append(victims, pcp.Victim{Watts: histMean, Host: name})
 					}
 
-					sort.Sort(VictimSorter(victims)) // Sort by average wattage
+					sort.Sort(pcp.VictimSorter(victims)) // Sort by average wattage
 
 					// From  best victim to worst, if everyone is already capped NOOP
 					for _, victim := range victims {
@@ -127,7 +128,7 @@ func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, prefix s
 						if !cappedHosts[victim.Host] {
 							cappedHosts[victim.Host] = true
 							orderCapped = append(orderCapped, victim.Host)
-							log.Printf("Capping Victim %s Avg. Wattage: %f", victim.Host, victim.Watts*RAPLUnits)
+							log.Printf("Capping Victim %s Avg. Wattage: %f", victim.Host, victim.Watts*pcp.RAPLUnits)
 							if err := rapl.Cap(victim.Host, "rapl", 50); err != nil {
 								log.Print("Error capping host")
 							}

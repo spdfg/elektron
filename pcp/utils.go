@@ -7,7 +7,7 @@ import (
 
 var RAPLUnits = math.Pow(2, -32)
 
-func averageNodePowerHistory(history *ring.Ring) float64 {
+func AverageNodePowerHistory(history *ring.Ring) float64 {
 
 	total := 0.0
 	count := 0.0
@@ -29,7 +29,7 @@ func averageNodePowerHistory(history *ring.Ring) float64 {
 }
 
 // TODO: Figure a way to merge this and avgpower
-func averageClusterPowerHistory(history *ring.Ring) float64 {
+func AverageClusterPowerHistory(history *ring.Ring) float64 {
 
 	total := 0.0
 	count := 0.0

@@ -3,6 +3,7 @@ package pcp
 import (
 	"bitbucket.org/sunybingcloud/elektron/constants"
 	"bitbucket.org/sunybingcloud/elektron/rapl"
+	"bitbucket.org/sunybingcloud/elektron/pcp"
 	"bitbucket.org/sunybingcloud/elektron/utilities"
 	"bufio"
 	"container/ring"
@@ -110,16 +111,16 @@ func StartPCPLogAndProgressiveExtremaCap(quit chan struct{}, logging *bool, pref
 					powerHistories[host].Value = power
 					powerHistories[host] = powerHistories[host].Next()
 
-					log.Printf("Host: %s, Power: %f", indexToHost[powerIndex], (power * RAPLUnits))
+					log.Printf("Host: %s, Power: %f", indexToHost[powerIndex], (power * pcp.RAPLUnits))
 
 					totalPower += power
 				}
-				clusterPower := totalPower * RAPLUnits
+				clusterPower := totalPower * pcp.RAPLUnits
 
 				clusterPowerHist.Value = clusterPower
 				clusterPowerHist = clusterPowerHist.Next()
 
-				clusterMean := averageClusterPowerHistory(clusterPowerHist)
+				clusterMean := pcp.AverageClusterPowerHistory(clusterPowerHist)
 
 				log.Printf("Total power: %f, %d Sec Avg: %f", clusterPower, clusterPowerHist.Len(), clusterMean)
 
@@ -128,18 +129,18 @@ func StartPCPLogAndProgressiveExtremaCap(quit chan struct{}, logging *bool, pref
 					log.Printf("Cap values of capped victims: %v", cappedVictims)
 					log.Printf("Cap values of victims to uncap: %v", orderCappedVictims)
 					// Create statics for all victims and choose one to cap
-					victims := make([]Victim, 0, 8)
+					victims := make([]pcp.Victim, 0, 8)
 
 					// TODO: Just keep track of the largest to reduce fron nlogn to n
 					for name, history := range powerHistories {
 
-						histMean := averageNodePowerHistory(history)
+						histMean := pcp.AverageNodePowerHistory(history)
 
 						// Consider doing mean calculations using go routines if we need to speed up
-						victims = append(victims, Victim{Watts: histMean, Host: name})
+						victims = append(victims, pcp.Victim{Watts: histMean, Host: name})
 					}
 
-					sort.Sort(VictimSorter(victims)) // Sort by average wattage
+					sort.Sort(pcp.VictimSorter(victims)) // Sort by average wattage
 
 					// Finding the best victim to cap in a round robin manner
 					newVictimFound := false
