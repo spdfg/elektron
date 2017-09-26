@@ -10,7 +10,6 @@ import (
 	"github.com/mesos/mesos-go/mesosutil"
 	sched "github.com/mesos/mesos-go/scheduler"
 	"log"
-	"os"
 	"time"
 )
 
@@ -37,38 +36,20 @@ type BinPacking struct {
 	base // Type embedded to inherit common functions
 }
 
-// New elektron scheduler
-func NewBinPacking(tasks []def.Task, wattsAsAResource bool, schedTracePrefix string, classMapWatts bool) *BinPacking {
-	def.SortTasks(tasks, def.SortByWatts)
-
-	logFile, err := os.Create("./" + schedTracePrefix + "_schedTrace.log")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	s := &BinPacking{
-		base: base{
-			tasks:            tasks,
-			wattsAsAResource: wattsAsAResource,
-			classMapWatts:    classMapWatts,
-			Shutdown:         make(chan struct{}),
-			Done:             make(chan struct{}),
-			PCPLog:           make(chan struct{}),
-			running:          make(map[string]map[string]bool),
-			RecordPCP:        false,
-			schedTrace:       log.New(logFile, "", log.LstdFlags),
-		},
-	}
-	return s
+// Initialization
+func (s *BinPacking) init(opts ...schedPolicyOption) {
+	s.base.init(opts...)
+	// sorting the tasks based on watts
+	def.SortTasks(s.tasks, def.SortByWatts)
 }
 
 func (s *BinPacking) newTask(offer *mesos.Offer, task def.Task) *mesos.TaskInfo {
 	taskName := fmt.Sprintf("%s-%d", task.Name, *task.Instances)
 	s.tasksCreated++
 
-	if !s.RecordPCP {
+	if !*s.RecordPCP {
 		// Turn on logging
-		s.RecordPCP = true
+		*s.RecordPCP = true
 		time.Sleep(1 * time.Second) // Make sure we're recording by the time the first task starts
 	}
 

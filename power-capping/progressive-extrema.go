@@ -2,8 +2,8 @@ package pcp
 
 import (
 	"bitbucket.org/sunybingcloud/elektron/constants"
-	"bitbucket.org/sunybingcloud/elektron/rapl"
 	"bitbucket.org/sunybingcloud/elektron/pcp"
+	"bitbucket.org/sunybingcloud/elektron/rapl"
 	"bitbucket.org/sunybingcloud/elektron/utilities"
 	"bufio"
 	"container/ring"

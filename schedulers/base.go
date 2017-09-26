@@ -7,7 +7,14 @@ import (
 	"log"
 )
 
+// Implements mesos scheduler.
+type ElectronScheduler interface {
+	sched.Scheduler
+	init(opts ...schedPolicyOption)
+}
+
 type base struct {
+	ElectronScheduler
 	tasksCreated     int
 	tasksRunning     int
 	tasks            []def.Task
@@ -18,7 +25,7 @@ type base struct {
 
 	// First set of PCP values are garbage values, signal to logger to start recording when we're
 	// about to schedule a new task
-	RecordPCP bool
+	RecordPCP *bool
 
 	// This channel is closed when the program receives an interrupt,
 	// signalling that the program should shut down.
@@ -31,6 +38,16 @@ type base struct {
 	PCPLog chan struct{}
 
 	schedTrace *log.Logger
+}
+
+func (s *base) init(opts ...schedPolicyOption) {
+	for _, opt := range opts {
+		// applying options
+		if err := opt(s); err != nil {
+			log.Fatal(err)
+		}
+	}
+	s.running = make(map[string]map[string]bool)
 }
 
 func (s *base) OfferRescinded(_ sched.SchedulerDriver, offerID *mesos.OfferID) {

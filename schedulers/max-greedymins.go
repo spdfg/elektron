@@ -10,7 +10,6 @@ import (
 	"github.com/mesos/mesos-go/mesosutil"
 	sched "github.com/mesos/mesos-go/scheduler"
 	"log"
-	"os"
 	"time"
 )
 
@@ -38,29 +37,9 @@ type MaxGreedyMins struct {
 	base //Type embedding to inherit common functions
 }
 
-// New elektron scheduler
-func NewMaxGreedyMins(tasks []def.Task, wattsAsAResource bool, schedTracePrefix string, classMapWatts bool) *MaxGreedyMins {
-	def.SortTasks(tasks, def.SortByWatts)
-
-	logFile, err := os.Create("./" + schedTracePrefix + "_schedTrace.log")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	s := &MaxGreedyMins{
-		base: base{
-			tasks:            tasks,
-			wattsAsAResource: wattsAsAResource,
-			classMapWatts:    classMapWatts,
-			Shutdown:         make(chan struct{}),
-			Done:             make(chan struct{}),
-			PCPLog:           make(chan struct{}),
-			running:          make(map[string]map[string]bool),
-			RecordPCP:        false,
-			schedTrace:       log.New(logFile, "", log.LstdFlags),
-		},
-	}
-	return s
+// Initialization
+func (s *MaxGreedyMins) init(opts ...schedPolicyOption) {
+	s.base.init(opts...)
 }
 
 func (s *MaxGreedyMins) newTask(offer *mesos.Offer, task def.Task) *mesos.TaskInfo {
@@ -68,9 +47,9 @@ func (s *MaxGreedyMins) newTask(offer *mesos.Offer, task def.Task) *mesos.TaskIn
 	s.tasksCreated++
 
 	// Start recording only when we're creating the first task
-	if !s.RecordPCP {
+	if !*s.RecordPCP {
 		// Turn on logging
-		s.RecordPCP = true
+		*s.RecordPCP = true
 		time.Sleep(1 * time.Second) // Make sure we're recording by the time the first task starts
 	}
 

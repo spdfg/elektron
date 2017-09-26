@@ -10,7 +10,6 @@ import (
 	"github.com/mesos/mesos-go/mesosutil"
 	sched "github.com/mesos/mesos-go/scheduler"
 	"log"
-	"os"
 	"time"
 )
 
@@ -38,37 +37,18 @@ type FirstFit struct {
 	base // Type embedded to inherit common functions
 }
 
-// New elektron scheduler
-func NewFirstFit(tasks []def.Task, wattsAsAResource bool, schedTracePrefix string, classMapWatts bool) *FirstFit {
-
-	logFile, err := os.Create("./" + schedTracePrefix + "_schedTrace.log")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	s := &FirstFit{
-		base: base{
-			tasks:            tasks,
-			wattsAsAResource: wattsAsAResource,
-			classMapWatts:    classMapWatts,
-			Shutdown:         make(chan struct{}),
-			Done:             make(chan struct{}),
-			PCPLog:           make(chan struct{}),
-			running:          make(map[string]map[string]bool),
-			RecordPCP:        false,
-			schedTrace:       log.New(logFile, "", log.LstdFlags),
-		},
-	}
-	return s
+// Initialization
+func (s *FirstFit) init(opts ...schedPolicyOption) {
+	s.base.init(opts...)
 }
 
 func (s *FirstFit) newTask(offer *mesos.Offer, task def.Task) *mesos.TaskInfo {
 	taskName := fmt.Sprintf("%s-%d", task.Name, *task.Instances)
 	s.tasksCreated++
 
-	if !s.RecordPCP {
+	if !*s.RecordPCP {
 		// Turn on logging
-		s.RecordPCP = true
+		*s.RecordPCP = true
 		time.Sleep(1 * time.Second) // Make sure we're recording by the time the first task starts
 	}
 
