@@ -1,9 +1,9 @@
 package schedulers
 
 import (
-	"bitbucket.org/sunybingcloud/electron/def"
-	"bitbucket.org/sunybingcloud/electron/utilities/mesosUtils"
-	"bitbucket.org/sunybingcloud/electron/utilities/offerUtils"
+	"bitbucket.org/sunybingcloud/elektron/def"
+	"bitbucket.org/sunybingcloud/elektron/utilities/mesosUtils"
+	"bitbucket.org/sunybingcloud/elektron/utilities/offerUtils"
 	"fmt"
 	"github.com/golang/protobuf/proto"
 	mesos "github.com/mesos/mesos-go/mesosproto"
@@ -39,7 +39,7 @@ type BPSWMaxMinWatts struct {
 	base //Type embedding to inherit common functions
 }
 
-// New electron scheduler
+// New elektron scheduler
 func NewBPSWMaxMinWatts(tasks []def.Task, wattsAsAResource bool, schedTracePrefix string, classMapWatts bool) *BPSWMaxMinWatts {
 	sort.Sort(def.WattsSorter(tasks))
 
@@ -101,7 +101,7 @@ func (s *BPSWMaxMinWatts) newTask(offer *mesos.Offer, task def.Task) *mesos.Task
 	return &mesos.TaskInfo{
 		Name: proto.String(taskName),
 		TaskId: &mesos.TaskID{
-			Value: proto.String("electron-" + taskName),
+			Value: proto.String("elektron-" + taskName),
 		},
 		SlaveId:   offer.SlaveId,
 		Resources: resources,

@@ -1,8 +1,8 @@
 package def
 
 import (
-	"bitbucket.org/sunybingcloud/electron/constants"
-	"bitbucket.org/sunybingcloud/electron/utilities/offerUtils"
+	"bitbucket.org/sunybingcloud/elektron/constants"
+	"bitbucket.org/sunybingcloud/elektron/utilities/offerUtils"
 	"encoding/json"
 	mesos "github.com/mesos/mesos-go/mesosproto"
 	"github.com/pkg/errors"

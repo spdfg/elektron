@@ -1,7 +1,7 @@
 package schedulers
 
 import (
-	"bitbucket.org/sunybingcloud/electron/constants"
+	"bitbucket.org/sunybingcloud/elektron/constants"
 	"fmt"
 	"log"
 )

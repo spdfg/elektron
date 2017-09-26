@@ -1,9 +1,9 @@
 package schedulers
 
 import (
-	"bitbucket.org/sunybingcloud/electron/def"
-	"bitbucket.org/sunybingcloud/electron/utilities/mesosUtils"
-	"bitbucket.org/sunybingcloud/electron/utilities/offerUtils"
+	"bitbucket.org/sunybingcloud/elektron/def"
+	"bitbucket.org/sunybingcloud/elektron/utilities/mesosUtils"
+	"bitbucket.org/sunybingcloud/elektron/utilities/offerUtils"
 	"fmt"
 	"github.com/golang/protobuf/proto"
 	mesos "github.com/mesos/mesos-go/mesosproto"
@@ -33,12 +33,12 @@ func (s *FirstFit) takeOffer(offer *mesos.Offer, task def.Task) bool {
 	return false
 }
 
-// electronScheduler implements the Scheduler interface
+// elektronScheduler implements the Scheduler interface
 type FirstFit struct {
 	base // Type embedded to inherit common functions
 }
 
-// New electron scheduler
+// New elektron scheduler
 func NewFirstFit(tasks []def.Task, wattsAsAResource bool, schedTracePrefix string, classMapWatts bool) *FirstFit {
 
 	logFile, err := os.Create("./" + schedTracePrefix + "_schedTrace.log")
@@ -98,7 +98,7 @@ func (s *FirstFit) newTask(offer *mesos.Offer, task def.Task) *mesos.TaskInfo {
 	return &mesos.TaskInfo{
 		Name: proto.String(taskName),
 		TaskId: &mesos.TaskID{
-			Value: proto.String("electron-" + taskName),
+			Value: proto.String("elektron-" + taskName),
 		},
 		SlaveId:   offer.SlaveId,
 		Resources: resources,

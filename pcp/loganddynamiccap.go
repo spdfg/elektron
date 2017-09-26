@@ -1,7 +1,7 @@
 package pcp
 
 import (
-	"bitbucket.org/sunybingcloud/electron/rapl"
+	"bitbucket.org/sunybingcloud/elektron/rapl"
 	"bufio"
 	"container/ring"
 	"log"
