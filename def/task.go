@@ -94,36 +94,6 @@ func WattsToConsider(task Task, classMapWatts bool, offer *mesos.Offer) (float64
 	}
 }
 
-// Sorter implements sort.Sort interface to sort tasks by Watts requirement.
-type WattsSorter []Task
-
-func (slice WattsSorter) Len() int {
-	return len(slice)
-}
-
-func (slice WattsSorter) Less(i, j int) bool {
-	return slice[i].Watts < slice[j].Watts
-}
-
-func (slice WattsSorter) Swap(i, j int) {
-	slice[i], slice[j] = slice[j], slice[i]
-}
-
-// Sorter implements sort.Sort interface to sort tasks by CPU requirement.
-type CPUSorter []Task
-
-func (slice CPUSorter) Len() int {
-	return len(slice)
-}
-
-func (slice CPUSorter) Less(i, j int) bool {
-	return slice[i].CPU < slice[j].CPU
-}
-
-func (slice CPUSorter) Swap(i, j int) {
-	slice[i], slice[j] = slice[j], slice[i]
-}
-
 // Compare two tasks.
 func Compare(task1 *Task, task2 *Task) bool {
 	// If comparing the same pointers (checking the addresses).

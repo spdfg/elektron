@@ -11,7 +11,6 @@ import (
 	sched "github.com/mesos/mesos-go/scheduler"
 	"log"
 	"os"
-	"sort"
 	"time"
 )
 
@@ -41,7 +40,7 @@ type BPSWMaxMinWatts struct {
 
 // New elektron scheduler
 func NewBPSWMaxMinWatts(tasks []def.Task, wattsAsAResource bool, schedTracePrefix string, classMapWatts bool) *BPSWMaxMinWatts {
-	sort.Sort(def.WattsSorter(tasks))
+	def.SortTasks(tasks, def.SortByWatts)
 
 	logFile, err := os.Create("./" + schedTracePrefix + "_schedTrace.log")
 	if err != nil {

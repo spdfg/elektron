@@ -58,7 +58,7 @@ func (tc TasksToClassify) classify(numberOfClusters int, taskObservation func(ta
 	return labelAndOrder(clusters, numberOfClusters, taskObservation)
 }
 
-// record observations
+// Record observations
 func getObservations(tasks []Task, taskObservation func(task Task) []float64) []gokmeans.Node {
 	observations := []gokmeans.Node{}
 	for i := 0; i < len(tasks); i++ {

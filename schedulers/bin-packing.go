@@ -11,7 +11,6 @@ import (
 	sched "github.com/mesos/mesos-go/scheduler"
 	"log"
 	"os"
-	"sort"
 	"time"
 )
 
@@ -40,7 +39,7 @@ type BinPackSortedWatts struct {
 
 // New elektron scheduler
 func NewBinPackSortedWatts(tasks []def.Task, wattsAsAResource bool, schedTracePrefix string, classMapWatts bool) *BinPackSortedWatts {
-	sort.Sort(def.WattsSorter(tasks))
+	def.SortTasks(tasks, def.SortByWatts)
 
 	logFile, err := os.Create("./" + schedTracePrefix + "_schedTrace.log")
 	if err != nil {
