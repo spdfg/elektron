@@ -4,6 +4,8 @@ import (
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/ssh"
 	"strconv"
+	"os"
+	elekEnv "bitbucket.org/sunybingcloud/elektron/environment"
 )
 
 func Cap(host, username string, percentage float64) error {
@@ -15,8 +17,8 @@ func Cap(host, username string, percentage float64) error {
 	sshConfig := &ssh.ClientConfig{
 		User: username,
 		Auth: []ssh.AuthMethod{
-			// TODO: CHANGE and MAKE THIS USE SSH KEY BEFORE MAKING PUBLIC!!!!
-			ssh.Password("pankajlikesdanceswithwolves#!@#"),
+			// TODO: CHANGE and MAKE THIS USE SSH KEY!!!!
+			ssh.Password(os.Getenv(elekEnv.RaplPassword)),
 		},
 	}
 
