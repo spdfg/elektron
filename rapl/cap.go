@@ -33,7 +33,7 @@ func Cap(host, username string, percentage float64) error {
 		return errors.Wrap(err, "Failed to create session")
 	}
 
-	err = session.Run("sudo /misc/shared_data/rdelval1/RAPL_PKG_Throttle.py " + strconv.FormatFloat(percentage, 'f', 2, 64))
+	err = session.Run("sudo " + os.Getenv(elekEnv.RaplThrottleScriptLocation) + "/RAPL_PKG_Throttle.py" + strconv.FormatFloat(percentage, 'f', 2, 64))
 	if err != nil {
 		return errors.Wrap(err, "Failed to run RAPL script")
 	}
