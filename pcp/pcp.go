@@ -31,13 +31,13 @@ func Start(quit chan struct{}, logging *bool, prefix string) {
 	scanner := bufio.NewScanner(pipe)
 
 	go func(logging *bool) {
-		// Get names of the columns
+		// Get names of the columns.
 		scanner.Scan()
 
-		// Write to logfile
+		// Write to logfile.
 		logFile.WriteString(scanner.Text() + "\n")
 
-		// Throw away first set of results
+		// Throw away first set of results.
 		scanner.Scan()
 
 		seconds := 0
@@ -66,7 +66,7 @@ func Start(quit chan struct{}, logging *bool, prefix string) {
 		time.Sleep(5 * time.Second)
 
 		// http://stackoverflow.com/questions/22470193/why-wont-go-kill-a-child-process-correctly
-		// kill process and all children processes
+		// Kill process and all children processes.
 		syscall.Kill(-pgid, 15)
 		return
 	}

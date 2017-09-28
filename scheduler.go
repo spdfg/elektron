@@ -29,7 +29,7 @@ var schedPolicyName = flag.String("schedPolicy", "first-fit", "Name of the sched
 	"Use option -listSchedPolicies to get the names of available scheduling policies")
 var listSchedPolicies = flag.Bool("listSchedPolicies", false, "Names of the pluaggable scheduling policies.")
 
-// Short hand args
+// Short hand args.
 func init() {
 	flag.StringVar(master, "m", "<mesos-master>:5050", "Location of leading Mesos master (shorthand)")
 	flag.StringVar(tasksFile, "w", "", "JSON file containing task definitions (shorthand)")
@@ -57,17 +57,17 @@ func listAllSchedulingPolicies() {
 func main() {
 	flag.Parse()
 
-	// checking to see if we need to just list the pluggable scheduling policies
+	// Checking to see if we need to just list the pluggable scheduling policies.
 	if *listSchedPolicies {
 		listAllSchedulingPolicies()
 		os.Exit(1)
 	}
 
 	// If non-default scheduling policy given,
-	// 	checking if scheduling policyName exists
+	// 	checking if scheduling policyName exists.
 	if *schedPolicyName != "first-fit" {
 		if _, ok := schedulers.Schedulers[*schedPolicyName]; !ok {
-			// invalid scheduling policy
+			// Invalid scheduling policy.
 			log.Println("Invalid scheduling policy given. The possible scheduling policies are:")
 			listAllSchedulingPolicies()
 			os.Exit(1)
@@ -126,10 +126,10 @@ func main() {
 	go pcp.Start(pcpLog, &recordPCP, logPrefix)
 	//go pcp.StartPCPLogAndExtremaDynamicCap(pcpLog, &recordPCP, logPrefix, *hiThreshold, *loThreshold)
 	//go pcp.StartPCPLogAndProgressiveExtremaCap(pcpLog, &recordPCP, logPrefix, *hiThreshold, *loThreshold)
-	time.Sleep(1 * time.Second) // Take a second between starting PCP log and continuing
+	time.Sleep(1 * time.Second) // Take a second between starting PCP log and continuing.
 
-	// Attempt to handle SIGINT to not leave pmdumptext running
-	// Catch interrupt
+	// Attempt to handle SIGINT to not leave pmdumptext running.
+	// Catch interrupt.
 	go func() {
 		c := make(chan os.Signal, 1)
 		signal.Notify(c, os.Interrupt, os.Kill)
@@ -145,13 +145,13 @@ func main() {
 
 	go func() {
 
-		// Signals we have scheduled every task we have
+		// Signals we have scheduled every task we have.
 		select {
 		case <-shutdown:
 			//case <-time.After(shutdownTimeout):
 		}
 
-		// All tasks have finished
+		// All tasks have finished.
 		select {
 		case <-done:
 			close(pcpLog)
@@ -159,7 +159,7 @@ func main() {
 			//case <-time.After(shutdownTimeout):
 		}
 
-		// Done shutting down
+		// Done shutting down.
 		driver.Stop(false)
 
 	}()

@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-// Decides if to take an offer or not
+// Decides if to take an offer or not.
 func (s *MaxMin) takeOffer(offer *mesos.Offer, task def.Task,
 	totalCPU, totalRAM, totalWatts float64) bool {
 
@@ -23,7 +23,7 @@ func (s *MaxMin) takeOffer(offer *mesos.Offer, task def.Task,
 
 	wattsConsideration, err := def.WattsToConsider(task, s.classMapWatts, offer)
 	if err != nil {
-		// Error in determining wattsConsideration
+		// Error in determining wattsConsideration.
 		log.Fatal(err)
 	}
 	if (cpus >= (totalCPU + task.CPU)) && (mem >= (totalRAM + task.RAM)) &&
@@ -34,10 +34,10 @@ func (s *MaxMin) takeOffer(offer *mesos.Offer, task def.Task,
 }
 
 type MaxMin struct {
-	base //Type embedding to inherit common functions
+	base //Type embedding to inherit common functions.
 }
 
-// Initialization
+// Initialization.
 func (s *MaxMin) init(opts ...schedPolicyOption) {
 	s.base.init(opts...)
 }
@@ -46,19 +46,19 @@ func (s *MaxMin) newTask(offer *mesos.Offer, task def.Task) *mesos.TaskInfo {
 	taskName := fmt.Sprintf("%s-%d", task.Name, *task.Instances)
 	s.tasksCreated++
 
-	// Start recording only when we're creating the first task
+	// Start recording only when we're creating the first task.
 	if !*s.RecordPCP {
-		// Turn on logging
+		// Turn on logging.
 		*s.RecordPCP = true
-		time.Sleep(1 * time.Second) // Make sure we're recording by the time the first task starts
+		time.Sleep(1 * time.Second) // Make sure we're recording by the time the first task starts.
 	}
 
-	// If this is our first time running into this Agent
+	// If this is our first time running into this Agent.
 	if _, ok := s.running[offer.GetSlaveId().GoString()]; !ok {
 		s.running[offer.GetSlaveId().GoString()] = make(map[string]bool)
 	}
 
-	// Add task to list of tasks running on node
+	// Add task to list of tasks running on node.
 	s.running[offer.GetSlaveId().GoString()][taskName] = true
 
 	resources := []*mesos.Resource{
@@ -71,7 +71,7 @@ func (s *MaxMin) newTask(offer *mesos.Offer, task def.Task) *mesos.TaskInfo {
 			log.Printf("Watts considered for host[%s] and task[%s] = %f", *offer.Hostname, task.Name, wattsToConsider)
 			resources = append(resources, mesosutil.NewScalarResource("watts", wattsToConsider))
 		} else {
-			// Error in determining wattsConsideration
+			// Error in determining wattsConsideration.
 			log.Fatal(err)
 		}
 	}
@@ -90,7 +90,7 @@ func (s *MaxMin) newTask(offer *mesos.Offer, task def.Task) *mesos.TaskInfo {
 			Type: mesos.ContainerInfo_DOCKER.Enum(),
 			Docker: &mesos.ContainerInfo_DockerInfo{
 				Image:   proto.String(task.Image),
-				Network: mesos.ContainerInfo_DockerInfo_BRIDGE.Enum(), // Run everything isolated
+				Network: mesos.ContainerInfo_DockerInfo_BRIDGE.Enum(), // Run everything isolated.
 			},
 		},
 	}
@@ -107,7 +107,7 @@ func (s *MaxMin) CheckFit(
 	totalRAM *float64,
 	totalWatts *float64) (bool, *mesos.TaskInfo) {
 
-	// Does the task fit
+	// Does the task fit.
 	if s.takeOffer(offer, task, *totalCPU, *totalRAM, *totalWatts) {
 
 		*totalWatts += wattsConsideration
@@ -123,7 +123,7 @@ func (s *MaxMin) CheckFit(
 		*task.Instances--
 
 		if *task.Instances <= 0 {
-			// All instances of task have been scheduled, remove it
+			// All instances of task have been scheduled, remove it.
 			s.tasks = append(s.tasks[:i], s.tasks[i+1:]...)
 
 			if len(s.tasks) <= 0 {
@@ -160,17 +160,17 @@ func (s *MaxMin) ResourceOffers(driver sched.SchedulerDriver, offers []*mesos.Of
 		totalCPU := 0.0
 		totalRAM := 0.0
 
-		// Assumes s.tasks is ordered in non-decreasing median max peak order
+		// Assumes s.tasks is ordered in non-decreasing median max peak order.
 
-		// Attempt to schedule a single instance of the heaviest workload available first
-		// Start from the back until one fits
+		// Attempt to schedule a single instance of the heaviest workload available first.
+		// Start from the back until one fits.
 
-		direction := false // True = Min Max, False = Max Min
+		direction := false // True = Min Max, False = Max Min.
 		var index int
-		start := true // if false then index has changed and need to keep it that way
+		start := true // If false then index has changed and need to keep it that way.
 		for i := 0; i < len(s.tasks); i++ {
-			// we need to pick a min task or a max task
-			// depending on the value of direction
+			// We need to pick a min task or a max task
+			// depending on the value of direction.
 			if direction && start {
 				index = 0
 			} else if start {
@@ -180,11 +180,11 @@ func (s *MaxMin) ResourceOffers(driver sched.SchedulerDriver, offers []*mesos.Of
 
 			wattsConsideration, err := def.WattsToConsider(task, s.classMapWatts, offer)
 			if err != nil {
-				// Error in determining wattsConsideration
+				// Error in determining wattsConsideration.
 				log.Fatal(err)
 			}
 
-			// Don't take offer it is doesn't match our task's host requirement
+			// Don't take offer it is doesn't match our task's host requirement.
 			if offerUtils.HostMismatch(*offer.Hostname, task.Host) {
 				continue
 			}
@@ -196,13 +196,13 @@ func (s *MaxMin) ResourceOffers(driver sched.SchedulerDriver, offers []*mesos.Of
 			if taken {
 				offerTaken = true
 				tasks = append(tasks, taskToSchedule)
-				// Need to change direction and set start to true
-				// Setting start to true would ensure that index be set accurately again
+				// Need to change direction and set start to true.
+				// Setting start to true would ensure that index be set accurately again.
 				direction = !direction
 				start = true
 				i--
 			} else {
-				// Need to move index depending on the value of direction
+				// Need to move index depending on the value of direction.
 				if direction {
 					index++
 					start = false

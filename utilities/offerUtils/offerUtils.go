@@ -24,7 +24,7 @@ func OfferAgg(offer *mesos.Offer) (float64, float64, float64) {
 	return cpus, mem, watts
 }
 
-// Determine the power class of the host in the offer
+// Determine the power class of the host in the offer.
 func PowerClass(offer *mesos.Offer) string {
 	var powerClass string
 	for _, attr := range offer.GetAttributes() {
@@ -36,7 +36,7 @@ func PowerClass(offer *mesos.Offer) string {
 }
 
 // Implements the sort.Sort interface to sort Offers based on CPU.
-// TODO: Have a generic sorter that sorts based on a defined requirement (CPU, RAM, DISK or Watts)
+// TODO: Have a generic sorter that sorts based on a defined requirement (CPU, RAM, DISK or Watts).
 type OffersSorter []*mesos.Offer
 
 func (offersSorter OffersSorter) Len() int {
@@ -48,9 +48,9 @@ func (offersSorter OffersSorter) Swap(i, j int) {
 }
 
 func (offersSorter OffersSorter) Less(i, j int) bool {
-	// getting CPU resource availability of offersSorter[i]
+	// Getting CPU resource availability of offersSorter[i].
 	cpu1, _, _ := OfferAgg(offersSorter[i])
-	// getting CPU resource availability of offersSorter[j]
+	// Getting CPU resource availability of offersSorter[j].
 	cpu2, _, _ := OfferAgg(offersSorter[j])
 	return cpu1 <= cpu2
 }

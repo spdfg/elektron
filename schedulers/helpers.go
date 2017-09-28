@@ -18,7 +18,7 @@ func coLocated(tasks map[string]bool) {
 	fmt.Println("---------------------")
 }
 
-// Get the powerClass of the given hostname
+// Get the powerClass of the given hostname.
 func hostToPowerClass(hostName string) string {
 	for powerClass, hosts := range constants.PowerClasses {
 		if _, ok := hosts[hostName]; ok {
@@ -28,7 +28,7 @@ func hostToPowerClass(hostName string) string {
 	return ""
 }
 
-// scheduler policy options to help initialize schedulers
+// Scheduler policy options to help initialize schedulers.
 type schedPolicyOption func(e ElectronScheduler) error
 
 func WithTasks(ts []def.Task) schedPolicyOption {

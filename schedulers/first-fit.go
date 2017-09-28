@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-// Decides if to take an offer or not
+// Decides if to take an offer or not.
 func (s *FirstFit) takeOffer(offer *mesos.Offer, task def.Task) bool {
 
 	cpus, mem, watts := offerUtils.OfferAgg(offer)
@@ -22,7 +22,7 @@ func (s *FirstFit) takeOffer(offer *mesos.Offer, task def.Task) bool {
 
 	wattsConsideration, err := def.WattsToConsider(task, s.classMapWatts, offer)
 	if err != nil {
-		// Error in determining wattsConsideration
+		// Error in determining wattsConsideration.
 		log.Fatal(err)
 	}
 	if cpus >= task.CPU && mem >= task.RAM && (!s.wattsAsAResource || watts >= wattsConsideration) {
@@ -32,12 +32,12 @@ func (s *FirstFit) takeOffer(offer *mesos.Offer, task def.Task) bool {
 	return false
 }
 
-// elektronScheduler implements the Scheduler interface
+// Elektron scheduler implements the Scheduler interface.
 type FirstFit struct {
 	base // Type embedded to inherit common functions
 }
 
-// Initialization
+// Initialization.
 func (s *FirstFit) init(opts ...schedPolicyOption) {
 	s.base.init(opts...)
 }
@@ -47,17 +47,17 @@ func (s *FirstFit) newTask(offer *mesos.Offer, task def.Task) *mesos.TaskInfo {
 	s.tasksCreated++
 
 	if !*s.RecordPCP {
-		// Turn on logging
+		// Turn on logging.
 		*s.RecordPCP = true
-		time.Sleep(1 * time.Second) // Make sure we're recording by the time the first task starts
+		time.Sleep(1 * time.Second) // Make sure we're recording by the time the first task starts.
 	}
 
-	// If this is our first time running into this Agent
+	// If this is our first time running into this Agent.
 	if _, ok := s.running[offer.GetSlaveId().GoString()]; !ok {
 		s.running[offer.GetSlaveId().GoString()] = make(map[string]bool)
 	}
 
-	// Add task to list of tasks running on node
+	// Add task to list of tasks running on node.
 	s.running[offer.GetSlaveId().GoString()][taskName] = true
 
 	resources := []*mesos.Resource{
@@ -70,7 +70,7 @@ func (s *FirstFit) newTask(offer *mesos.Offer, task def.Task) *mesos.TaskInfo {
 			log.Printf("Watts considered for host[%s] and task[%s] = %f", *offer.Hostname, task.Name, wattsToConsider)
 			resources = append(resources, mesosutil.NewScalarResource("watts", wattsToConsider))
 		} else {
-			// Error in determining wattsConsideration
+			// Error in determining wattsConsideration.
 			log.Fatal(err)
 		}
 	}
@@ -112,18 +112,17 @@ func (s *FirstFit) ResourceOffers(driver sched.SchedulerDriver, offers []*mesos.
 
 		tasks := []*mesos.TaskInfo{}
 
-		// First fit strategy
-
+		// First fit strategy.
 		offerTaken := false
 		for i := 0; i < len(s.tasks); i++ {
 			task := s.tasks[i]
 
-			// Don't take offer if it doesn't match our task's host requirement
+			// Don't take offer if it doesn't match our task's host requirement.
 			if offerUtils.HostMismatch(*offer.Hostname, task.Host) {
 				continue
 			}
 
-			// Decision to take the offer or not
+			// Decision to take the offer or not.
 			if s.takeOffer(offer, task) {
 
 				log.Println("Co-Located with: ")
@@ -142,7 +141,7 @@ func (s *FirstFit) ResourceOffers(driver sched.SchedulerDriver, offers []*mesos.
 				*task.Instances--
 
 				if *task.Instances <= 0 {
-					// All instances of task have been scheduled, remove it
+					// All instances of task have been scheduled, remove it.
 					s.tasks[i] = s.tasks[len(s.tasks)-1]
 					s.tasks = s.tasks[:len(s.tasks)-1]
 
@@ -151,11 +150,11 @@ func (s *FirstFit) ResourceOffers(driver sched.SchedulerDriver, offers []*mesos.
 						close(s.Shutdown)
 					}
 				}
-				break // Offer taken, move on
+				break // Offer taken, move on.
 			}
 		}
 
-		// If there was no match for the task
+		// If there was no match for the task.
 		if !offerTaken {
 			fmt.Println("There is not enough resources to launch a task:")
 			cpus, mem, watts := offerUtils.OfferAgg(offer)

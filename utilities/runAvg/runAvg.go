@@ -14,7 +14,7 @@ import (
 type Interface interface {
 	// Value to use for running average calculation.
 	Val() float64
-	// Unique ID
+	// Unique ID.
 	ID() string
 }
 
@@ -24,10 +24,10 @@ type runningAverageCalculator struct {
 	currentSum              float64
 }
 
-// singleton instance
+// Singleton instance.
 var racSingleton *runningAverageCalculator
 
-// return single instance
+// Return single instance.
 func getInstance(curSum float64, wSize int) *runningAverageCalculator {
 	if racSingleton == nil {
 		racSingleton = &runningAverageCalculator{
@@ -51,12 +51,12 @@ func (rac *runningAverageCalculator) calculate(data Interface) float64 {
 		rac.considerationWindow.PushBack(data)
 		rac.currentSum += data.Val()
 	} else {
-		// removing the element at the front of the window.
+		// Removing the element at the front of the window.
 		elementToRemove := rac.considerationWindow.Front()
 		rac.currentSum -= elementToRemove.Value.(Interface).Val()
 		rac.considerationWindow.Remove(elementToRemove)
 
-		// adding new element to the window
+		// Adding new element to the window.
 		rac.considerationWindow.PushBack(data)
 		rac.currentSum += data.Val()
 	}
@@ -65,7 +65,7 @@ func (rac *runningAverageCalculator) calculate(data Interface) float64 {
 
 /*
 If element with given ID present in the window, then remove it and return (removeElement, nil).
-Else, return (nil, error)
+Else, return (nil, error).
 */
 func (rac *runningAverageCalculator) removeFromWindow(id string) (interface{}, error) {
 	for element := rac.considerationWindow.Front(); element != nil; element = element.Next() {
@@ -86,7 +86,7 @@ func Calc(data Interface, windowSize int) float64 {
 
 // Remove element from the window if it is present.
 func Remove(id string) (interface{}, error) {
-	// checking if racSingleton has been instantiated
+	// Checking if racSingleton has been instantiated.
 	if racSingleton == nil {
 		return nil, errors.New("Error: Not instantiated. Please call Init() to instantiate.")
 	} else {
@@ -94,9 +94,9 @@ func Remove(id string) (interface{}, error) {
 	}
 }
 
-// initialize the parameters of the running average calculator
+// Initialize the parameters of the running average calculator.
 func Init() {
-	// checking to see if racSingleton needs top be instantiated
+	// Checking to see if racSingleton needs top be instantiated.
 	if racSingleton == nil {
 		racSingleton = getInstance(0.0, 0)
 	}

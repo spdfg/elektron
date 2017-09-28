@@ -2,7 +2,7 @@ package utilities
 
 /*
 The Pair and PairList have been taken from google groups forum,
-https://groups.google.com/forum/#!topic/golang-nuts/FT7cjmcL7gw
+https://groups.google.com/forum/#!topic/golang-nuts/FT7cjmcL7gw.
 */
 
 // Utility struct that helps in sorting map[string]float64 by value.
@@ -14,7 +14,7 @@ type Pair struct {
 // A slice of pairs that implements the sort.Interface to sort by value.
 type PairList []Pair
 
-// Convert map[string]float64 to PairList
+// Convert map[string]float64 to PairList.
 func GetPairList(m map[string]float64) PairList {
 	pl := PairList{}
 	for k, v := range m {
@@ -23,17 +23,17 @@ func GetPairList(m map[string]float64) PairList {
 	return pl
 }
 
-// Swap pairs in the PairList
+// Swap pairs in the PairList.
 func (plist PairList) Swap(i, j int) {
 	plist[i], plist[j] = plist[j], plist[i]
 }
 
-// function to return the length of the pairlist.
+// Get the length of the pairlist.
 func (plist PairList) Len() int {
 	return len(plist)
 }
 
-// function to compare two elements in pairlist.
+// Compare two elements in pairlist.
 func (plist PairList) Less(i, j int) bool {
 	return plist[i].Value < plist[j].Value
 }

@@ -40,10 +40,10 @@ func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, prefix s
 	scanner := bufio.NewScanner(pipe)
 
 	go func(logging *bool, hiThreshold, loThreshold float64) {
-		// Get names of the columns
+		// Get names of the columns.
 		scanner.Scan()
 
-		// Write to logfile
+		// Write to logfile.
 		logFile.WriteString(scanner.Text() + "\n")
 
 		headers := strings.Split(scanner.Text(), ",")
@@ -54,22 +54,21 @@ func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, prefix s
 
 		for i, hostMetric := range headers {
 			metricSplit := strings.Split(hostMetric, ":")
-			//log.Printf("%d Host %s: Metric: %s\n", i, split[0], split[1])
 
 			if strings.Contains(metricSplit[1], "RAPL_ENERGY_PKG") ||
 				strings.Contains(metricSplit[1], "RAPL_ENERGY_DRAM") {
-				//fmt.Println("Index: ", i)
 				powerIndexes = append(powerIndexes, i)
 				indexToHost[i] = metricSplit[0]
 
-				// Only create one ring per host
+				// Only create one ring per host.
 				if _, ok := powerHistories[metricSplit[0]]; !ok {
-					powerHistories[metricSplit[0]] = ring.New(20) // Two PKGS, two DRAM per node,  20 = 5 seconds of tracking
+					// Two PKGS, two DRAM per node, 20 - 5 seconds of tracking.
+					powerHistories[metricSplit[0]] = ring.New(20)
 				}
 			}
 		}
 
-		// Throw away first set of results
+		// Throw away first set of results.
 		scanner.Scan()
 
 		cappedHosts := make(map[string]bool)
@@ -108,7 +107,7 @@ func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, prefix s
 
 				if clusterMean > hiThreshold {
 					log.Printf("Need to cap a node")
-					// Create statics for all victims and choose one to cap
+					// Create statics for all victims and choose one to cap.
 					victims := make([]pcp.Victim, 0, 8)
 
 					// TODO: Just keep track of the largest to reduce fron nlogn to n
@@ -116,15 +115,15 @@ func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, prefix s
 
 						histMean := pcp.AverageNodePowerHistory(history)
 
-						// Consider doing mean calculations using go routines if we need to speed up
+						// Consider doing mean calculations using go routines if we need to speed up.
 						victims = append(victims, pcp.Victim{Watts: histMean, Host: name})
 					}
 
-					sort.Sort(pcp.VictimSorter(victims)) // Sort by average wattage
+					sort.Sort(pcp.VictimSorter(victims)) // Sort by average wattage.
 
-					// From  best victim to worst, if everyone is already capped NOOP
+					// From  best victim to worst, if everyone is already capped NOOP.
 					for _, victim := range victims {
-						// Only cap if host hasn't been capped yet
+						// Only cap if host hasn't been capped yet.
 						if !cappedHosts[victim.Host] {
 							cappedHosts[victim.Host] = true
 							orderCapped = append(orderCapped, victim.Host)
@@ -132,7 +131,7 @@ func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, prefix s
 							if err := rapl.Cap(victim.Host, "rapl", 50); err != nil {
 								log.Print("Error capping host")
 							}
-							break // Only cap one machine at at time
+							break // Only cap one machine at at time.
 						}
 					}
 
@@ -142,7 +141,7 @@ func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, prefix s
 						host := orderCapped[len(orderCapped)-1]
 						orderCapped = orderCapped[:len(orderCapped)-1]
 						cappedHosts[host] = false
-						// User RAPL package to send uncap
+						// User RAPL package to send uncap.
 						log.Printf("Uncapping host %s", host)
 						if err := rapl.Cap(host, "rapl", 100); err != nil {
 							log.Print("Error uncapping host")
@@ -169,7 +168,7 @@ func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, prefix s
 		time.Sleep(5 * time.Second)
 
 		// http://stackoverflow.com/questions/22470193/why-wont-go-kill-a-child-process-correctly
-		// kill process and all children processes
+		// Kill process and all children processes.
 		syscall.Kill(-pgid, 15)
 		return
 	}

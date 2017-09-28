@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-// Decides if to take an offer or not
+// Decides if to take an offer or not.
 func (s *MaxGreedyMins) takeOffer(offer *mesos.Offer, task def.Task,
 	totalCPU, totalRAM, totalWatts float64) bool {
 
@@ -23,7 +23,7 @@ func (s *MaxGreedyMins) takeOffer(offer *mesos.Offer, task def.Task,
 
 	wattsConsideration, err := def.WattsToConsider(task, s.classMapWatts, offer)
 	if err != nil {
-		// Error in determining wattsConsideration
+		// Error in determining wattsConsideration.
 		log.Fatal(err)
 	}
 	if (cpus >= (totalCPU + task.CPU)) && (mem >= (totalRAM + task.RAM)) &&
@@ -34,10 +34,10 @@ func (s *MaxGreedyMins) takeOffer(offer *mesos.Offer, task def.Task,
 }
 
 type MaxGreedyMins struct {
-	base //Type embedding to inherit common functions
+	base //Type embedding to inherit common functions.
 }
 
-// Initialization
+// Initialization.
 func (s *MaxGreedyMins) init(opts ...schedPolicyOption) {
 	s.base.init(opts...)
 }
@@ -46,19 +46,19 @@ func (s *MaxGreedyMins) newTask(offer *mesos.Offer, task def.Task) *mesos.TaskIn
 	taskName := fmt.Sprintf("%s-%d", task.Name, *task.Instances)
 	s.tasksCreated++
 
-	// Start recording only when we're creating the first task
+	// Start recording only when we're creating the first task.
 	if !*s.RecordPCP {
 		// Turn on logging
 		*s.RecordPCP = true
-		time.Sleep(1 * time.Second) // Make sure we're recording by the time the first task starts
+		time.Sleep(1 * time.Second) // Make sure we're recording by the time the first task starts.
 	}
 
-	// If this is our first time running into this Agent
+	// If this is our first time running into this Agent.
 	if _, ok := s.running[offer.GetSlaveId().GoString()]; !ok {
 		s.running[offer.GetSlaveId().GoString()] = make(map[string]bool)
 	}
 
-	// Add task to list of tasks running on node
+	// Add task to list of tasks running on node.
 	s.running[offer.GetSlaveId().GoString()][taskName] = true
 
 	resources := []*mesos.Resource{
@@ -71,7 +71,7 @@ func (s *MaxGreedyMins) newTask(offer *mesos.Offer, task def.Task) *mesos.TaskIn
 			log.Printf("Watts considered for host[%s] and task[%s] = %f", *offer.Hostname, task.Name, wattsToConsider)
 			resources = append(resources, mesosutil.NewScalarResource("watts", wattsToConsider))
 		} else {
-			// Error in determining wattsConsideration
+			// Error in determining wattsConsideration.
 			log.Fatal(err)
 		}
 	}
@@ -90,7 +90,7 @@ func (s *MaxGreedyMins) newTask(offer *mesos.Offer, task def.Task) *mesos.TaskIn
 			Type: mesos.ContainerInfo_DOCKER.Enum(),
 			Docker: &mesos.ContainerInfo_DockerInfo{
 				Image:   proto.String(task.Image),
-				Network: mesos.ContainerInfo_DockerInfo_BRIDGE.Enum(), // Run everything isolated
+				Network: mesos.ContainerInfo_DockerInfo_BRIDGE.Enum(), // Run everything isolated.
 			},
 		},
 	}
@@ -107,7 +107,7 @@ func (s *MaxGreedyMins) CheckFit(
 	totalRAM *float64,
 	totalWatts *float64) (bool, *mesos.TaskInfo) {
 
-	// Does the task fit
+	// Does the task fit.
 	if s.takeOffer(offer, task, *totalCPU, *totalRAM, *totalWatts) {
 
 		*totalWatts += wattsConsideration
@@ -123,7 +123,7 @@ func (s *MaxGreedyMins) CheckFit(
 		*task.Instances--
 
 		if *task.Instances <= 0 {
-			// All instances of task have been scheduled, remove it
+			// All instances of task have been scheduled, remove it.
 			s.tasks = append(s.tasks[:i], s.tasks[i+1:]...)
 
 			if len(s.tasks) <= 0 {
@@ -160,20 +160,20 @@ func (s *MaxGreedyMins) ResourceOffers(driver sched.SchedulerDriver, offers []*m
 		totalCPU := 0.0
 		totalRAM := 0.0
 
-		// Assumes s.tasks is ordered in non-decreasing median max peak order
+		// Assumes s.tasks is ordered in non-decreasing median max peak order.
 
-		// Attempt to schedule a single instance of the heaviest workload available first
-		// Start from the back until one fits
+		// Attempt to schedule a single instance of the heaviest workload available first.
+		// Start from the back until one fits.
 		for i := len(s.tasks) - 1; i >= 0; i-- {
 
 			task := s.tasks[i]
 			wattsConsideration, err := def.WattsToConsider(task, s.classMapWatts, offer)
 			if err != nil {
-				// Error in determining wattsConsideration
+				// Error in determining wattsConsideration.
 				log.Fatal(err)
 			}
 
-			// Don't take offer if it doesn't match our task's host requirement
+			// Don't take offer if it doesn't match our task's host requirement.
 			if offerUtils.HostMismatch(*offer.Hostname, task.Host) {
 				continue
 			}
@@ -189,16 +189,16 @@ func (s *MaxGreedyMins) ResourceOffers(driver sched.SchedulerDriver, offers []*m
 			}
 		}
 
-		// Pack the rest of the offer with the smallest tasks
+		// Pack the rest of the offer with the smallest tasks.
 		for i := 0; i < len(s.tasks); i++ {
 			task := s.tasks[i]
 			wattsConsideration, err := def.WattsToConsider(task, s.classMapWatts, offer)
 			if err != nil {
-				// Error in determining wattsConsideration
+				// Error in determining wattsConsideration.
 				log.Fatal(err)
 			}
 
-			// Don't take offer if it doesn't match our task's host requirement
+			// Don't take offer if it doesn't match our task's host requirement.
 			if offerUtils.HostMismatch(*offer.Hostname, task.Host) {
 				continue
 			}
@@ -212,7 +212,7 @@ func (s *MaxGreedyMins) ResourceOffers(driver sched.SchedulerDriver, offers []*m
 					offerTaken = true
 					tasks = append(tasks, taskToSchedule)
 				} else {
-					break // Continue on to next task
+					break // Continue on to next task.
 				}
 			}
 		}
@@ -222,7 +222,7 @@ func (s *MaxGreedyMins) ResourceOffers(driver sched.SchedulerDriver, offers []*m
 			driver.LaunchTasks([]*mesos.OfferID{offer.Id}, tasks, mesosUtils.DefaultFilter)
 		} else {
 
-			// If there was no match for the task
+			// If there was no match for the task.
 			fmt.Println("There is not enough resources to launch a task:")
 			cpus, mem, watts := offerUtils.OfferAgg(offer)
 

@@ -24,17 +24,17 @@ type base struct {
 	classMapWatts    bool
 
 	// First set of PCP values are garbage values, signal to logger to start recording when we're
-	// about to schedule a new task
+	// about to schedule a new task.
 	RecordPCP *bool
 
 	// This channel is closed when the program receives an interrupt,
 	// signalling that the program should shut down.
 	Shutdown chan struct{}
 	// This channel is closed after shutdown is closed, and only when all
-	// outstanding tasks have been cleaned up
+	// outstanding tasks have been cleaned up.
 	Done chan struct{}
 
-	// Controls when to shutdown pcp logging
+	// Controls when to shutdown pcp logging.
 	PCPLog chan struct{}
 
 	schedTrace *log.Logger
@@ -42,7 +42,7 @@ type base struct {
 
 func (s *base) init(opts ...schedPolicyOption) {
 	for _, opt := range opts {
-		// applying options
+		// Applying options.
 		if err := opt(s); err != nil {
 			log.Fatal(err)
 		}

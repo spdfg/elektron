@@ -1,9 +1,9 @@
 package def
 
-// the sortBy function that takes a task reference and returns the resource to consider when sorting.
+// The sortBy function that takes a task reference and returns the resource to consider when sorting.
 type sortBy func(task *Task) float64
 
-// Possible Sorting Criteria
+// Possible Sorting Criteria.
 // Each holds a closure that fetches the required resource from the
 // 	given task reference.
 var (

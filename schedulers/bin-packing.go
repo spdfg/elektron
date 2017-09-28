@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-// Decides if to take an offer or not
+// Decides if to take an offer or not.
 func (s *BinPacking) takeOffer(offer *mesos.Offer, task def.Task, totalCPU, totalRAM, totalWatts float64) bool {
 
 	cpus, mem, watts := offerUtils.OfferAgg(offer)
@@ -22,7 +22,7 @@ func (s *BinPacking) takeOffer(offer *mesos.Offer, task def.Task, totalCPU, tota
 
 	wattsConsideration, err := def.WattsToConsider(task, s.classMapWatts, offer)
 	if err != nil {
-		// Error in determining wattsConsideration
+		// Error in determining wattsConsideration.
 		log.Fatal(err)
 	}
 	if (cpus >= (totalCPU + task.CPU)) && (mem >= (totalRAM + task.RAM)) &&
@@ -33,13 +33,13 @@ func (s *BinPacking) takeOffer(offer *mesos.Offer, task def.Task, totalCPU, tota
 }
 
 type BinPacking struct {
-	base // Type embedded to inherit common functions
+	base // Type embedded to inherit common functions.
 }
 
-// Initialization
+// Initialization.
 func (s *BinPacking) init(opts ...schedPolicyOption) {
 	s.base.init(opts...)
-	// sorting the tasks based on watts
+	// Sorting the tasks based on watts.
 	def.SortTasks(s.tasks, def.SortByWatts)
 }
 
@@ -48,17 +48,17 @@ func (s *BinPacking) newTask(offer *mesos.Offer, task def.Task) *mesos.TaskInfo 
 	s.tasksCreated++
 
 	if !*s.RecordPCP {
-		// Turn on logging
+		// Turn on logging.
 		*s.RecordPCP = true
 		time.Sleep(1 * time.Second) // Make sure we're recording by the time the first task starts
 	}
 
-	// If this is our first time running into this Agent
+	// If this is our first time running into this Agent.
 	if _, ok := s.running[offer.GetSlaveId().GoString()]; !ok {
 		s.running[offer.GetSlaveId().GoString()] = make(map[string]bool)
 	}
 
-	// Add task to list of tasks running on node
+	// Add task to list of tasks running on node.
 	s.running[offer.GetSlaveId().GoString()][taskName] = true
 
 	resources := []*mesos.Resource{
@@ -71,7 +71,7 @@ func (s *BinPacking) newTask(offer *mesos.Offer, task def.Task) *mesos.TaskInfo 
 			log.Printf("Watts considered for host[%s] and task[%s] = %f", *offer.Hostname, task.Name, wattsToConsider)
 			resources = append(resources, mesosutil.NewScalarResource("watts", wattsToConsider))
 		} else {
-			// Error in determining wattsToConsider
+			// Error in determining wattsToConsider.
 			log.Fatal(err)
 		}
 	}
@@ -121,17 +121,17 @@ func (s *BinPacking) ResourceOffers(driver sched.SchedulerDriver, offers []*meso
 			task := s.tasks[i]
 			wattsConsideration, err := def.WattsToConsider(task, s.classMapWatts, offer)
 			if err != nil {
-				// Error in determining wattsConsideration
+				// Error in determining wattsConsideration.
 				log.Fatal(err)
 			}
 
-			// Don't take offer if it doesn't match our task's host requirement
+			// Don't take offer if it doesn't match our task's host requirement.
 			if offerUtils.HostMismatch(*offer.Hostname, task.Host) {
 				continue
 			}
 
 			for *task.Instances > 0 {
-				// Does the task fit
+				// Does the task fit.
 				if s.takeOffer(offer, task, totalCPU, totalRAM, totalWatts) {
 
 					offerTaken = true
@@ -148,7 +148,7 @@ func (s *BinPacking) ResourceOffers(driver sched.SchedulerDriver, offers []*meso
 					*task.Instances--
 
 					if *task.Instances <= 0 {
-						// All instances of task have been scheduled, remove it
+						// All instances of task have been scheduled, remove it.
 						s.tasks = append(s.tasks[:i], s.tasks[i+1:]...)
 
 						if len(s.tasks) <= 0 {
@@ -157,7 +157,7 @@ func (s *BinPacking) ResourceOffers(driver sched.SchedulerDriver, offers []*meso
 						}
 					}
 				} else {
-					break // Continue on to next offer
+					break // Continue on to next offer.
 				}
 			}
 		}
@@ -167,7 +167,7 @@ func (s *BinPacking) ResourceOffers(driver sched.SchedulerDriver, offers []*meso
 			driver.LaunchTasks([]*mesos.OfferID{offer.Id}, tasks, mesosUtils.DefaultFilter)
 		} else {
 
-			// If there was no match for the task
+			// If there was no match for the task.
 			fmt.Println("There is not enough resources to launch a task:")
 			cpus, mem, watts := offerUtils.OfferAgg(offer)
 
