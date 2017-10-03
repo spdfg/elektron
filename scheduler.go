@@ -15,7 +15,7 @@ import (
 	"time"
 )
 
-var master = flag.String("master", "<mesos-master>:5050", "Location of leading Mesos master")
+var master = flag.String("master", "Location of leading Mesos master -- <mesos-master>:<port>")
 var tasksFile = flag.String("workload", "", "JSON file containing task definitions")
 var wattsAsAResource = flag.Bool("wattsAsAResource", false, "Enable Watts as a Resource. "+
 	"This allows the usage of the Watts attribute (if present) in the workload definition during offer matching.")
