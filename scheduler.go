@@ -15,7 +15,7 @@ import (
 	"time"
 )
 
-var master = flag.String("master", "Location of leading Mesos master -- <mesos-master>:<port>")
+var master = flag.String("master", "", "Location of leading Mesos master -- <mesos-master>:<port>")
 var tasksFile = flag.String("workload", "", "JSON file containing task definitions")
 var wattsAsAResource = flag.Bool("wattsAsAResource", false, "Enable Watts as a Resource. "+
 	"This allows the usage of the Watts attribute (if present) in the workload definition during offer matching.")
@@ -31,7 +31,7 @@ var listSchedPolicies = flag.Bool("listSchedPolicies", false, "Names of the plua
 
 // Short hand args.
 func init() {
-	flag.StringVar(master, "m", "<mesos-master>:5050", "Location of leading Mesos master (shorthand)")
+	flag.StringVar(master, "m", "", "Location of leading Mesos master (shorthand)")
 	flag.StringVar(tasksFile, "w", "", "JSON file containing task definitions (shorthand)")
 	flag.BoolVar(wattsAsAResource, "waar", false, "Enable Watts as a Resource. "+
 		"This allows the usage of the Watts attribute (if present) in the workload definition during offer matching. (shorthand)")
