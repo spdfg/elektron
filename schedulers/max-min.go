@@ -1,16 +1,17 @@
 package schedulers
 
 import (
+	"fmt"
+	"log"
+	"time"
+
 	"bitbucket.org/sunybingcloud/elektron/def"
 	"bitbucket.org/sunybingcloud/elektron/utilities/mesosUtils"
 	"bitbucket.org/sunybingcloud/elektron/utilities/offerUtils"
-	"fmt"
 	"github.com/golang/protobuf/proto"
 	mesos "github.com/mesos/mesos-go/mesosproto"
 	"github.com/mesos/mesos-go/mesosutil"
 	sched "github.com/mesos/mesos-go/scheduler"
-	"log"
-	"time"
 )
 
 // Decides if to take an offer or not.
@@ -40,6 +41,8 @@ type MaxMin struct {
 // Initialization.
 func (s *MaxMin) init(opts ...schedPolicyOption) {
 	s.base.init(opts...)
+	// Sorting the tasks based on Watts.
+	def.SortTasks(s.tasks, def.SortByWatts)
 }
 
 func (s *MaxMin) newTask(offer *mesos.Offer, task def.Task) *mesos.TaskInfo {
