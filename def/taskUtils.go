@@ -1,7 +1,7 @@
 package def
 
 import (
-	"github.com/mdesenfants/gokmeans"
+	"github.com/mash/gokmeans"
 	"log"
 	"sort"
 )

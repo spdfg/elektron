@@ -2,7 +2,7 @@ package offerUtils
 
 import (
 	"bitbucket.org/sunybingcloud/elektron/constants"
-	mesos "github.com/mesos/mesos-go/mesosproto"
+	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 	"log"
 	"strings"
 )

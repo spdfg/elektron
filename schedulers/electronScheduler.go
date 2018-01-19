@@ -3,8 +3,8 @@ package schedulers
 import (
 	"bitbucket.org/sunybingcloud/elektron/def"
 	elecLogDef "bitbucket.org/sunybingcloud/elektron/logging/def"
-	mesos "github.com/mesos/mesos-go/mesosproto"
-	sched "github.com/mesos/mesos-go/scheduler"
+	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
+	sched "github.com/mesos/mesos-go/api/v0/scheduler"
 )
 
 // Implements mesos scheduler.

@@ -1,17 +1,19 @@
 package schedulers
 
 import (
-	"bitbucket.org/sunybingcloud/elektron/def"
-	"bitbucket.org/sunybingcloud/elektron/utilities/mesosUtils"
-	"bitbucket.org/sunybingcloud/elektron/utilities/offerUtils"
+	"bitbucket.org/sunybingcloud/electron/def"
+	"bitbucket.org/sunybingcloud/electron/utilities/mesosUtils"
+	"bitbucket.org/sunybingcloud/electron/utilities/offerUtils"
 	"fmt"
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 	sched "github.com/mesos/mesos-go/api/v0/scheduler"
+	"log"
 	"math/rand"
 )
 
 // Decides if to take an offer or not
-func (s *FirstFit) takeOffer(spc SchedPolicyContext, offer *mesos.Offer, task def.Task) bool {
+func (s *FirstFitSortedWatts) takeOffer(spc SchedPolicyContext, offer *mesos.Offer, task def.Task) bool {
+
 	baseSchedRef := spc.(*baseScheduler)
 	cpus, mem, watts := offerUtils.OfferAgg(offer)
 
@@ -20,7 +22,7 @@ func (s *FirstFit) takeOffer(spc SchedPolicyContext, offer *mesos.Offer, task de
 	wattsConsideration, err := def.WattsToConsider(task, baseSchedRef.classMapWatts, offer)
 	if err != nil {
 		// Error in determining wattsConsideration
-		baseSchedRef.LogElectronError(err)
+		log.Fatal(err)
 	}
 	if cpus >= task.CPU && mem >= task.RAM && (!baseSchedRef.wattsAsAResource || watts >= wattsConsideration) {
 		return true
@@ -29,14 +31,16 @@ func (s *FirstFit) takeOffer(spc SchedPolicyContext, offer *mesos.Offer, task de
 	return false
 }
 
-// Elektron scheduler implements the Scheduler interface.
-type FirstFit struct {
+// electronScheduler implements the Scheduler interface
+type FirstFitSortedWatts struct {
 	SchedPolicyState
 }
 
-func (s *FirstFit) ConsumeOffers(spc SchedPolicyContext, driver sched.SchedulerDriver, offers []*mesos.Offer) {
-	fmt.Println("FirstFit scheduling...")
+func (s *FirstFitSortedWatts) ConsumeOffers(spc SchedPolicyContext, driver sched.SchedulerDriver,
+	offers []*mesos.Offer) {
+	fmt.Println("FFSW scheduling...")
 	baseSchedRef := spc.(*baseScheduler)
+	def.SortTasks(baseSchedRef.tasks, def.SortByWatts)
 	baseSchedRef.LogOffersReceived(offers)
 
 	for _, offer := range offers {
@@ -53,11 +57,12 @@ func (s *FirstFit) ConsumeOffers(spc SchedPolicyContext, driver sched.SchedulerD
 		tasks := []*mesos.TaskInfo{}
 
 		// First fit strategy
+
 		offerTaken := false
 		for i := 0; i < len(baseSchedRef.tasks); i++ {
 			task := baseSchedRef.tasks[i]
 
-			// Don't take offer if it doesn't match our task's host requirement.
+			// Don't take offer if it doesn't match our task's host requirement
 			if offerUtils.HostMismatch(*offer.Hostname, task.Host) {
 				continue
 			}
@@ -80,24 +85,25 @@ func (s *FirstFit) ConsumeOffers(spc SchedPolicyContext, driver sched.SchedulerD
 
 				if *task.Instances <= 0 {
 					// All instances of task have been scheduled, remove it
-					baseSchedRef.tasks[i] = baseSchedRef.tasks[len(baseSchedRef.tasks)-1]
-					baseSchedRef.tasks = baseSchedRef.tasks[:len(baseSchedRef.tasks)-1]
+					baseSchedRef.tasks = append(baseSchedRef.tasks[:i],
+						baseSchedRef.tasks[i+1:]...)
 
 					if len(baseSchedRef.tasks) <= 0 {
 						baseSchedRef.LogTerminateScheduler()
 						close(baseSchedRef.Shutdown)
 					}
 				}
-				break // Offer taken, move on.
+				break // Offer taken, move on
 			}
 		}
 
-		// If there was no match for the task.
+		// If there was no match for the task
 		if !offerTaken {
 			cpus, mem, watts := offerUtils.OfferAgg(offer)
 			baseSchedRef.LogInsufficientResourcesDeclineOffer(offer, cpus, mem, watts)
 			driver.DeclineOffer(offer.Id, mesosUtils.DefaultFilter)
 		}
+
 	}
 
 	// Switch scheduling policy only if feature enabled from CLI

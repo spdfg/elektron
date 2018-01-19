@@ -1,7 +1,7 @@
 package schedulers
 
 import (
-	sched "github.com/mesos/mesos-go/scheduler"
+	sched "github.com/mesos/mesos-go/api/v0/scheduler"
 )
 
 // Names of different scheduling policies.

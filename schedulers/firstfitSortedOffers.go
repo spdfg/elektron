@@ -1,17 +1,22 @@
 package schedulers
 
 import (
-	"bitbucket.org/sunybingcloud/elektron/def"
-	"bitbucket.org/sunybingcloud/elektron/utilities/mesosUtils"
-	"bitbucket.org/sunybingcloud/elektron/utilities/offerUtils"
+	"bitbucket.org/sunybingcloud/electron/def"
+	elecLogDef "bitbucket.org/sunybingcloud/electron/logging/def"
+	"bitbucket.org/sunybingcloud/electron/utilities/mesosUtils"
+	"bitbucket.org/sunybingcloud/electron/utilities/offerUtils"
+	"bytes"
 	"fmt"
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 	sched "github.com/mesos/mesos-go/api/v0/scheduler"
+	"log"
 	"math/rand"
+	"sort"
 )
 
 // Decides if to take an offer or not
-func (s *FirstFit) takeOffer(spc SchedPolicyContext, offer *mesos.Offer, task def.Task) bool {
+func (s *FirstFitSortedOffers) takeOffer(spc SchedPolicyContext, offer *mesos.Offer, task def.Task) bool {
+
 	baseSchedRef := spc.(*baseScheduler)
 	cpus, mem, watts := offerUtils.OfferAgg(offer)
 
@@ -20,7 +25,7 @@ func (s *FirstFit) takeOffer(spc SchedPolicyContext, offer *mesos.Offer, task de
 	wattsConsideration, err := def.WattsToConsider(task, baseSchedRef.classMapWatts, offer)
 	if err != nil {
 		// Error in determining wattsConsideration
-		baseSchedRef.LogElectronError(err)
+		log.Fatal(err)
 	}
 	if cpus >= task.CPU && mem >= task.RAM && (!baseSchedRef.wattsAsAResource || watts >= wattsConsideration) {
 		return true
@@ -29,18 +34,32 @@ func (s *FirstFit) takeOffer(spc SchedPolicyContext, offer *mesos.Offer, task de
 	return false
 }
 
-// Elektron scheduler implements the Scheduler interface.
-type FirstFit struct {
+// electronScheduler implements the Scheduler interface
+type FirstFitSortedOffers struct {
 	SchedPolicyState
 }
 
-func (s *FirstFit) ConsumeOffers(spc SchedPolicyContext, driver sched.SchedulerDriver, offers []*mesos.Offer) {
-	fmt.Println("FirstFit scheduling...")
+func (s *FirstFitSortedOffers) ConsumeOffers(spc SchedPolicyContext, driver sched.SchedulerDriver,
+	offers []*mesos.Offer) {
+	fmt.Println("FFSO scheduling...")
 	baseSchedRef := spc.(*baseScheduler)
 	baseSchedRef.LogOffersReceived(offers)
 
-	for _, offer := range offers {
+	// Sorting the offers
+	sort.Sort(offerUtils.OffersSorter(offers))
+
+	// Printing the sorted offers and the corresponding CPU resource availability
+	buffer := bytes.Buffer{}
+	buffer.WriteString(fmt.Sprintln("Sorted Offers:"))
+	for i := 0; i < len(offers); i++ {
+		offer := offers[i]
 		offerUtils.UpdateEnvironment(offer)
+		offerCPU, _, _ := offerUtils.OfferAgg(offer)
+		buffer.WriteString(fmt.Sprintf("Offer[%s].CPU = %f\n", offer.GetHostname(), offerCPU))
+	}
+	baseSchedRef.Log(elecLogDef.GENERAL, buffer.String())
+
+	for _, offer := range offers {
 		select {
 		case <-baseSchedRef.Shutdown:
 			baseSchedRef.LogNoPendingTasksDeclineOffers(offer)
@@ -53,11 +72,12 @@ func (s *FirstFit) ConsumeOffers(spc SchedPolicyContext, driver sched.SchedulerD
 		tasks := []*mesos.TaskInfo{}
 
 		// First fit strategy
+
 		offerTaken := false
 		for i := 0; i < len(baseSchedRef.tasks); i++ {
 			task := baseSchedRef.tasks[i]
 
-			// Don't take offer if it doesn't match our task's host requirement.
+			// Don't take offer if it doesn't match our task's host requirement
 			if offerUtils.HostMismatch(*offer.Hostname, task.Host) {
 				continue
 			}
@@ -88,11 +108,11 @@ func (s *FirstFit) ConsumeOffers(spc SchedPolicyContext, driver sched.SchedulerD
 						close(baseSchedRef.Shutdown)
 					}
 				}
-				break // Offer taken, move on.
+				break // Offer taken, move on
 			}
 		}
 
-		// If there was no match for the task.
+		// If there was no match for the task
 		if !offerTaken {
 			cpus, mem, watts := offerUtils.OfferAgg(offer)
 			baseSchedRef.LogInsufficientResourcesDeclineOffer(offer, cpus, mem, watts)
