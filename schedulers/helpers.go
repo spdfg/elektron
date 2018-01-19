@@ -4,18 +4,16 @@ import (
 	"bitbucket.org/sunybingcloud/elektron/constants"
 	"bitbucket.org/sunybingcloud/elektron/def"
 	"errors"
-	"fmt"
-	"log"
-	"os"
+	elecLogDef "bitbucket.org/sunybingcloud/elektron/logging/def"
 )
 
-func coLocated(tasks map[string]bool) {
+func coLocated(tasks map[string]bool, s baseScheduler) {
 
 	for task := range tasks {
-		log.Println(task)
+		s.Log(elecLogDef.GENERAL, task)
 	}
 
-	fmt.Println("---------------------")
+	s.Log(elecLogDef.GENERAL, "---------------------")
 }
 
 // Get the powerClass of the given hostname.
@@ -28,15 +26,26 @@ func hostToPowerClass(hostName string) string {
 	return ""
 }
 
-// Scheduler policy options to help initialize schedulers.
+// scheduler policy options to help initialize schedulers
 type schedPolicyOption func(e ElectronScheduler) error
+
+func WithSchedPolicy(schedPolicyName string) schedPolicyOption {
+	return func(s ElectronScheduler) error {
+		if schedPolicy, ok := SchedPolicies[schedPolicyName]; !ok {
+			return errors.New("Incorrect scheduling policy.")
+		} else {
+			s.(*baseScheduler).curSchedPolicy = schedPolicy
+			return nil
+		}
+	}
+}
 
 func WithTasks(ts []def.Task) schedPolicyOption {
 	return func(s ElectronScheduler) error {
 		if ts == nil {
 			return errors.New("Task[] is empty.")
 		} else {
-			s.(*base).tasks = ts
+			s.(*baseScheduler).tasks = ts
 			return nil
 		}
 	}
@@ -44,34 +53,22 @@ func WithTasks(ts []def.Task) schedPolicyOption {
 
 func WithWattsAsAResource(waar bool) schedPolicyOption {
 	return func(s ElectronScheduler) error {
-		s.(*base).wattsAsAResource = waar
+		s.(*baseScheduler).wattsAsAResource = waar
 		return nil
 	}
 }
 
 func WithClassMapWatts(cmw bool) schedPolicyOption {
 	return func(s ElectronScheduler) error {
-		s.(*base).classMapWatts = cmw
+		s.(*baseScheduler).classMapWatts = cmw
 		return nil
 	}
 }
 
 func WithRecordPCP(recordPCP *bool) schedPolicyOption {
 	return func(s ElectronScheduler) error {
-		s.(*base).RecordPCP = recordPCP
+		s.(*baseScheduler).RecordPCP = recordPCP
 		return nil
-	}
-}
-
-func WithSchedTracePrefix(schedTracePrefix string) schedPolicyOption {
-	return func(s ElectronScheduler) error {
-		logFile, err := os.Create("./" + schedTracePrefix + "_schedTrace.log")
-		if err != nil {
-			return err
-		} else {
-			s.(*base).schedTrace = log.New(logFile, "", log.LstdFlags)
-			return nil
-		}
 	}
 }
 
@@ -80,7 +77,7 @@ func WithShutdown(shutdown chan struct{}) schedPolicyOption {
 		if shutdown == nil {
 			return errors.New("Shutdown channel is nil.")
 		} else {
-			s.(*base).Shutdown = shutdown
+			s.(*baseScheduler).Shutdown = shutdown
 			return nil
 		}
 	}
@@ -91,7 +88,7 @@ func WithDone(done chan struct{}) schedPolicyOption {
 		if done == nil {
 			return errors.New("Done channel is nil.")
 		} else {
-			s.(*base).Done = done
+			s.(*baseScheduler).Done = done
 			return nil
 		}
 	}
@@ -102,8 +99,23 @@ func WithPCPLog(pcpLog chan struct{}) schedPolicyOption {
 		if pcpLog == nil {
 			return errors.New("PCPLog channel is nil.")
 		} else {
-			s.(*base).PCPLog = pcpLog
+			s.(*baseScheduler).PCPLog = pcpLog
 			return nil
 		}
+	}
+}
+
+func WithLoggingChannels(lmt chan elecLogDef.LogMessageType, msg chan string) schedPolicyOption {
+	return func(s ElectronScheduler) error {
+		s.(*baseScheduler).logMsgType = lmt
+		s.(*baseScheduler).logMsg = msg
+		return nil
+	}
+}
+
+func WithSchedPolSwitchEnabled(enableSchedPolicySwitch bool) schedPolicyOption {
+	return func(s ElectronScheduler) error {
+		s.(*baseScheduler).schedPolSwitchEnabled = enableSchedPolicySwitch
+		return nil
 	}
 }

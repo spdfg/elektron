@@ -5,27 +5,24 @@ import (
 	"bitbucket.org/sunybingcloud/elektron/utilities/mesosUtils"
 	"bitbucket.org/sunybingcloud/elektron/utilities/offerUtils"
 	"fmt"
-	"github.com/golang/protobuf/proto"
 	mesos "github.com/mesos/mesos-go/mesosproto"
-	"github.com/mesos/mesos-go/mesosutil"
 	sched "github.com/mesos/mesos-go/scheduler"
-	"log"
-	"time"
+	"math/rand"
 )
 
-// Decides if to take an offer or not.
-func (s *FirstFit) takeOffer(offer *mesos.Offer, task def.Task) bool {
-
+// Decides if to take an offer or not
+func (s *FirstFit) takeOffer(spc SchedPolicyContext, offer *mesos.Offer, task def.Task) bool {
+	baseSchedRef := spc.(*baseScheduler)
 	cpus, mem, watts := offerUtils.OfferAgg(offer)
 
 	//TODO: Insert watts calculation here instead of taking them as a parameter
 
-	wattsConsideration, err := def.WattsToConsider(task, s.classMapWatts, offer)
+	wattsConsideration, err := def.WattsToConsider(task, baseSchedRef.classMapWatts, offer)
 	if err != nil {
-		// Error in determining wattsConsideration.
-		log.Fatal(err)
+		// Error in determining wattsConsideration
+		baseSchedRef.LogElectronError(err)
 	}
-	if cpus >= task.CPU && mem >= task.RAM && (!s.wattsAsAResource || watts >= wattsConsideration) {
+	if cpus >= task.CPU && mem >= task.RAM && (!baseSchedRef.wattsAsAResource || watts >= wattsConsideration) {
 		return true
 	}
 
@@ -34,120 +31,61 @@ func (s *FirstFit) takeOffer(offer *mesos.Offer, task def.Task) bool {
 
 // Elektron scheduler implements the Scheduler interface.
 type FirstFit struct {
-	base // Type embedded to inherit common functions
+	SchedPolicyState
 }
 
-// Initialization.
-func (s *FirstFit) init(opts ...schedPolicyOption) {
-	s.base.init(opts...)
-}
-
-func (s *FirstFit) newTask(offer *mesos.Offer, task def.Task) *mesos.TaskInfo {
-	taskName := fmt.Sprintf("%s-%d", task.Name, *task.Instances)
-	s.tasksCreated++
-
-	if !*s.RecordPCP {
-		// Turn on logging.
-		*s.RecordPCP = true
-		time.Sleep(1 * time.Second) // Make sure we're recording by the time the first task starts.
-	}
-
-	// If this is our first time running into this Agent.
-	if _, ok := s.running[offer.GetSlaveId().GoString()]; !ok {
-		s.running[offer.GetSlaveId().GoString()] = make(map[string]bool)
-	}
-
-	// Add task to list of tasks running on node.
-	s.running[offer.GetSlaveId().GoString()][taskName] = true
-
-	resources := []*mesos.Resource{
-		mesosutil.NewScalarResource("cpus", task.CPU),
-		mesosutil.NewScalarResource("mem", task.RAM),
-	}
-
-	if s.wattsAsAResource {
-		if wattsToConsider, err := def.WattsToConsider(task, s.classMapWatts, offer); err == nil {
-			log.Printf("Watts considered for host[%s] and task[%s] = %f", *offer.Hostname, task.Name, wattsToConsider)
-			resources = append(resources, mesosutil.NewScalarResource("watts", wattsToConsider))
-		} else {
-			// Error in determining wattsConsideration.
-			log.Fatal(err)
-		}
-	}
-
-	return &mesos.TaskInfo{
-		Name: proto.String(taskName),
-		TaskId: &mesos.TaskID{
-			Value: proto.String("elektron-" + taskName),
-		},
-		SlaveId:   offer.SlaveId,
-		Resources: resources,
-		Command: &mesos.CommandInfo{
-			Value: proto.String(task.CMD),
-		},
-		Container: &mesos.ContainerInfo{
-			Type: mesos.ContainerInfo_DOCKER.Enum(),
-			Docker: &mesos.ContainerInfo_DockerInfo{
-				Image:   proto.String(task.Image),
-				Network: mesos.ContainerInfo_DockerInfo_BRIDGE.Enum(), // Run everything isolated
-			},
-		},
-	}
-}
-
-func (s *FirstFit) ResourceOffers(driver sched.SchedulerDriver, offers []*mesos.Offer) {
-	log.Printf("Received %d resource offers", len(offers))
+func (s *FirstFit) ConsumeOffers(spc SchedPolicyContext, driver sched.SchedulerDriver, offers []*mesos.Offer) {
+	fmt.Println("FirstFit scheduling...")
+	baseSchedRef := spc.(*baseScheduler)
+	baseSchedRef.LogOffersReceived(offers)
 
 	for _, offer := range offers {
 		offerUtils.UpdateEnvironment(offer)
 		select {
-		case <-s.Shutdown:
-			log.Println("Done scheduling tasks: declining offer on [", offer.GetHostname(), "]")
+		case <-baseSchedRef.Shutdown:
+			baseSchedRef.LogNoPendingTasksDeclineOffers(offer)
 			driver.DeclineOffer(offer.Id, mesosUtils.LongFilter)
-
-			log.Println("Number of tasks still running: ", s.tasksRunning)
+			baseSchedRef.LogNumberOfRunningTasks()
 			continue
 		default:
 		}
 
 		tasks := []*mesos.TaskInfo{}
 
-		// First fit strategy.
+		// First fit strategy
 		offerTaken := false
-		for i := 0; i < len(s.tasks); i++ {
-			task := s.tasks[i]
+		for i := 0; i < len(baseSchedRef.tasks); i++ {
+			task := baseSchedRef.tasks[i]
 
 			// Don't take offer if it doesn't match our task's host requirement.
 			if offerUtils.HostMismatch(*offer.Hostname, task.Host) {
 				continue
 			}
 
-			// Decision to take the offer or not.
-			if s.takeOffer(offer, task) {
+			// Decision to take the offer or not
+			if s.takeOffer(spc, offer, task) {
 
-				log.Println("Co-Located with: ")
-				coLocated(s.running[offer.GetSlaveId().GoString()])
+				baseSchedRef.LogCoLocatedTasks(offer.GetSlaveId().GoString())
 
-				taskToSchedule := s.newTask(offer, task)
+				taskToSchedule := baseSchedRef.newTask(offer, task)
 				tasks = append(tasks, taskToSchedule)
 
-				log.Printf("Starting %s on [%s]\n", task.Name, offer.GetHostname())
+				baseSchedRef.LogTaskStarting(&task, offer)
 				driver.LaunchTasks([]*mesos.OfferID{offer.Id}, tasks, mesosUtils.DefaultFilter)
 
 				offerTaken = true
 
-				fmt.Println("Inst: ", *task.Instances)
-				s.schedTrace.Print(offer.GetHostname() + ":" + taskToSchedule.GetTaskId().GetValue())
+				baseSchedRef.LogSchedTrace(taskToSchedule, offer)
 				*task.Instances--
 
 				if *task.Instances <= 0 {
-					// All instances of task have been scheduled, remove it.
-					s.tasks[i] = s.tasks[len(s.tasks)-1]
-					s.tasks = s.tasks[:len(s.tasks)-1]
+					// All instances of task have been scheduled, remove it
+					baseSchedRef.tasks[i] = baseSchedRef.tasks[len(baseSchedRef.tasks)-1]
+					baseSchedRef.tasks = baseSchedRef.tasks[:len(baseSchedRef.tasks)-1]
 
-					if len(s.tasks) <= 0 {
-						log.Println("Done scheduling all tasks")
-						close(s.Shutdown)
+					if len(baseSchedRef.tasks) <= 0 {
+						baseSchedRef.LogTerminateScheduler()
+						close(baseSchedRef.Shutdown)
 					}
 				}
 				break // Offer taken, move on.
@@ -156,31 +94,23 @@ func (s *FirstFit) ResourceOffers(driver sched.SchedulerDriver, offers []*mesos.
 
 		// If there was no match for the task.
 		if !offerTaken {
-			fmt.Println("There is not enough resources to launch a task:")
 			cpus, mem, watts := offerUtils.OfferAgg(offer)
-
-			log.Printf("<CPU: %f, RAM: %f, Watts: %f>\n", cpus, mem, watts)
+			baseSchedRef.LogInsufficientResourcesDeclineOffer(offer, cpus, mem, watts)
 			driver.DeclineOffer(offer.Id, mesosUtils.DefaultFilter)
 		}
-
 	}
-}
 
-func (s *FirstFit) StatusUpdate(driver sched.SchedulerDriver, status *mesos.TaskStatus) {
-	log.Printf("Received task status [%s] for task [%s]", NameFor(status.State), *status.TaskId.Value)
-
-	if *status.State == mesos.TaskState_TASK_RUNNING {
-		s.tasksRunning++
-	} else if IsTerminal(status.State) {
-		delete(s.running[status.GetSlaveId().GoString()], *status.TaskId.Value)
-		s.tasksRunning--
-		if s.tasksRunning == 0 {
-			select {
-			case <-s.Shutdown:
-				close(s.Done)
-			default:
+	// Switch scheduling policy only if feature enabled from CLI
+	if baseSchedRef.schedPolSwitchEnabled {
+		// Switching to a random scheduling policy.
+		// TODO: Switch based on some criteria.
+		index := rand.Intn(len(SchedPolicies))
+		for _, v := range SchedPolicies {
+			if index == 0 {
+				spc.SwitchSchedPol(v)
+				break
 			}
+			index--
 		}
 	}
-	log.Printf("DONE: Task status [%s] for task [%s]", NameFor(status.State), *status.TaskId.Value)
 }

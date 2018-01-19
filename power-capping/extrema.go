@@ -3,10 +3,11 @@ package pcp
 import (
 	"bitbucket.org/sunybingcloud/elektron/pcp"
 	"bitbucket.org/sunybingcloud/elektron/rapl"
+	elecLogDef "bitbucket.org/sunybingcloud/elektron/logging/def"
 	"bufio"
 	"container/ring"
+	"fmt"
 	"log"
-	"os"
 	"os/exec"
 	"sort"
 	"strconv"
@@ -15,7 +16,9 @@ import (
 	"time"
 )
 
-func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, prefix string, hiThreshold, loThreshold float64) {
+func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, hiThreshold, loThreshold float64,
+	logMType chan elecLogDef.LogMessageType, logMsg chan string) {
+
 	const pcpCommand string = "pmdumptext -m -l -f '' -t 1.0 -d , -c config"
 	cmd := exec.Command("sh", "-c", pcpCommand)
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
@@ -23,13 +26,6 @@ func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, prefix s
 	if hiThreshold < loThreshold {
 		log.Println("High threshold is lower than low threshold!")
 	}
-
-	logFile, err := os.Create("./" + prefix + ".pcplog")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	defer logFile.Close()
 
 	pipe, err := cmd.StdoutPipe()
 	if err != nil {
@@ -43,8 +39,9 @@ func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, prefix s
 		// Get names of the columns.
 		scanner.Scan()
 
-		// Write to logfile.
-		logFile.WriteString(scanner.Text() + "\n")
+		// Write to logfile
+		logMType <- elecLogDef.PCP
+		logMsg <- scanner.Text()
 
 		headers := strings.Split(scanner.Text(), ",")
 
@@ -79,9 +76,11 @@ func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, prefix s
 		for scanner.Scan() {
 
 			if *logging {
-				log.Println("Logging PCP...")
+				logMType <- elecLogDef.GENERAL
+				logMsg <- "Logging PCP..."
 				split := strings.Split(scanner.Text(), ",")
-				logFile.WriteString(scanner.Text() + "\n")
+				logMType <- elecLogDef.PCP
+				logMsg <- scanner.Text()
 
 				totalPower := 0.0
 				for _, powerIndex := range powerIndexes {
@@ -92,7 +91,8 @@ func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, prefix s
 					powerHistories[host].Value = power
 					powerHistories[host] = powerHistories[host].Next()
 
-					log.Printf("Host: %s, Power: %f", indexToHost[powerIndex], (power * pcp.RAPLUnits))
+					logMType <- elecLogDef.GENERAL
+					logMsg <- fmt.Sprintf("Host: %s, Power: %f", indexToHost[powerIndex], (power * pcp.RAPLUnits))
 
 					totalPower += power
 				}
@@ -103,11 +103,13 @@ func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, prefix s
 
 				clusterMean := pcp.AverageClusterPowerHistory(clusterPowerHist)
 
-				log.Printf("Total power: %f, %d Sec Avg: %f", clusterPower, clusterPowerHist.Len(), clusterMean)
+				logMType <- elecLogDef.GENERAL
+				logMsg <- fmt.Sprintf("Total power: %f, %d Sec Avg: %f", clusterPower, clusterPowerHist.Len(), clusterMean)
 
 				if clusterMean > hiThreshold {
-					log.Printf("Need to cap a node")
-					// Create statics for all victims and choose one to cap.
+					logMType <- elecLogDef.GENERAL
+					logMsg <- "Need to cap a node"
+					// Create statics for all victims and choose one to cap
 					victims := make([]pcp.Victim, 0, 8)
 
 					// TODO: Just keep track of the largest to reduce fron nlogn to n
@@ -127,9 +129,11 @@ func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, prefix s
 						if !cappedHosts[victim.Host] {
 							cappedHosts[victim.Host] = true
 							orderCapped = append(orderCapped, victim.Host)
-							log.Printf("Capping Victim %s Avg. Wattage: %f", victim.Host, victim.Watts*pcp.RAPLUnits)
+							logMType <- elecLogDef.GENERAL
+							logMsg <- fmt.Sprintf("Capping Victim %s Avg. Wattage: %f", victim.Host, victim.Watts * pcp.RAPLUnits)
 							if err := rapl.Cap(victim.Host, "rapl", 50); err != nil {
-								log.Print("Error capping host")
+								logMType <- elecLogDef.ERROR
+								logMsg <- "Error capping host"
 							}
 							break // Only cap one machine at at time.
 						}
@@ -143,8 +147,11 @@ func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, prefix s
 						cappedHosts[host] = false
 						// User RAPL package to send uncap.
 						log.Printf("Uncapping host %s", host)
+						logMType <- elecLogDef.GENERAL
+						logMsg <- fmt.Sprintf("Uncapped host %s", host)
 						if err := rapl.Cap(host, "rapl", 100); err != nil {
-							log.Print("Error uncapping host")
+							logMType <- elecLogDef.ERROR
+							logMsg <- "Error capping host"
 						}
 					}
 				}
@@ -154,7 +161,8 @@ func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, prefix s
 		}
 	}(logging, hiThreshold, loThreshold)
 
-	log.Println("PCP logging started")
+	logMType <- elecLogDef.GENERAL
+	logMsg <- "PCP logging started"
 
 	if err := cmd.Start(); err != nil {
 		log.Fatal(err)
@@ -164,7 +172,8 @@ func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, prefix s
 
 	select {
 	case <-quit:
-		log.Println("Stopping PCP logging in 5 seconds")
+		logMType <- elecLogDef.GENERAL
+		logMsg <- "Stopping PCP logging in 5 seconds"
 		time.Sleep(5 * time.Second)
 
 		// http://stackoverflow.com/questions/22470193/why-wont-go-kill-a-child-process-correctly

@@ -5,11 +5,12 @@ import (
 	"bitbucket.org/sunybingcloud/elektron/pcp"
 	"bitbucket.org/sunybingcloud/elektron/rapl"
 	"bitbucket.org/sunybingcloud/elektron/utilities"
+	elecLogDef "bitbucket.org/sunybingcloud/elektron/logging/def"
 	"bufio"
 	"container/ring"
+	"fmt"
 	"log"
 	"math"
-	"os"
 	"os/exec"
 	"sort"
 	"strconv"
@@ -28,22 +29,17 @@ func getNextCapValue(curCapValue float64, precision int) float64 {
 	return float64(round(curCapValue*output)) / output
 }
 
-func StartPCPLogAndProgressiveExtremaCap(quit chan struct{}, logging *bool, prefix string, hiThreshold, loThreshold float64) {
-	log.Println("Inside Log and Progressive Extrema")
+func StartPCPLogAndProgressiveExtremaCap(quit chan struct{}, logging *bool, hiThreshold, loThreshold float64,
+	logMType chan elecLogDef.LogMessageType, logMsg chan string) {
+
 	const pcpCommand string = "pmdumptext -m -l -f '' -t 1.0 -d , -c config"
 	cmd := exec.Command("sh", "-c", pcpCommand)
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
 	if hiThreshold < loThreshold {
-		log.Println("High threshold is lower than low threshold!")
+		logMType <- elecLogDef.GENERAL
+		logMsg <- "High threshold is lower than low threshold!"
 	}
-
-	logFile, err := os.Create("./" + prefix + ".pcplog")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	defer logFile.Close()
 
 	pipe, err := cmd.StdoutPipe()
 	if err != nil {
@@ -57,8 +53,9 @@ func StartPCPLogAndProgressiveExtremaCap(quit chan struct{}, logging *bool, pref
 		// Get names of the columns.
 		scanner.Scan()
 
-		// Write to logfile.
-		logFile.WriteString(scanner.Text() + "\n")
+		// Write to logfile
+		logMType <- elecLogDef.PCP
+		logMsg <- scanner.Text()
 
 		headers := strings.Split(scanner.Text(), ",")
 
@@ -97,9 +94,11 @@ func StartPCPLogAndProgressiveExtremaCap(quit chan struct{}, logging *bool, pref
 
 		for scanner.Scan() {
 			if *logging {
-				log.Println("Logging PCP...")
+				logMType <- elecLogDef.GENERAL
+				logMsg <- "Logging PCP..."
 				split := strings.Split(scanner.Text(), ",")
-				logFile.WriteString(scanner.Text() + "\n")
+				logMType <- elecLogDef.PCP
+				logMsg <- scanner.Text()
 
 				totalPower := 0.0
 				for _, powerIndex := range powerIndexes {
@@ -110,7 +109,9 @@ func StartPCPLogAndProgressiveExtremaCap(quit chan struct{}, logging *bool, pref
 					powerHistories[host].Value = power
 					powerHistories[host] = powerHistories[host].Next()
 
-					log.Printf("Host: %s, Power: %f", indexToHost[powerIndex], (power * pcp.RAPLUnits))
+					logMType <- elecLogDef.GENERAL
+					logMsg <- fmt.Sprintf("Host: %s, Power %f",
+						indexToHost[powerIndex], (power * pcp.RAPLUnits))
 
 					totalPower += power
 				}
@@ -121,13 +122,17 @@ func StartPCPLogAndProgressiveExtremaCap(quit chan struct{}, logging *bool, pref
 
 				clusterMean := pcp.AverageClusterPowerHistory(clusterPowerHist)
 
-				log.Printf("Total power: %f, %d Sec Avg: %f", clusterPower, clusterPowerHist.Len(), clusterMean)
+				logMType <- elecLogDef.GENERAL
+				logMsg <- fmt.Sprintf("Total power: %f, %d Sec Avg: %f", clusterPower, clusterPowerHist.Len(), clusterMean)
 
 				if clusterMean >= hiThreshold {
-					log.Println("Need to cap a node")
-					log.Printf("Cap values of capped victims: %v", cappedVictims)
-					log.Printf("Cap values of victims to uncap: %v", orderCappedVictims)
-					// Create statics for all victims and choose one to cap.
+					logMType <- elecLogDef.GENERAL
+					logMsg <- "Need to cap a node"
+					logMType <- elecLogDef.GENERAL
+					logMsg <- fmt.Sprintf("Cap values of capped victims: %v", cappedVictims)
+					logMType <- elecLogDef.GENERAL
+					logMsg <- fmt.Sprintf("Cap values of victims to uncap: %v", orderCappedVictims)
+					// Create statics for all victims and choose one to cap
 					victims := make([]pcp.Victim, 0, 8)
 
 					// TODO: Just keep track of the largest to reduce fron nlogn to n
@@ -153,10 +158,12 @@ func StartPCPLogAndProgressiveExtremaCap(quit chan struct{}, logging *bool, pref
 							}
 							// Need to cap this victim.
 							if err := rapl.Cap(victims[i].Host, "rapl", 50.0); err != nil {
-								log.Printf("Error capping host %s", victims[i].Host)
+								logMType <- elecLogDef.GENERAL
+								logMsg <- fmt.Sprintf("Error capping host %s", victims[i].Host)
 							} else {
-								log.Printf("Capped host[%s] at %f", victims[i].Host, 50.0)
-								// Keeping track of this victim and it's cap value.
+								logMType <- elecLogDef.GENERAL
+								logMsg <- fmt.Sprintf("Capped host[%s] at %f", victims[i].Host, 50.0)
+								// Keeping track of this victim and it's cap value
 								cappedVictims[victims[i].Host] = 50.0
 								newVictimFound = true
 								// This node can be uncapped and hence adding to orderCapped.
@@ -178,11 +185,13 @@ func StartPCPLogAndProgressiveExtremaCap(quit chan struct{}, logging *bool, pref
 							if capValue > constants.LowerCapLimit {
 								newCapValue := getNextCapValue(capValue, 2)
 								if err := rapl.Cap(alreadyCappedHosts[i], "rapl", newCapValue); err != nil {
-									log.Printf("Error capping host[%s]", alreadyCappedHosts[i])
+									logMType <- elecLogDef.ERROR
+									logMsg <- fmt.Sprintf("Error capping host[%s]", alreadyCappedHosts[i])
 								} else {
 									// Successful cap
-									log.Printf("Capped host[%s] at %f", alreadyCappedHosts[i], newCapValue)
-									// Checking whether this victim can be capped further.
+									logMType <- elecLogDef.GENERAL
+									logMsg <- fmt.Sprintf("Capped host[%s] at %f", alreadyCappedHosts[i], newCapValue)
+									// Checking whether this victim can be capped further
 									if newCapValue <= constants.LowerCapLimit {
 										// Deleting victim from cappedVictims.
 										delete(cappedVictims, alreadyCappedHosts[i])
@@ -204,14 +213,18 @@ func StartPCPLogAndProgressiveExtremaCap(quit chan struct{}, logging *bool, pref
 							}
 						}
 						if !canCapAlreadyCappedVictim {
-							log.Println("No Victim left to cap.")
+							logMType <- elecLogDef.GENERAL
+							logMsg <- "No Victim left to cap."
 						}
 					}
 
 				} else if clusterMean < loThreshold {
-					log.Println("Need to uncap a node")
-					log.Printf("Cap values of capped victims: %v", cappedVictims)
-					log.Printf("Cap values of victims to uncap: %v", orderCappedVictims)
+					logMType <- elecLogDef.GENERAL
+					logMsg <- "Need to uncap a node"
+					logMType <- elecLogDef.GENERAL
+					logMsg <- fmt.Sprintf("Cap values of capped victims: %v", cappedVictims)
+					logMType <- elecLogDef.GENERAL
+					logMsg <- fmt.Sprintf("Cap values of victims to uncap: %v", orderCappedVictims)
 					if len(orderCapped) > 0 {
 						// We pick the host that is capped the most to uncap.
 						orderCappedToSort := utilities.GetPairList(orderCappedVictims)
@@ -221,13 +234,15 @@ func StartPCPLogAndProgressiveExtremaCap(quit chan struct{}, logging *bool, pref
 						// This is a floating point operation and might suffer from precision loss.
 						newUncapValue := orderCappedVictims[hostToUncap] * 2.0
 						if err := rapl.Cap(hostToUncap, "rapl", newUncapValue); err != nil {
-							log.Printf("Error uncapping host[%s]", hostToUncap)
+							logMType <- elecLogDef.ERROR
+							logMsg <- fmt.Sprintf("Error uncapping host[%s]", hostToUncap)
 						} else {
-							// Successful uncap.
-							log.Printf("Uncapped host[%s] to %f", hostToUncap, newUncapValue)
-							// Can we uncap this host further. If not, then we remove its entry from orderCapped.
-							if newUncapValue >= 100.0 { // Can compare using ==
-								// Deleting entry from orderCapped.
+							// Successful uncap
+							logMType <- elecLogDef.GENERAL
+							logMsg <- fmt.Sprintf("Uncapped host[%s] to %f", hostToUncap, newUncapValue)
+							// Can we uncap this host further. If not, then we remove its entry from orderCapped
+							if newUncapValue >= 100.0 { // can compare using ==
+								// Deleting entry from orderCapped
 								for i, victimHost := range orderCapped {
 									if victimHost == hostToUncap {
 										orderCapped = append(orderCapped[:i], orderCapped[i+1:]...)
@@ -245,7 +260,8 @@ func StartPCPLogAndProgressiveExtremaCap(quit chan struct{}, logging *bool, pref
 							}
 						}
 					} else {
-						log.Println("No host staged for Uncapping")
+						logMType <- elecLogDef.GENERAL
+						logMsg <- "No host staged for Uncapped"
 					}
 				}
 			}
@@ -254,7 +270,8 @@ func StartPCPLogAndProgressiveExtremaCap(quit chan struct{}, logging *bool, pref
 
 	}(logging, hiThreshold, loThreshold)
 
-	log.Println("PCP logging started")
+	logMType <- elecLogDef.GENERAL
+	logMsg <- "PCP logging started"
 
 	if err := cmd.Start(); err != nil {
 		log.Fatal(err)
@@ -264,7 +281,8 @@ func StartPCPLogAndProgressiveExtremaCap(quit chan struct{}, logging *bool, pref
 
 	select {
 	case <-quit:
-		log.Println("Stopping PCP logging in 5 seconds")
+		logMType <- elecLogDef.GENERAL
+		logMsg <- "Stopping PCP logging in 5 seconds"
 		time.Sleep(5 * time.Second)
 
 		// http://stackoverflow.com/questions/22470193/why-wont-go-kill-a-child-process-correctly
