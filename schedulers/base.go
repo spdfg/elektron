@@ -12,6 +12,7 @@ import (
 	"log"
 	"sync"
 	"time"
+	"bitbucket.org/sunybingcloud/elektron/utilities"
 )
 
 type baseScheduler struct {
@@ -27,6 +28,7 @@ type baseScheduler struct {
 	running          map[string]map[string]bool
 	wattsAsAResource bool
 	classMapWatts    bool
+	totalResourceAvailabilityRecorded bool
 
 	// First set of PCP values are garbage values, signal to logger to start recording when we're
 	// about to schedule a new task
@@ -162,6 +164,7 @@ func (s *baseScheduler) Disconnected(sched.SchedulerDriver) {
 }
 
 func (s *baseScheduler) ResourceOffers(driver sched.SchedulerDriver, offers []*mesos.Offer) {
+        utilities.RecordTotalResourceAvailability(offers)
 	s.curSchedPolicy.ConsumeOffers(s, driver, offers)
 }
 
@@ -170,6 +173,9 @@ func (s *baseScheduler) StatusUpdate(driver sched.SchedulerDriver, status *mesos
 	if *status.State == mesos.TaskState_TASK_RUNNING {
 		s.tasksRunning++
 	} else if IsTerminal(status.State) {
+		// Update resource availability.
+		utilities.ResourceAvailabilityUpdate("ON_TASK_TERMINAL_STATE",
+			*status.TaskId, *status.SlaveId)
 		delete(s.running[status.GetSlaveId().GoString()], *status.TaskId.Value)
 		s.tasksRunning--
 		if s.tasksRunning == 0 {

@@ -5,6 +5,10 @@ import (
 	"bitbucket.org/sunybingcloud/elektron/def"
 	"errors"
 	elecLogDef "bitbucket.org/sunybingcloud/elektron/logging/def"
+	"bitbucket.org/sunybingcloud/elektron/utilities"
+	"bitbucket.org/sunybingcloud/elektron/utilities/mesosUtils"
+	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
+	sched "github.com/mesos/mesos-go/api/v0/scheduler"
 )
 
 func coLocated(tasks map[string]bool, s baseScheduler) {
@@ -118,4 +122,15 @@ func WithSchedPolSwitchEnabled(enableSchedPolicySwitch bool) schedPolicyOption {
 		s.(*baseScheduler).schedPolSwitchEnabled = enableSchedPolicySwitch
 		return nil
 	}
+}
+
+// Launch tasks.
+func LaunchTasks(offerIDs []*mesos.OfferID, tasksToLaunch []*mesos.TaskInfo, driver sched.SchedulerDriver) error {
+	driver.LaunchTasks(offerIDs, tasksToLaunch, mesosUtils.DefaultFilter)
+	// Update resource availability
+	var err error
+        for _, task := range tasksToLaunch {
+		err = utilities.ResourceAvailabilityUpdate("ON_TASK_ACTIVE_STATE", *task.TaskId, *task.SlaveId)
+	}
+	return err
 }

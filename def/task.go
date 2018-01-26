@@ -36,6 +36,7 @@ func TasksFromJSON(uri string) ([]Task, error) {
 		return nil, errors.Wrap(err, "Error unmarshalling")
 	}
 
+	initTaskResourceRequirements(tasks)
 	return tasks, nil
 }
 

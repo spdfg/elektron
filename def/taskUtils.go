@@ -4,6 +4,8 @@ import (
 	"github.com/mash/gokmeans"
 	"log"
 	"sort"
+	"errors"
+	"fmt"
 )
 
 // Information about a cluster of tasks.
@@ -121,4 +123,39 @@ func SortTasks(ts []Task, sb sortBy) {
 	sort.SliceStable(ts, func(i, j int) bool {
 		return sb(&ts[i]) <= sb(&ts[j])
 	})
+}
+
+// Map taskIDs to resource requirements.
+type TaskResources struct {
+	CPU   float64
+	Ram   float64
+	Watts float64
+}
+
+var taskResourceRequirement map[string]*TaskResources
+
+// Record resource requirements for all the tasks.
+func initTaskResourceRequirements(tasks []Task) {
+	taskResourceRequirement = make(map[string]*TaskResources)
+	baseTaskID := "electron-"
+	for _, task := range tasks {
+		for i := *task.Instances; i > 0; i-- {
+			taskID := fmt.Sprintf("%s-%d", baseTaskID + task.Name, *task.Instances)
+			taskResourceRequirement[taskID] = &TaskResources{
+				CPU: task.CPU,
+				Ram: task.RAM,
+				Watts: task.Watts,
+			}
+		}
+	}
+}
+
+// Retrieve the resource requirement of a task specified by the TaskID
+func GetResourceRequirement(taskID string) (TaskResources, error) {
+	if tr, ok := taskResourceRequirement[taskID]; ok {
+		return *tr, nil
+	} else {
+		// Shouldn't be here.
+		return TaskResources{}, errors.New("Invalid TaskID: " + taskID)
+	}
 }
