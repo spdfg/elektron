@@ -1,11 +1,11 @@
 package def
 
 import (
-	"github.com/mash/gokmeans"
-	"log"
-	"sort"
 	"errors"
 	"fmt"
+	"github.com/mdesenfants/gokmeans"
+	"log"
+	"sort"
 )
 
 // Information about a cluster of tasks.
@@ -140,10 +140,10 @@ func initTaskResourceRequirements(tasks []Task) {
 	baseTaskID := "electron-"
 	for _, task := range tasks {
 		for i := *task.Instances; i > 0; i-- {
-			taskID := fmt.Sprintf("%s-%d", baseTaskID + task.Name, i)
+			taskID := fmt.Sprintf("%s-%d", baseTaskID+task.Name, i)
 			taskResourceRequirement[taskID] = &TaskResources{
-				CPU: task.CPU,
-				Ram: task.RAM,
+				CPU:   task.CPU,
+				Ram:   task.RAM,
 				Watts: task.Watts,
 			}
 		}

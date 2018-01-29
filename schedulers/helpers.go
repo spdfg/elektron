@@ -3,12 +3,12 @@ package schedulers
 import (
 	"bitbucket.org/sunybingcloud/elektron/constants"
 	"bitbucket.org/sunybingcloud/elektron/def"
-	"errors"
 	elecLogDef "bitbucket.org/sunybingcloud/elektron/logging/def"
 	"bitbucket.org/sunybingcloud/elektron/utilities"
 	"bitbucket.org/sunybingcloud/elektron/utilities/mesosUtils"
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 	sched "github.com/mesos/mesos-go/api/v0/scheduler"
+	"github.com/pkg/errors"
 	"log"
 )
 
@@ -130,7 +130,7 @@ func LaunchTasks(offerIDs []*mesos.OfferID, tasksToLaunch []*mesos.TaskInfo, dri
 	driver.LaunchTasks(offerIDs, tasksToLaunch, mesosUtils.DefaultFilter)
 	// Update resource availability
 	var err error
-        for _, task := range tasksToLaunch {
+	for _, task := range tasksToLaunch {
 		err = utilities.ResourceAvailabilityUpdate("ON_TASK_ACTIVE_STATE", *task.TaskId, *task.SlaveId)
 		if err != nil {
 			log.Println(err)

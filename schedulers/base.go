@@ -3,6 +3,7 @@ package schedulers
 import (
 	"bitbucket.org/sunybingcloud/elektron/def"
 	elecLogDef "bitbucket.org/sunybingcloud/elektron/logging/def"
+	"bitbucket.org/sunybingcloud/elektron/utilities"
 	"bytes"
 	"fmt"
 	"github.com/golang/protobuf/proto"
@@ -12,7 +13,6 @@ import (
 	"log"
 	"sync"
 	"time"
-	"bitbucket.org/sunybingcloud/elektron/utilities"
 )
 
 type baseScheduler struct {
@@ -21,13 +21,13 @@ type baseScheduler struct {
 	// Current scheduling policy used for resource offer consumption.
 	curSchedPolicy SchedPolicyState
 
-	tasksCreated     int
-	tasksRunning     int
-	tasks            []def.Task
-	metrics          map[string]def.Metric
-	running          map[string]map[string]bool
-	wattsAsAResource bool
-	classMapWatts    bool
+	tasksCreated                      int
+	tasksRunning                      int
+	tasks                             []def.Task
+	metrics                           map[string]def.Metric
+	running                           map[string]map[string]bool
+	wattsAsAResource                  bool
+	classMapWatts                     bool
 	totalResourceAvailabilityRecorded bool
 
 	// First set of PCP values are garbage values, signal to logger to start recording when we're
@@ -164,7 +164,7 @@ func (s *baseScheduler) Disconnected(sched.SchedulerDriver) {
 }
 
 func (s *baseScheduler) ResourceOffers(driver sched.SchedulerDriver, offers []*mesos.Offer) {
-        utilities.RecordTotalResourceAvailability(offers)
+	utilities.RecordTotalResourceAvailability(offers)
 	s.curSchedPolicy.ConsumeOffers(s, driver, offers)
 }
 

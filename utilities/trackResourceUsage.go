@@ -17,9 +17,9 @@ type TrackResourceUsage struct {
 // This information is maintained for each node in the cluster.
 type ResourceCount struct {
 	// Total resources available.
-	TotalCPU    float64
-	TotalRAM    float64
-	TotalWatts  float64
+	TotalCPU   float64
+	TotalRAM   float64
+	TotalWatts float64
 
 	// Resources currently unused.
 	UnusedCPU   float64
@@ -106,7 +106,7 @@ var resourceAvailabilityUpdateScenario = map[string]func(mesos.TaskID, mesos.Sla
 		if taskResources, err := def.GetResourceRequirement(*taskID.Value); err != nil {
 			return err
 		} else {
-                        // Checking if first resource offer already recorded for slaveID.
+			// Checking if first resource offer already recorded for slaveID.
 			if resCount, ok := tru.perHostResourceAvailability[*slaveID.Value]; ok {
 				resCount.DecrUnusedResources(taskResources)
 			} else {
