@@ -140,7 +140,7 @@ func initTaskResourceRequirements(tasks []Task) {
 	baseTaskID := "electron-"
 	for _, task := range tasks {
 		for i := *task.Instances; i > 0; i-- {
-			taskID := fmt.Sprintf("%s-%d", baseTaskID + task.Name, *task.Instances)
+			taskID := fmt.Sprintf("%s-%d", baseTaskID + task.Name, i)
 			taskResourceRequirement[taskID] = &TaskResources{
 				CPU: task.CPU,
 				Ram: task.RAM,

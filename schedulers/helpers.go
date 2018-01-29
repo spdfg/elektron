@@ -9,6 +9,7 @@ import (
 	"bitbucket.org/sunybingcloud/elektron/utilities/mesosUtils"
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 	sched "github.com/mesos/mesos-go/api/v0/scheduler"
+	"log"
 )
 
 func coLocated(tasks map[string]bool, s baseScheduler) {
@@ -131,6 +132,9 @@ func LaunchTasks(offerIDs []*mesos.OfferID, tasksToLaunch []*mesos.TaskInfo, dri
 	var err error
         for _, task := range tasksToLaunch {
 		err = utilities.ResourceAvailabilityUpdate("ON_TASK_ACTIVE_STATE", *task.TaskId, *task.SlaveId)
+		if err != nil {
+			log.Println(err)
+		}
 	}
 	return err
 }
