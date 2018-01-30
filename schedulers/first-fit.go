@@ -12,7 +12,7 @@ import (
 
 // Decides if to take an offer or not
 func (s *FirstFit) takeOffer(spc SchedPolicyContext, offer *mesos.Offer, task def.Task) bool {
-	baseSchedRef := spc.(*baseScheduler)
+	baseSchedRef := spc.(*BaseScheduler)
 	cpus, mem, watts := offerUtils.OfferAgg(offer)
 
 	//TODO: Insert watts calculation here instead of taking them as a parameter
@@ -36,7 +36,7 @@ type FirstFit struct {
 
 func (s *FirstFit) ConsumeOffers(spc SchedPolicyContext, driver sched.SchedulerDriver, offers []*mesos.Offer) {
 	fmt.Println("FirstFit scheduling...")
-	baseSchedRef := spc.(*baseScheduler)
+	baseSchedRef := spc.(*BaseScheduler)
 	baseSchedRef.LogOffersReceived(offers)
 
 	for _, offer := range offers {

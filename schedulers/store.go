@@ -26,7 +26,7 @@ func buildScheduler(s sched.Scheduler, opts ...schedPolicyOption) {
 }
 
 func SchedFactory(opts ...schedPolicyOption) sched.Scheduler {
-	s := &baseScheduler{}
+	s := &BaseScheduler{}
 	buildScheduler(s, opts...)
 	return s
 }

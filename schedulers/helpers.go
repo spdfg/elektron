@@ -12,7 +12,7 @@ import (
 	"log"
 )
 
-func coLocated(tasks map[string]bool, s baseScheduler) {
+func coLocated(tasks map[string]bool, s BaseScheduler) {
 
 	for task := range tasks {
 		s.Log(elecLogDef.GENERAL, task)
@@ -39,7 +39,7 @@ func WithSchedPolicy(schedPolicyName string) schedPolicyOption {
 		if schedPolicy, ok := SchedPolicies[schedPolicyName]; !ok {
 			return errors.New("Incorrect scheduling policy.")
 		} else {
-			s.(*baseScheduler).curSchedPolicy = schedPolicy
+			s.(*BaseScheduler).curSchedPolicy = schedPolicy
 			return nil
 		}
 	}
@@ -50,7 +50,7 @@ func WithTasks(ts []def.Task) schedPolicyOption {
 		if ts == nil {
 			return errors.New("Task[] is empty.")
 		} else {
-			s.(*baseScheduler).tasks = ts
+			s.(*BaseScheduler).tasks = ts
 			return nil
 		}
 	}
@@ -58,21 +58,21 @@ func WithTasks(ts []def.Task) schedPolicyOption {
 
 func WithWattsAsAResource(waar bool) schedPolicyOption {
 	return func(s ElectronScheduler) error {
-		s.(*baseScheduler).wattsAsAResource = waar
+		s.(*BaseScheduler).wattsAsAResource = waar
 		return nil
 	}
 }
 
 func WithClassMapWatts(cmw bool) schedPolicyOption {
 	return func(s ElectronScheduler) error {
-		s.(*baseScheduler).classMapWatts = cmw
+		s.(*BaseScheduler).classMapWatts = cmw
 		return nil
 	}
 }
 
 func WithRecordPCP(recordPCP *bool) schedPolicyOption {
 	return func(s ElectronScheduler) error {
-		s.(*baseScheduler).RecordPCP = recordPCP
+		s.(*BaseScheduler).RecordPCP = recordPCP
 		return nil
 	}
 }
@@ -82,7 +82,7 @@ func WithShutdown(shutdown chan struct{}) schedPolicyOption {
 		if shutdown == nil {
 			return errors.New("Shutdown channel is nil.")
 		} else {
-			s.(*baseScheduler).Shutdown = shutdown
+			s.(*BaseScheduler).Shutdown = shutdown
 			return nil
 		}
 	}
@@ -93,7 +93,7 @@ func WithDone(done chan struct{}) schedPolicyOption {
 		if done == nil {
 			return errors.New("Done channel is nil.")
 		} else {
-			s.(*baseScheduler).Done = done
+			s.(*BaseScheduler).Done = done
 			return nil
 		}
 	}
@@ -104,7 +104,7 @@ func WithPCPLog(pcpLog chan struct{}) schedPolicyOption {
 		if pcpLog == nil {
 			return errors.New("PCPLog channel is nil.")
 		} else {
-			s.(*baseScheduler).PCPLog = pcpLog
+			s.(*BaseScheduler).PCPLog = pcpLog
 			return nil
 		}
 	}
@@ -112,15 +112,15 @@ func WithPCPLog(pcpLog chan struct{}) schedPolicyOption {
 
 func WithLoggingChannels(lmt chan elecLogDef.LogMessageType, msg chan string) schedPolicyOption {
 	return func(s ElectronScheduler) error {
-		s.(*baseScheduler).logMsgType = lmt
-		s.(*baseScheduler).logMsg = msg
+		s.(*BaseScheduler).logMsgType = lmt
+		s.(*BaseScheduler).logMsg = msg
 		return nil
 	}
 }
 
 func WithSchedPolSwitchEnabled(enableSchedPolicySwitch bool) schedPolicyOption {
 	return func(s ElectronScheduler) error {
-		s.(*baseScheduler).schedPolSwitchEnabled = enableSchedPolicySwitch
+		s.(*BaseScheduler).schedPolSwitchEnabled = enableSchedPolicySwitch
 		return nil
 	}
 }

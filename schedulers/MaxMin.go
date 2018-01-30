@@ -14,7 +14,7 @@ import (
 // Decides if to take an offer or not
 func (s *MaxMin) takeOffer(spc SchedPolicyContext, offer *mesos.Offer, task def.Task,
 	totalCPU, totalRAM, totalWatts float64) bool {
-	baseSchedRef := spc.(*baseScheduler)
+	baseSchedRef := spc.(*BaseScheduler)
 	cpus, mem, watts := offerUtils.OfferAgg(offer)
 
 	//TODO: Insert watts calculation here instead of taking them as a parameter
@@ -47,7 +47,7 @@ func (s *MaxMin) CheckFit(
 	totalRAM *float64,
 	totalWatts *float64) (bool, *mesos.TaskInfo) {
 
-	baseSchedRef := spc.(*baseScheduler)
+	baseSchedRef := spc.(*BaseScheduler)
 	// Does the task fit.
 	if s.takeOffer(spc, offer, task, *totalCPU, *totalRAM, *totalWatts) {
 
@@ -78,7 +78,7 @@ func (s *MaxMin) CheckFit(
 
 func (s *MaxMin) ConsumeOffers(spc SchedPolicyContext, driver sched.SchedulerDriver, offers []*mesos.Offer) {
 	fmt.Println("Max-Min scheduling...")
-	baseSchedRef := spc.(*baseScheduler)
+	baseSchedRef := spc.(*BaseScheduler)
 	def.SortTasks(baseSchedRef.tasks, def.SortByWatts)
 	baseSchedRef.LogOffersReceived(offers)
 

@@ -14,7 +14,7 @@ import (
 // Decides if to take an offer or not
 func (s *BinPackSortedWatts) takeOffer(spc SchedPolicyContext, offer *mesos.Offer, task def.Task, totalCPU, totalRAM, totalWatts float64) bool {
 
-	baseSchedRef := spc.(*baseScheduler)
+	baseSchedRef := spc.(*BaseScheduler)
 	cpus, mem, watts := offerUtils.OfferAgg(offer)
 
 	//TODO: Insert watts calculation here instead of taking them as a parameter
@@ -37,7 +37,7 @@ type BinPackSortedWatts struct {
 
 func (s *BinPackSortedWatts) ConsumeOffers(spc SchedPolicyContext, driver sched.SchedulerDriver, offers []*mesos.Offer) {
 	fmt.Println("BPSW scheduling...")
-	baseSchedRef := spc.(*baseScheduler)
+	baseSchedRef := spc.(*BaseScheduler)
 	def.SortTasks(baseSchedRef.tasks, def.SortByWatts)
 	baseSchedRef.LogOffersReceived(offers)
 

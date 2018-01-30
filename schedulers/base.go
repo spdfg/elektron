@@ -15,7 +15,7 @@ import (
 	"time"
 )
 
-type baseScheduler struct {
+type BaseScheduler struct {
 	ElectronScheduler
 	SchedPolicyContext
 	// Current scheduling policy used for resource offer consumption.
@@ -57,7 +57,7 @@ type baseScheduler struct {
 	schedPolSwitchEnabled bool
 }
 
-func (s *baseScheduler) init(opts ...schedPolicyOption) {
+func (s *BaseScheduler) init(opts ...schedPolicyOption) {
 	for _, opt := range opts {
 		// applying options
 		if err := opt(s); err != nil {
@@ -68,11 +68,11 @@ func (s *baseScheduler) init(opts ...schedPolicyOption) {
 	s.mutex = sync.Mutex{}
 }
 
-func (s *baseScheduler) SwitchSchedPol(newSchedPol SchedPolicyState) {
+func (s *BaseScheduler) SwitchSchedPol(newSchedPol SchedPolicyState) {
 	s.curSchedPolicy = newSchedPol
 }
 
-func (s *baseScheduler) newTask(offer *mesos.Offer, task def.Task) *mesos.TaskInfo {
+func (s *BaseScheduler) newTask(offer *mesos.Offer, task def.Task) *mesos.TaskInfo {
 	taskName := fmt.Sprintf("%s-%d", task.Name, *task.Instances)
 	s.tasksCreated++
 
@@ -125,22 +125,22 @@ func (s *baseScheduler) newTask(offer *mesos.Offer, task def.Task) *mesos.TaskIn
 	}
 }
 
-func (s *baseScheduler) OfferRescinded(_ sched.SchedulerDriver, offerID *mesos.OfferID) {
+func (s *BaseScheduler) OfferRescinded(_ sched.SchedulerDriver, offerID *mesos.OfferID) {
 	s.LogOfferRescinded(offerID)
 }
-func (s *baseScheduler) SlaveLost(_ sched.SchedulerDriver, slaveID *mesos.SlaveID) {
+func (s *BaseScheduler) SlaveLost(_ sched.SchedulerDriver, slaveID *mesos.SlaveID) {
 	s.LogSlaveLost(slaveID)
 }
-func (s *baseScheduler) ExecutorLost(_ sched.SchedulerDriver, executorID *mesos.ExecutorID,
+func (s *BaseScheduler) ExecutorLost(_ sched.SchedulerDriver, executorID *mesos.ExecutorID,
 	slaveID *mesos.SlaveID, status int) {
 	s.LogExecutorLost(executorID, slaveID)
 }
 
-func (s *baseScheduler) Error(_ sched.SchedulerDriver, err string) {
+func (s *BaseScheduler) Error(_ sched.SchedulerDriver, err string) {
 	s.LogMesosError(err)
 }
 
-func (s *baseScheduler) FrameworkMessage(
+func (s *BaseScheduler) FrameworkMessage(
 	driver sched.SchedulerDriver,
 	executorID *mesos.ExecutorID,
 	slaveID *mesos.SlaveID,
@@ -148,27 +148,26 @@ func (s *baseScheduler) FrameworkMessage(
 	s.LogFrameworkMessage(executorID, slaveID, message)
 }
 
-func (s *baseScheduler) Registered(
+func (s *BaseScheduler) Registered(
 	_ sched.SchedulerDriver,
 	frameworkID *mesos.FrameworkID,
 	masterInfo *mesos.MasterInfo) {
 	s.LogFrameworkRegistered(frameworkID, masterInfo)
 }
 
-func (s *baseScheduler) Reregistered(_ sched.SchedulerDriver, masterInfo *mesos.MasterInfo) {
+func (s *BaseScheduler) Reregistered(_ sched.SchedulerDriver, masterInfo *mesos.MasterInfo) {
 	s.LogFrameworkReregistered(masterInfo)
 }
 
-func (s *baseScheduler) Disconnected(sched.SchedulerDriver) {
+func (s *BaseScheduler) Disconnected(sched.SchedulerDriver) {
 	s.LogDisconnected()
 }
 
-func (s *baseScheduler) ResourceOffers(driver sched.SchedulerDriver, offers []*mesos.Offer) {
-	utilities.RecordTotalResourceAvailability(offers)
+func (s *BaseScheduler) ResourceOffers(driver sched.SchedulerDriver, offers []*mesos.Offer) {
 	s.curSchedPolicy.ConsumeOffers(s, driver, offers)
 }
 
-func (s *baseScheduler) StatusUpdate(driver sched.SchedulerDriver, status *mesos.TaskStatus) {
+func (s *BaseScheduler) StatusUpdate(driver sched.SchedulerDriver, status *mesos.TaskStatus) {
 	s.LogTaskStatusUpdate(status)
 	if *status.State == mesos.TaskState_TASK_RUNNING {
 		s.tasksRunning++
@@ -188,14 +187,14 @@ func (s *baseScheduler) StatusUpdate(driver sched.SchedulerDriver, status *mesos
 	}
 }
 
-func (s *baseScheduler) Log(lmt elecLogDef.LogMessageType, msg string) {
+func (s *BaseScheduler) Log(lmt elecLogDef.LogMessageType, msg string) {
 	s.mutex.Lock()
 	s.logMsgType <- lmt
 	s.logMsg <- msg
 	s.mutex.Unlock()
 }
 
-func (s *baseScheduler) LogTaskStarting(ts *def.Task, offer *mesos.Offer) {
+func (s *BaseScheduler) LogTaskStarting(ts *def.Task, offer *mesos.Offer) {
 	lmt := elecLogDef.GENERAL
 	msgColor := elecLogDef.LogMessageColors[lmt]
 	var msg string
@@ -208,7 +207,7 @@ func (s *baseScheduler) LogTaskStarting(ts *def.Task, offer *mesos.Offer) {
 	s.Log(lmt, msg)
 }
 
-func (s *baseScheduler) LogTaskWattsConsideration(ts def.Task, host string, wattsToConsider float64) {
+func (s *BaseScheduler) LogTaskWattsConsideration(ts def.Task, host string, wattsToConsider float64) {
 	lmt := elecLogDef.GENERAL
 	msgColor := elecLogDef.LogMessageColors[lmt]
 	msg := msgColor.Sprintf("Watts considered for task[%s] and host[%s] = %f Watts",
@@ -216,14 +215,14 @@ func (s *baseScheduler) LogTaskWattsConsideration(ts def.Task, host string, watt
 	s.Log(lmt, msg)
 }
 
-func (s *baseScheduler) LogOffersReceived(offers []*mesos.Offer) {
+func (s *BaseScheduler) LogOffersReceived(offers []*mesos.Offer) {
 	lmt := elecLogDef.GENERAL
 	msgColor := elecLogDef.LogMessageColors[lmt]
 	msg := msgColor.Sprintf("Received %d resource offers", len(offers))
 	s.Log(lmt, msg)
 }
 
-func (s *baseScheduler) LogNoPendingTasksDeclineOffers(offer *mesos.Offer) {
+func (s *BaseScheduler) LogNoPendingTasksDeclineOffers(offer *mesos.Offer) {
 	lmt := elecLogDef.WARNING
 	msgColor := elecLogDef.LogMessageColors[lmt]
 	msg := msgColor.Sprintf("DECLINING OFFER for host[%s]... "+
@@ -231,14 +230,14 @@ func (s *baseScheduler) LogNoPendingTasksDeclineOffers(offer *mesos.Offer) {
 	s.Log(lmt, msg)
 }
 
-func (s *baseScheduler) LogNumberOfRunningTasks() {
+func (s *BaseScheduler) LogNumberOfRunningTasks() {
 	lmt := elecLogDef.GENERAL
 	msgColor := elecLogDef.LogMessageColors[lmt]
 	msg := msgColor.Sprintf("Number of tasks still running = %d", s.tasksRunning)
 	s.Log(lmt, msg)
 }
 
-func (s *baseScheduler) LogCoLocatedTasks(slaveID string) {
+func (s *BaseScheduler) LogCoLocatedTasks(slaveID string) {
 	lmt := elecLogDef.GENERAL
 	msgColor := elecLogDef.LogMessageColors[lmt]
 	buffer := bytes.Buffer{}
@@ -250,19 +249,19 @@ func (s *baseScheduler) LogCoLocatedTasks(slaveID string) {
 	s.Log(lmt, msg)
 }
 
-func (s *baseScheduler) LogSchedTrace(taskToSchedule *mesos.TaskInfo, offer *mesos.Offer) {
+func (s *BaseScheduler) LogSchedTrace(taskToSchedule *mesos.TaskInfo, offer *mesos.Offer) {
 	msg := fmt.Sprint(offer.GetHostname() + ":" + taskToSchedule.GetTaskId().GetValue())
 	s.Log(elecLogDef.SCHED_TRACE, msg)
 }
 
-func (s *baseScheduler) LogTerminateScheduler() {
+func (s *BaseScheduler) LogTerminateScheduler() {
 	lmt := elecLogDef.GENERAL
 	msgColor := elecLogDef.LogMessageColors[lmt]
 	msg := msgColor.Sprint("Done scheduling all tasks!")
 	s.Log(lmt, msg)
 }
 
-func (s *baseScheduler) LogInsufficientResourcesDeclineOffer(offer *mesos.Offer,
+func (s *BaseScheduler) LogInsufficientResourcesDeclineOffer(offer *mesos.Offer,
 	offerResources ...interface{}) {
 	lmt := elecLogDef.WARNING
 	msgColor := elecLogDef.LogMessageColors[lmt]
@@ -273,28 +272,28 @@ func (s *baseScheduler) LogInsufficientResourcesDeclineOffer(offer *mesos.Offer,
 	s.Log(lmt, msg)
 }
 
-func (s *baseScheduler) LogOfferRescinded(offerID *mesos.OfferID) {
+func (s *BaseScheduler) LogOfferRescinded(offerID *mesos.OfferID) {
 	lmt := elecLogDef.ERROR
 	msgColor := elecLogDef.LogMessageColors[lmt]
 	msg := msgColor.Sprintf("OFFER RESCINDED: OfferID = %s", offerID)
 	s.Log(lmt, msg)
 }
 
-func (s *baseScheduler) LogSlaveLost(slaveID *mesos.SlaveID) {
+func (s *BaseScheduler) LogSlaveLost(slaveID *mesos.SlaveID) {
 	lmt := elecLogDef.ERROR
 	msgColor := elecLogDef.LogMessageColors[lmt]
 	msg := msgColor.Sprintf("SLAVE LOST: SlaveID = %s", slaveID)
 	s.Log(lmt, msg)
 }
 
-func (s *baseScheduler) LogExecutorLost(executorID *mesos.ExecutorID, slaveID *mesos.SlaveID) {
+func (s *BaseScheduler) LogExecutorLost(executorID *mesos.ExecutorID, slaveID *mesos.SlaveID) {
 	lmt := elecLogDef.ERROR
 	msgColor := elecLogDef.LogMessageColors[lmt]
 	msg := msgColor.Sprintf("EXECUTOR LOST: ExecutorID = %s, SlaveID = %s", executorID, slaveID)
 	s.Log(lmt, msg)
 }
 
-func (s *baseScheduler) LogFrameworkMessage(executorID *mesos.ExecutorID,
+func (s *BaseScheduler) LogFrameworkMessage(executorID *mesos.ExecutorID,
 	slaveID *mesos.SlaveID, message string) {
 	lmt := elecLogDef.GENERAL
 	msgColor := elecLogDef.LogMessageColors[lmt]
@@ -302,21 +301,21 @@ func (s *baseScheduler) LogFrameworkMessage(executorID *mesos.ExecutorID,
 	s.Log(lmt, msg)
 }
 
-func (s *baseScheduler) LogMesosError(err string) {
+func (s *BaseScheduler) LogMesosError(err string) {
 	lmt := elecLogDef.ERROR
 	msgColor := elecLogDef.LogMessageColors[lmt]
 	msg := msgColor.Sprintf("MESOS ERROR: %s", err)
 	s.Log(lmt, msg)
 }
 
-func (s *baseScheduler) LogElectronError(err error) {
+func (s *BaseScheduler) LogElectronError(err error) {
 	lmt := elecLogDef.ERROR
 	msgColor := elecLogDef.LogMessageColors[lmt]
 	msg := msgColor.Sprintf("ELECTRON ERROR: %v", err)
 	s.Log(lmt, msg)
 }
 
-func (s *baseScheduler) LogFrameworkRegistered(frameworkID *mesos.FrameworkID,
+func (s *BaseScheduler) LogFrameworkRegistered(frameworkID *mesos.FrameworkID,
 	masterInfo *mesos.MasterInfo) {
 	lmt := elecLogDef.SUCCESS
 	msgColor := elecLogDef.LogMessageColors[lmt]
@@ -325,21 +324,21 @@ func (s *baseScheduler) LogFrameworkRegistered(frameworkID *mesos.FrameworkID,
 	s.Log(lmt, msg)
 }
 
-func (s *baseScheduler) LogFrameworkReregistered(masterInfo *mesos.MasterInfo) {
+func (s *BaseScheduler) LogFrameworkReregistered(masterInfo *mesos.MasterInfo) {
 	lmt := elecLogDef.GENERAL
 	msgColor := elecLogDef.LogMessageColors[lmt]
 	msg := msgColor.Sprintf("Framework re-registered with master %s", masterInfo)
 	s.Log(lmt, msg)
 }
 
-func (s *baseScheduler) LogDisconnected() {
+func (s *BaseScheduler) LogDisconnected() {
 	lmt := elecLogDef.WARNING
 	msgColor := elecLogDef.LogMessageColors[lmt]
 	msg := msgColor.Sprint("Framework disconnected with master")
 	s.Log(lmt, msg)
 }
 
-func (s *baseScheduler) LogTaskStatusUpdate(status *mesos.TaskStatus) {
+func (s *BaseScheduler) LogTaskStatusUpdate(status *mesos.TaskStatus) {
 	var lmt elecLogDef.LogMessageType
 	switch *status.State {
 	case mesos.TaskState_TASK_ERROR, mesos.TaskState_TASK_FAILED,
