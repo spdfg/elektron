@@ -1,9 +1,9 @@
 package pcp
 
 import (
+	elecLogDef "bitbucket.org/sunybingcloud/elektron/logging/def"
 	"bitbucket.org/sunybingcloud/elektron/pcp"
 	"bitbucket.org/sunybingcloud/elektron/rapl"
-	elecLogDef "bitbucket.org/sunybingcloud/elektron/logging/def"
 	"bufio"
 	"container/ring"
 	"fmt"
@@ -130,7 +130,7 @@ func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, hiThresh
 							cappedHosts[victim.Host] = true
 							orderCapped = append(orderCapped, victim.Host)
 							logMType <- elecLogDef.GENERAL
-							logMsg <- fmt.Sprintf("Capping Victim %s Avg. Wattage: %f", victim.Host, victim.Watts * pcp.RAPLUnits)
+							logMsg <- fmt.Sprintf("Capping Victim %s Avg. Wattage: %f", victim.Host, victim.Watts*pcp.RAPLUnits)
 							if err := rapl.Cap(victim.Host, "rapl", 50); err != nil {
 								logMType <- elecLogDef.ERROR
 								logMsg <- "Error capping host"

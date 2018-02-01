@@ -4,6 +4,7 @@ import (
 	"bitbucket.org/sunybingcloud/elektron/def"
 	elecLogDef "bitbucket.org/sunybingcloud/elektron/logging/def"
 	"bitbucket.org/sunybingcloud/elektron/utilities"
+	"bitbucket.org/sunybingcloud/elektron/utilities/schedUtils"
 	"bytes"
 	"fmt"
 	"github.com/golang/protobuf/proto"
@@ -55,6 +56,17 @@ type BaseScheduler struct {
 
 	// Whether switching of scheduling policies at runtime has been enabled
 	schedPolSwitchEnabled bool
+
+	// Size of window of tasks that can be scheduled in the next offer cycle.
+	// The window size can be adjusted to make the most use of every resource offer.
+	// By default, the schedulingWindow would correspond to all the remaining tasks that haven't yet been scheduled.
+	schedulingWindow int
+
+	// Criteria to resize the schedulingWindow.
+	schedWindowResizeCrit schedUtils.SchedulingWindowResizingCriteria
+	// Window of tasks that the current scheduling policy has to schedule.
+	// Once #schedWindow tasks are scheduled, the current scheduling policy has to stop scheduling.
+	schedWindow int
 }
 
 func (s *BaseScheduler) init(opts ...schedPolicyOption) {
@@ -66,6 +78,7 @@ func (s *BaseScheduler) init(opts ...schedPolicyOption) {
 	}
 	s.running = make(map[string]map[string]bool)
 	s.mutex = sync.Mutex{}
+	s.schedWindowResizeCrit = "fillNextOfferCycle"
 }
 
 func (s *BaseScheduler) SwitchSchedPol(newSchedPol SchedPolicyState) {

@@ -6,18 +6,18 @@ import (
 
 // Names of different scheduling policies.
 const (
-	ff          = "first-fit"
-	bp          = "bin-packing"
-	mgm         = "max-greedymins"
-	mm          = "max-min"
+	ff  = "first-fit"
+	bp  = "bin-packing"
+	mgm = "max-greedymins"
+	mm  = "max-min"
 )
 
 // Scheduling policy factory
 var SchedPolicies map[string]SchedPolicyState = map[string]SchedPolicyState{
-	ff:          &FirstFit{},
-	bp:          &BinPackSortedWatts{},
-	mgm:         &MaxGreedyMins{},
-	mm:          &MaxMin{},
+	ff:  &FirstFit{},
+	bp:  &BinPackSortedWatts{},
+	mgm: &MaxGreedyMins{},
+	mm:  &MaxMin{},
 }
 
 // build the scheduling policy with the options being applied

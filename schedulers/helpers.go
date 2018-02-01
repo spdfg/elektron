@@ -125,7 +125,7 @@ func WithSchedPolSwitchEnabled(enableSchedPolicySwitch bool) schedPolicyOption {
 	}
 }
 
-// Launch tasks.
+// Launch tasks and also update the resource availability for the corresponding host.
 func LaunchTasks(offerIDs []*mesos.OfferID, tasksToLaunch []*mesos.TaskInfo, driver sched.SchedulerDriver) error {
 	driver.LaunchTasks(offerIDs, tasksToLaunch, mesosUtils.DefaultFilter)
 	// Update resource availability

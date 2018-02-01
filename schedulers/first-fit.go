@@ -4,6 +4,7 @@ import (
 	"bitbucket.org/sunybingcloud/elektron/def"
 	"bitbucket.org/sunybingcloud/elektron/utilities/mesosUtils"
 	"bitbucket.org/sunybingcloud/elektron/utilities/offerUtils"
+	"bitbucket.org/sunybingcloud/elektron/utilities/schedUtils"
 	"fmt"
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 	sched "github.com/mesos/mesos-go/api/v0/scheduler"
@@ -103,6 +104,11 @@ func (s *FirstFit) ConsumeOffers(spc SchedPolicyContext, driver sched.SchedulerD
 
 	// Switch scheduling policy only if feature enabled from CLI
 	if baseSchedRef.schedPolSwitchEnabled {
+		// Need to recompute the schedWindow for the next offer cycle.
+		// The next scheduling policy will schedule at max schedWindow number of tasks.
+		baseSchedRef.schedWindow = schedUtils.
+			SchedWindowResizingCritToStrategy[baseSchedRef.schedWindowResizeCrit].Apply(
+			func() interface{} { return baseSchedRef.tasks })
 		// Switching to a random scheduling policy.
 		// TODO: Switch based on some criteria.
 		index := rand.Intn(len(SchedPolicies))

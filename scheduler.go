@@ -2,9 +2,9 @@ package main
 
 import (
 	"bitbucket.org/sunybingcloud/elektron/def"
+	elecLogDef "bitbucket.org/sunybingcloud/elektron/logging/def"
 	"bitbucket.org/sunybingcloud/elektron/pcp"
 	"bitbucket.org/sunybingcloud/elektron/schedulers"
-        elecLogDef "bitbucket.org/sunybingcloud/elektron/logging/def"
 	"flag"
 	"fmt"
 	"github.com/golang/protobuf/proto"
