@@ -3,24 +3,25 @@ package schedUtils
 import (
 	"bitbucket.org/sunybingcloud/elektron/def"
 	"bitbucket.org/sunybingcloud/elektron/utilities"
+	"log"
 )
 
 // Criteria for resizing the scheduling window.
 type SchedulingWindowResizingCriteria string
 
-var SchedWindowResizingCritToStrategy = map[SchedulingWindowResizingCriteria]schedWindowResizingStrategy{
+var SchedWindowResizingCritToStrategy = map[SchedulingWindowResizingCriteria]SchedWindowResizingStrategy{
 	"fillNextOfferCycle": &fillNextOfferCycle{},
 }
 
 // Interface for a scheduling window resizing strategy.
-type schedWindowResizingStrategy interface {
+type SchedWindowResizingStrategy interface {
 	// Apply the window resizing strategy and return the news scheduling window size.
 	Apply(func() interface{}) int
 }
 
 // Scheduling window resizing strategy that attempts to resize the scheduling window
 // to include as many tasks as possible so as to make the most use of the next offer cycle.
-type fillNextOfferCycle struct{}
+type fillNextOfferCycle struct {}
 
 func (s *fillNextOfferCycle) Apply(getArgs func() interface{}) int {
 	return s.apply(getArgs().([]def.Task))
@@ -47,17 +48,23 @@ func (s *fillNextOfferCycle) apply(taskQueue []def.Task) int {
 		return false
 	}
 
+	done := false
 	for _, task := range taskQueue {
 		for i := *task.Instances; i > 0; i-- {
+			log.Printf("Checking if Instance #%d of Task[%s] can be scheduled "+
+				"during the next offer cycle...", i, task.Name)
 			if canSchedule(task) {
 				filledCPU += task.CPU
 				filledRAM += task.RAM
 				newSchedWindow++
 			} else {
+				done = true
 				break
 			}
 		}
-		break
+		if done {
+			break
+		}
 	}
 	return newSchedWindow
 }
