@@ -21,7 +21,7 @@ type SchedWindowResizingStrategy interface {
 
 // Scheduling window resizing strategy that attempts to resize the scheduling window
 // to include as many tasks as possible so as to make the most use of the next offer cycle.
-type fillNextOfferCycle struct {}
+type fillNextOfferCycle struct{}
 
 func (s *fillNextOfferCycle) Apply(getArgs func() interface{}) int {
 	return s.apply(getArgs().([]def.Task))
