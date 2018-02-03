@@ -138,7 +138,7 @@ func main() {
 		return
 	}
 
-	go pcp.Start(pcpLog, &recordPCP, logMType, logMsg)
+	go pcp.Start(pcpLog, &recordPCP, logMType, logMsg, scheduler)
 	//go pcp.StartPCPLogAndExtremaDynamicCap(pcpLog, &recordPCP, *hiThreshold, *loThreshold, logMType, logMsg)
 	//go pcp.StartPCPLogAndProgressiveExtremaCap(pcpLog, &recordPCP, *hiThreshold, *loThreshold, logMType, logMsg)
 	time.Sleep(1 * time.Second) // Take a second between starting PCP log and continuing

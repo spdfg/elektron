@@ -3,6 +3,8 @@ package pcp
 import (
 	"container/ring"
 	"math"
+	"strconv"
+	"strings"
 )
 
 var RAPLUnits = math.Pow(2, -32)
@@ -46,4 +48,54 @@ func AverageClusterPowerHistory(history *ring.Ring) float64 {
 	}
 
 	return (total / count)
+}
+
+func sumAndNormalize(tokenSlice []string, normalizer float64) float64 {
+	sum := 0.0
+	for _, value := range tokenSlice {
+		i, _ := strconv.ParseFloat(value, 64)
+		sum += i
+	}
+	return sum / normalizer
+}
+
+func calcMean(a []float64) float64 {
+	total := 0.0
+	for _, v := range a {
+		total += v
+	}
+	return total / float64(len(a))
+}
+
+func calcVariance(a []float64) float64 {
+	mean := calcMean(a)
+	total := 0.0
+	for _, v := range a {
+		total += math.Pow(mean-v, 2)
+	}
+	return total / float64(len(a))
+}
+
+func utilization(used string, free string) float64 {
+	u, _ := strconv.ParseFloat(used, 64)
+	f, _ := strconv.ParseFloat(free, 64)
+	return u / (u + f)
+}
+
+func cpuUtilPerNode(text string) []float64 {
+	tokenSlice := strings.Split(text, ",")
+	cpuUtil := make([]float64, 8)
+	for i := 0; i < 8; i++ {
+		cpuUtil[i] = utilization(tokenSlice[8+i], tokenSlice[24+i])
+	}
+	return cpuUtil
+}
+
+func memUtilPerNode(text string) []float64 {
+	tokenSlice := strings.Split(text, ",")
+	memUtil := make([]float64, 8)
+	for i := 0; i < 8; i++ {
+		memUtil[i] = utilization(tokenSlice[40+i], tokenSlice[32+i])
+	}
+	return memUtil
 }

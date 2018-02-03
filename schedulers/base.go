@@ -3,7 +3,6 @@ package schedulers
 import (
 	"bitbucket.org/sunybingcloud/elektron/def"
 	elecLogDef "bitbucket.org/sunybingcloud/elektron/logging/def"
-	"bitbucket.org/sunybingcloud/elektron/utilities"
 	"bitbucket.org/sunybingcloud/elektron/utilities/schedUtils"
 	"bytes"
 	"fmt"
@@ -22,14 +21,15 @@ type BaseScheduler struct {
 	// Current scheduling policy used for resource offer consumption.
 	curSchedPolicy SchedPolicyState
 
-	tasksCreated                      int
-	tasksRunning                      int
-	tasks                             []def.Task
-	metrics                           map[string]def.Metric
-	running                           map[string]map[string]bool
-	wattsAsAResource                  bool
-	classMapWatts                     bool
-	totalResourceAvailabilityRecorded bool
+	tasksCreated      int
+	tasksRunning      int
+	tasks             []def.Task
+	metrics           map[string]def.Metric
+	Running           map[string]map[string]bool
+	wattsAsAResource  bool
+	classMapWatts     bool
+	TasksRunningMutex sync.Mutex
+	HostNameToSlaveID map[string]string
 
 	// First set of PCP values are garbage values, signal to logger to start recording when we're
 	// about to schedule a new task
@@ -76,7 +76,8 @@ func (s *BaseScheduler) init(opts ...schedPolicyOption) {
 			log.Fatal(err)
 		}
 	}
-	s.running = make(map[string]map[string]bool)
+	s.Running = make(map[string]map[string]bool)
+	s.HostNameToSlaveID = make(map[string]string)
 	s.mutex = sync.Mutex{}
 	s.schedWindowResStrategy = schedUtils.SchedWindowResizingCritToStrategy["fillNextOfferCycle"]
 }
@@ -96,12 +97,14 @@ func (s *BaseScheduler) newTask(offer *mesos.Offer, task def.Task) *mesos.TaskIn
 	}
 
 	// If this is our first time running into this Agent
-	if _, ok := s.running[offer.GetSlaveId().GoString()]; !ok {
-		s.running[offer.GetSlaveId().GoString()] = make(map[string]bool)
+	s.TasksRunningMutex.Lock()
+	if _, ok := s.Running[offer.GetSlaveId().GoString()]; !ok {
+		s.Running[offer.GetSlaveId().GoString()] = make(map[string]bool)
 	}
+	s.TasksRunningMutex.Unlock()
 
 	// Add task to list of tasks running on node
-	s.running[offer.GetSlaveId().GoString()][taskName] = true
+	s.Running[offer.GetSlaveId().GoString()][taskName] = true
 
 	resources := []*mesos.Resource{
 		mesosutil.NewScalarResource("cpus", task.CPU),
@@ -177,6 +180,11 @@ func (s *BaseScheduler) Disconnected(sched.SchedulerDriver) {
 }
 
 func (s *BaseScheduler) ResourceOffers(driver sched.SchedulerDriver, offers []*mesos.Offer) {
+	for _, offer := range offers {
+		if _, ok := s.HostNameToSlaveID[offer.GetHostname()]; !ok {
+			s.HostNameToSlaveID[offer.GetHostname()] = offer.GetSlaveId().GoString()
+		}
+	}
 	s.curSchedPolicy.ConsumeOffers(s, driver, offers)
 }
 
@@ -185,10 +193,9 @@ func (s *BaseScheduler) StatusUpdate(driver sched.SchedulerDriver, status *mesos
 	if *status.State == mesos.TaskState_TASK_RUNNING {
 		s.tasksRunning++
 	} else if IsTerminal(status.State) {
-		// Update resource availability.
-		utilities.ResourceAvailabilityUpdate("ON_TASK_TERMINAL_STATE",
-			*status.TaskId, *status.SlaveId)
-		delete(s.running[status.GetSlaveId().GoString()], *status.TaskId.Value)
+		s.TasksRunningMutex.Lock()
+		delete(s.Running[status.GetSlaveId().GoString()], *status.TaskId.Value)
+		s.TasksRunningMutex.Unlock()
 		s.tasksRunning--
 		if s.tasksRunning == 0 {
 			select {
@@ -246,7 +253,7 @@ func (s *BaseScheduler) LogNoPendingTasksDeclineOffers(offer *mesos.Offer) {
 func (s *BaseScheduler) LogNumberOfRunningTasks() {
 	lmt := elecLogDef.GENERAL
 	msgColor := elecLogDef.LogMessageColors[lmt]
-	msg := msgColor.Sprintf("Number of tasks still running = %d", s.tasksRunning)
+	msg := msgColor.Sprintf("Number of tasks still Running = %d", s.tasksRunning)
 	s.Log(lmt, msg)
 }
 
@@ -255,9 +262,11 @@ func (s *BaseScheduler) LogCoLocatedTasks(slaveID string) {
 	msgColor := elecLogDef.LogMessageColors[lmt]
 	buffer := bytes.Buffer{}
 	buffer.WriteString(fmt.Sprintln("Colocated with:"))
-	for taskName := range s.running[slaveID] {
+	s.TasksRunningMutex.Lock()
+	for taskName := range s.Running[slaveID] {
 		buffer.WriteString(fmt.Sprintln(taskName))
 	}
+	s.TasksRunningMutex.Unlock()
 	msg := msgColor.Sprintf(buffer.String())
 	s.Log(lmt, msg)
 }
