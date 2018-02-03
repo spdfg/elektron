@@ -70,6 +70,13 @@ func (loi *loggerObserverImpl) setLogFilePrefix(prefix string) {
 		schedTraceLogFilePrefix = loi.logDirectory + "/" + schedTraceLogFilePrefix
 	}
 	loi.logObserverSpecifics[schedTraceLogger].logFilePrefix = schedTraceLogFilePrefix
+
+	// Setting logFilePrefix for degCol logger
+	degColLogFilePrefix := prefix + "_degCol.log"
+	if loi.logDirectory != "" {
+		schedTraceLogFilePrefix = loi.logDirectory + "/" + degColLogFilePrefix
+	}
+	loi.logObserverSpecifics[degColLogger].logFilePrefix = degColLogFilePrefix
 }
 
 func (loi *loggerObserverImpl) setLogDirectory(dirName string) {

@@ -13,6 +13,7 @@ var (
 	SUCCESS     = messageNametoMessageType("SUCCESS")
 	SCHED_TRACE = messageNametoMessageType("SCHED_TRACE")
 	PCP         = messageNametoMessageType("PCP")
+	DEG_COL     = messageNametoMessageType("DEG_COL")
 )
 
 // Text colors for the different types of log messages.

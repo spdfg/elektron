@@ -18,6 +18,7 @@ func newLogger() *LoggerDriver {
 			SCHED_TRACE: true,
 			SUCCESS:     true,
 			PCP:         true,
+			DEG_COL:     true,
 		},
 	}
 	return logger

@@ -11,6 +11,7 @@ const (
 	conLogger        = "console-logger"
 	schedTraceLogger = "schedTrace-logger"
 	pcpLogger        = "pcp-logger"
+	degColLogger     = "degCol-logger"
 )
 
 // Logger class factory
@@ -18,6 +19,7 @@ var Loggers map[string]loggerObserver = map[string]loggerObserver{
 	conLogger:        nil,
 	schedTraceLogger: nil,
 	pcpLogger:        nil,
+	degColLogger:     nil,
 }
 
 // Logger options to help initialize loggers
@@ -37,6 +39,7 @@ func withLoggerSpecifics(prefix string) loggerOption {
 			conLogger:        &specifics{},
 			schedTraceLogger: &specifics{},
 			pcpLogger:        &specifics{},
+			degColLogger:     &specifics{},
 		}
 		l.(*loggerObserverImpl).setLogFilePrefix(prefix)
 		l.(*loggerObserverImpl).setLogFile()
@@ -58,6 +61,9 @@ func attachAllLoggers(lg *LoggerDriver, startTime time.Time, prefix string) {
 	Loggers[pcpLogger] = &PCPLogger{
 		loggerObserverImpl: *loi,
 	}
+	Loggers[degColLogger] = &DegColLogger{
+		loggerObserverImpl: *loi,
+	}
 
 	for _, lmt := range GetLogMessageTypes() {
 		switch lmt {
@@ -73,6 +79,8 @@ func attachAllLoggers(lg *LoggerDriver, startTime time.Time, prefix string) {
 			lg.attach(SUCCESS, Loggers[conLogger])
 		case PCP.String():
 			lg.attach(PCP, Loggers[pcpLogger])
+		case DEG_COL.String():
+			lg.attach(DEG_COL, Loggers[degColLogger])
 		}
 	}
 }
