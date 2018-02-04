@@ -35,7 +35,10 @@ func Start(quit chan struct{}, logging *bool, logMType chan elecLogDef.LogMessag
 		logMType <- elecLogDef.PCP
 		logMsg <- scanner.Text()
 
-		// Throw away first set of results.
+		logMType <- elecLogDef.DEG_COL
+		logMsg <- fmt.Sprintf("CPU Variance, CPU Task Share Variance, Memory Variance, Memory Task Share Variance")
+
+		// Throw away first set of results
 		scanner.Scan()
 
 		seconds := 0

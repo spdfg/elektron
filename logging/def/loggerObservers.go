@@ -74,7 +74,7 @@ func (loi *loggerObserverImpl) setLogFilePrefix(prefix string) {
 	// Setting logFilePrefix for degCol logger
 	degColLogFilePrefix := prefix + "_degCol.log"
 	if loi.logDirectory != "" {
-		schedTraceLogFilePrefix = loi.logDirectory + "/" + degColLogFilePrefix
+		degColLogFilePrefix = loi.logDirectory + "/" + degColLogFilePrefix
 	}
 	loi.logObserverSpecifics[degColLogger].logFilePrefix = degColLogFilePrefix
 }
