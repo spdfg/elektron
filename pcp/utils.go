@@ -59,23 +59,6 @@ func sumAndNormalize(tokenSlice []string, normalizer float64) float64 {
 	return sum / normalizer
 }
 
-func calcMean(a []float64) float64 {
-	total := 0.0
-	for _, v := range a {
-		total += v
-	}
-	return total / float64(len(a))
-}
-
-func calcVariance(a []float64) float64 {
-	mean := calcMean(a)
-	total := 0.0
-	for _, v := range a {
-		total += math.Pow(mean-v, 2)
-	}
-	return total / float64(len(a))
-}
-
 func utilization(used string, free string) float64 {
 	u, _ := strconv.ParseFloat(used, 64)
 	f, _ := strconv.ParseFloat(free, 64)

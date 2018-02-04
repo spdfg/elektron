@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"syscall"
 	"time"
+	"github.com/montanaflynn/stats"
 )
 
 func Start(quit chan struct{}, logging *bool, logMType chan elecLogDef.LogMessageType, logMsg chan string, s scheduler.Scheduler) {
@@ -65,10 +66,10 @@ func Start(quit chan struct{}, logging *bool, logMType chan elecLogDef.LogMessag
 				}
 			}
 
-			cpuVariance := calcVariance(cpuUtils)
-			cpuTaskSharesVariance := calcVariance(cpuTaskShares)
-			memVariance := calcVariance(memUtils)
-			memTaskSharesVariance := calcVariance(memTaskShares)
+			cpuVariance, _ := stats.Variance(cpuUtils)
+			cpuTaskSharesVariance, _ := stats.Variance(cpuTaskShares)
+			memVariance, _ := stats.Variance(memUtils)
+			memTaskSharesVariance, _ := stats.Variance(memTaskShares)
 
 			logMType <- elecLogDef.DEG_COL
 			logMsg <- fmt.Sprintf("%f, %f, %f, %f", cpuVariance, cpuTaskSharesVariance, memVariance, memTaskSharesVariance)
