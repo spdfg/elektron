@@ -76,7 +76,9 @@ func (s *BaseScheduler) init(opts ...schedPolicyOption) {
 			log.Fatal(err)
 		}
 	}
+	s.TasksRunningMutex.Lock()
 	s.Running = make(map[string]map[string]bool)
+	s.TasksRunningMutex.Unlock()
 	s.HostNameToSlaveID = make(map[string]string)
 	s.mutex = sync.Mutex{}
 	s.schedWindowResStrategy = schedUtils.SchedWindowResizingCritToStrategy["fillNextOfferCycle"]
@@ -101,10 +103,9 @@ func (s *BaseScheduler) newTask(offer *mesos.Offer, task def.Task) *mesos.TaskIn
 	if _, ok := s.Running[offer.GetSlaveId().GoString()]; !ok {
 		s.Running[offer.GetSlaveId().GoString()] = make(map[string]bool)
 	}
-	s.TasksRunningMutex.Unlock()
-
 	// Add task to list of tasks running on node
 	s.Running[offer.GetSlaveId().GoString()][taskName] = true
+	s.TasksRunningMutex.Unlock()
 
 	resources := []*mesos.Resource{
 		mesosutil.NewScalarResource("cpus", task.CPU),
