@@ -50,15 +50,6 @@ func AverageClusterPowerHistory(history *ring.Ring) float64 {
 	return (total / count)
 }
 
-func sumAndNormalize(tokenSlice []string, normalizer float64) float64 {
-	sum := 0.0
-	for _, value := range tokenSlice {
-		i, _ := strconv.ParseFloat(value, 64)
-		sum += i
-	}
-	return sum / normalizer
-}
-
 func utilization(used string, free string) float64 {
 	u, _ := strconv.ParseFloat(used, 64)
 	f, _ := strconv.ParseFloat(free, 64)

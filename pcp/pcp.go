@@ -11,8 +11,6 @@ import (
 	"syscall"
 	"time"
 	"github.com/montanaflynn/stats"
-	"github.com/mesos/mesos-go/api/v0/mesosproto"
-	"path/filepath"
 )
 
 func Start(quit chan struct{}, logging *bool, logMType chan elecLogDef.LogMessageType, logMsg chan string, s scheduler.Scheduler) {
@@ -38,7 +36,7 @@ func Start(quit chan struct{}, logging *bool, logMType chan elecLogDef.LogMessag
 		logMsg <- scanner.Text()
 
 		logMType <- elecLogDef.DEG_COL
-		logMsg <- fmt.Sprintf("CPU Variance, CPU Task Share Variance, Memory Variance, Memory Task Share Variance")
+		logMsg <- "CPU Variance, CPU Task Share Variance, Memory Variance, Memory Task Share Variance"
 
 		// Throw away first set of results
 		scanner.Scan()
