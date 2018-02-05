@@ -11,6 +11,8 @@ import (
 	"syscall"
 	"time"
 	"github.com/montanaflynn/stats"
+	"github.com/mesos/mesos-go/api/v0/mesosproto"
+	"path/filepath"
 )
 
 func Start(quit chan struct{}, logging *bool, logMType chan elecLogDef.LogMessageType, logMsg chan string, s scheduler.Scheduler) {
@@ -61,11 +63,12 @@ func Start(quit chan struct{}, logging *bool, logMType chan elecLogDef.LogMessag
 
 			for i := 0; i < 8; i++ {
 				host := fmt.Sprintf("stratos-00%d.cs.binghamton.edu", i+1)
-				slaveID := baseSchedRef.HostNameToSlaveID[host]
-				tasksRunning := len(baseSchedRef.Running[slaveID])
-				if tasksRunning > 0 {
-					cpuTaskShares[i] = cpuUtils[i] / float64(tasksRunning)
-					memTaskShares[i] = memUtils[i] / float64(tasksRunning)
+				if slaveID, ok := baseSchedRef.HostNameToSlaveID[host]; ok {
+					tasksRunning := len(baseSchedRef.Running[slaveID])
+					if tasksRunning > 0 {
+						cpuTaskShares[i] = cpuUtils[i] / float64(tasksRunning)
+						memTaskShares[i] = memUtils[i] / float64(tasksRunning)
+					}
 				}
 			}
 
