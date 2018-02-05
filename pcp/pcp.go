@@ -62,13 +62,21 @@ func Start(quit chan struct{}, logging *bool, logMType chan elecLogDef.LogMessag
 			for i := 0; i < 8; i++ {
 				host := fmt.Sprintf("stratos-00%d.cs.binghamton.edu", i+1)
 				if slaveID, ok := baseSchedRef.HostNameToSlaveID[host]; ok {
+					baseSchedRef.TasksRunningMutex.Lock()
 					tasksRunning := len(baseSchedRef.Running[slaveID])
+					baseSchedRef.TasksRunningMutex.Unlock()
 					if tasksRunning > 0 {
 						cpuTaskShares[i] = cpuUtils[i] / float64(tasksRunning)
 						memTaskShares[i] = memUtils[i] / float64(tasksRunning)
 					}
 				}
 			}
+
+			// Variance in resource utilization shows how the current workload has been distributed.
+			// However, if the number of tasks running are not equally distributed, utilization variance figures become
+			// less relevant as they do not express the distribution of CPU intensive tasks.
+			// We thus also calculate `task share variance`, which basically signifies how the workload is distributed
+			// across each node per share.
 
 			cpuVariance, _ := stats.Variance(cpuUtils)
 			cpuTaskSharesVariance, _ := stats.Variance(cpuTaskShares)
