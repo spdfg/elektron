@@ -21,15 +21,16 @@ type BaseScheduler struct {
 	// Current scheduling policy used for resource offer consumption.
 	curSchedPolicy SchedPolicyState
 
-	tasksCreated      int
-	tasksRunning      int
-	tasks             []def.Task
-	metrics           map[string]def.Metric
-	Running           map[string]map[string]bool
-	wattsAsAResource  bool
-	classMapWatts     bool
-	TasksRunningMutex sync.Mutex
-	HostNameToSlaveID map[string]string
+	tasksCreated                      int
+	tasksRunning                      int
+	tasks                             []def.Task
+	metrics                           map[string]def.Metric
+	Running                           map[string]map[string]bool
+	wattsAsAResource                  bool
+	classMapWatts                     bool
+	TasksRunningMutex                 sync.Mutex
+	HostNameToSlaveID                 map[string]string
+	totalResourceAvailabilityRecorded bool
 
 	// First set of PCP values are garbage values, signal to logger to start recording when we're
 	// about to schedule a new task

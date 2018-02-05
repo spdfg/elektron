@@ -6,11 +6,11 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/mesos/mesos-go/api/v0/scheduler"
+	"github.com/montanaflynn/stats"
 	"log"
 	"os/exec"
 	"syscall"
 	"time"
-	"github.com/montanaflynn/stats"
 )
 
 func Start(quit chan struct{}, logging *bool, logMType chan elecLogDef.LogMessageType, logMsg chan string, s scheduler.Scheduler) {
