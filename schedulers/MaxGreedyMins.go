@@ -4,11 +4,9 @@ import (
 	"bitbucket.org/sunybingcloud/elektron/def"
 	"bitbucket.org/sunybingcloud/elektron/utilities/mesosUtils"
 	"bitbucket.org/sunybingcloud/elektron/utilities/offerUtils"
-	"fmt"
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 	sched "github.com/mesos/mesos-go/api/v0/scheduler"
 	"log"
-	"math/rand"
 )
 
 // Decides if to take an offer or not
@@ -32,7 +30,7 @@ func (s *MaxGreedyMins) takeOffer(spc SchedPolicyContext, offer *mesos.Offer, ta
 }
 
 type MaxGreedyMins struct {
-	SchedPolicyState
+	baseSchedPolicyState
 }
 
 // Determine if the remaining space inside of the offer is enough for this
@@ -78,7 +76,7 @@ func (s *MaxGreedyMins) CheckFit(
 }
 
 func (s *MaxGreedyMins) ConsumeOffers(spc SchedPolicyContext, driver sched.SchedulerDriver, offers []*mesos.Offer) {
-	fmt.Println("Max-GreedyMins scheduling...")
+	log.Println("Max-GreedyMins scheduling...")
 	baseSchedRef := spc.(*BaseScheduler)
 	def.SortTasks(baseSchedRef.tasks, def.SortByWatts)
 	baseSchedRef.LogOffersReceived(offers)
@@ -172,21 +170,5 @@ func (s *MaxGreedyMins) ConsumeOffers(spc SchedPolicyContext, driver sched.Sched
 		}
 	}
 
-	// Switch scheduling policy only if feature enabled from CLI
-	if baseSchedRef.schedPolSwitchEnabled {
-		// Need to recompute the schedWindow for the next offer cycle.
-		// The next scheduling policy will schedule at max schedWindow number of tasks.
-		baseSchedRef.curSchedWindow = baseSchedRef.schedWindowResStrategy.Apply(
-			func() interface{} { return baseSchedRef.tasks })
-		// Switching to a random scheduling policy.
-		// TODO: Switch based on some criteria.
-		index := rand.Intn(len(SchedPolicies))
-		for _, v := range SchedPolicies {
-			if index == 0 {
-				spc.SwitchSchedPol(v)
-				break
-			}
-			index--
-		}
-	}
+	s.switchIfNecessary(spc)
 }

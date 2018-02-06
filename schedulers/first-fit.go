@@ -4,10 +4,9 @@ import (
 	"bitbucket.org/sunybingcloud/elektron/def"
 	"bitbucket.org/sunybingcloud/elektron/utilities/mesosUtils"
 	"bitbucket.org/sunybingcloud/elektron/utilities/offerUtils"
-	"fmt"
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 	sched "github.com/mesos/mesos-go/api/v0/scheduler"
-	"math/rand"
+	"log"
 )
 
 // Decides if to take an offer or not
@@ -31,11 +30,11 @@ func (s *FirstFit) takeOffer(spc SchedPolicyContext, offer *mesos.Offer, task de
 
 // Elektron scheduler implements the Scheduler interface.
 type FirstFit struct {
-	SchedPolicyState
+	baseSchedPolicyState
 }
 
 func (s *FirstFit) ConsumeOffers(spc SchedPolicyContext, driver sched.SchedulerDriver, offers []*mesos.Offer) {
-	fmt.Println("FirstFit scheduling...")
+	log.Println("FirstFit scheduling...")
 	baseSchedRef := spc.(*BaseScheduler)
 	baseSchedRef.LogOffersReceived(offers)
 
@@ -101,21 +100,5 @@ func (s *FirstFit) ConsumeOffers(spc SchedPolicyContext, driver sched.SchedulerD
 		}
 	}
 
-	// Switch scheduling policy only if feature enabled from CLI
-	if baseSchedRef.schedPolSwitchEnabled {
-		// Need to recompute the schedWindow for the next offer cycle.
-		// The next scheduling policy will schedule at max schedWindow number of tasks.
-		baseSchedRef.curSchedWindow = baseSchedRef.schedWindowResStrategy.Apply(
-			func() interface{} { return baseSchedRef.tasks })
-		// Switching to a random scheduling policy.
-		// TODO: Switch based on some criteria.
-		index := rand.Intn(len(SchedPolicies))
-		for _, v := range SchedPolicies {
-			if index == 0 {
-				spc.SwitchSchedPol(v)
-				break
-			}
-			index--
-		}
-	}
+	s.switchIfNecessary(spc)
 }
