@@ -102,9 +102,7 @@ func (s *BinPackSortedWatts) ConsumeOffers(spc SchedPolicyContext, driver sched.
 
 		if offerTaken {
 			baseSchedRef.LogTaskStarting(nil, offer)
-			if err := LaunchTasks([]*mesos.OfferID{offer.Id}, tasks, driver); err != nil {
-				baseSchedRef.LogElectronError(err)
-			}
+			LaunchTasks([]*mesos.OfferID{offer.Id}, tasks, driver)
 		} else {
 
 			// If there was no match for the task

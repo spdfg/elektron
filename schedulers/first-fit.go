@@ -70,9 +70,7 @@ func (s *FirstFit) ConsumeOffers(spc SchedPolicyContext, driver sched.SchedulerD
 				tasks = append(tasks, taskToSchedule)
 
 				baseSchedRef.LogTaskStarting(&task, offer)
-				if err := LaunchTasks([]*mesos.OfferID{offer.Id}, tasks, driver); err != nil {
-					baseSchedRef.LogElectronError(err)
-				}
+				LaunchTasks([]*mesos.OfferID{offer.Id}, tasks, driver)
 				offerTaken = true
 
 				baseSchedRef.LogSchedTrace(taskToSchedule, offer)

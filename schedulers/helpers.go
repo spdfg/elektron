@@ -9,7 +9,6 @@ import (
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 	sched "github.com/mesos/mesos-go/api/v0/scheduler"
 	"github.com/pkg/errors"
-	"log"
 )
 
 func coLocated(tasks map[string]bool, s BaseScheduler) {
@@ -125,16 +124,11 @@ func WithSchedPolSwitchEnabled(enableSchedPolicySwitch bool) schedPolicyOption {
 	}
 }
 
-// Launch tasks and also update the resource availability for the corresponding host.
-func LaunchTasks(offerIDs []*mesos.OfferID, tasksToLaunch []*mesos.TaskInfo, driver sched.SchedulerDriver) error {
+// Launch tasks.
+func LaunchTasks(offerIDs []*mesos.OfferID, tasksToLaunch []*mesos.TaskInfo, driver sched.SchedulerDriver) {
 	driver.LaunchTasks(offerIDs, tasksToLaunch, mesosUtils.DefaultFilter)
 	// Update resource availability
-	var err error
 	for _, task := range tasksToLaunch {
-		err = utilities.ResourceAvailabilityUpdate("ON_TASK_ACTIVE_STATE", *task.TaskId, *task.SlaveId)
-		if err != nil {
-			log.Println(err)
-		}
+		utilities.ResourceAvailabilityUpdate("ON_TASK_ACTIVE_STATE", *task.TaskId, *task.SlaveId)
 	}
-	return err
 }
