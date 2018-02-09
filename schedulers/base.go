@@ -3,6 +3,7 @@ package schedulers
 import (
 	"bitbucket.org/sunybingcloud/elektron/def"
 	elecLogDef "bitbucket.org/sunybingcloud/elektron/logging/def"
+        "bitbucket.org/sunybingcloud/elektron/utilities"
 	"bitbucket.org/sunybingcloud/elektron/utilities/schedUtils"
 	"bytes"
 	"fmt"
@@ -187,6 +188,7 @@ func (s *BaseScheduler) Disconnected(sched.SchedulerDriver) {
 }
 
 func (s *BaseScheduler) ResourceOffers(driver sched.SchedulerDriver, offers []*mesos.Offer) {
+	utilities.RecordTotalResourceAvailability(offers)
 	for _, offer := range offers {
 		if _, ok := s.HostNameToSlaveID[offer.GetHostname()]; !ok {
 			s.HostNameToSlaveID[offer.GetHostname()] = offer.GetSlaveId().GoString()
@@ -212,6 +214,9 @@ func (s *BaseScheduler) StatusUpdate(driver sched.SchedulerDriver, status *mesos
 	if *status.State == mesos.TaskState_TASK_RUNNING {
 		s.tasksRunning++
 	} else if IsTerminal(status.State) {
+		// Update resource availability.
+		utilities.ResourceAvailabilityUpdate("ON_TASK_TERMINAL_STATE",
+			*status.TaskId, *status.SlaveId)
 		s.TasksRunningMutex.Lock()
 		delete(s.Running[status.GetSlaveId().GoString()], *status.TaskId.Value)
 		s.TasksRunningMutex.Unlock()
