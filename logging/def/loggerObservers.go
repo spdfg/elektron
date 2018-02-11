@@ -77,6 +77,13 @@ func (loi *loggerObserverImpl) setLogFilePrefix(prefix string) {
 		degColLogFilePrefix = loi.logDirectory + "/" + degColLogFilePrefix
 	}
 	loi.logObserverSpecifics[degColLogger].logFilePrefix = degColLogFilePrefix
+
+	// Setting logFilePrefix for schedulingPolicySwitch logger
+	schedPolicySwitchLogFilePrefix := prefix + "_schedPolicySwitch.log"
+	if loi.logDirectory != "" {
+		schedPolicySwitchLogFilePrefix = loi.logDirectory + "/" + schedPolicySwitchLogFilePrefix
+	}
+	loi.logObserverSpecifics[spsLogger].logFilePrefix = schedPolicySwitchLogFilePrefix
 }
 
 func (loi *loggerObserverImpl) setLogDirectory(dirName string) {

@@ -400,3 +400,9 @@ func (s *BaseScheduler) LogTaskStatusUpdate(status *mesos.TaskStatus) {
 		*status.TaskId.Value, msgColor.Sprint(NameFor(status.State)))
 	s.Log(lmt, msg)
 }
+
+func (s *BaseScheduler) LogSchedPolicySwitch(name string, nextPolicy SchedPolicyState) {
+	if s.curSchedPolicy != nextPolicy {
+		s.Log(elecLogDef.SPS, name)
+	}
+}

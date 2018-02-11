@@ -70,4 +70,6 @@ type ElectronScheduler interface {
 	LogDisconnected()
 	// Log Status update of a task
 	LogTaskStatusUpdate(status *mesos.TaskStatus)
+	// Log Scheduling policy switches (if any)
+	LogSchedulingPolicySwitch()
 }

@@ -7,6 +7,7 @@ import (
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 	sched "github.com/mesos/mesos-go/api/v0/scheduler"
 	"log"
+	"math/rand"
 )
 
 // Decides if to take an offer or not
@@ -162,5 +163,18 @@ func (s *MaxMin) ConsumeOffers(spc SchedPolicyContext, driver sched.SchedulerDri
 		}
 	}
 
-	s.switchIfNecessary(spc)
+	// Switch scheduling policy only if feature enabled from CLI
+	if baseSchedRef.schedPolSwitchEnabled {
+		// Switching to a random scheduling policy.
+		// TODO: Switch based on some criteria.
+		index := rand.Intn(len(SchedPolicies))
+		for k, v := range SchedPolicies {
+			if index == 0 {
+				baseSchedRef.LogSchedPolicySwitch(k, v)
+				spc.SwitchSchedPol(v)
+				break
+			}
+			index--
+		}
+	}
 }

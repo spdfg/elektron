@@ -19,6 +19,7 @@ func newLogger() *LoggerDriver {
 			SUCCESS:     true,
 			PCP:         true,
 			DEG_COL:     true,
+			SPS:         true,
 		},
 	}
 	return logger
