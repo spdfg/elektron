@@ -165,6 +165,10 @@ func (s *MaxMin) ConsumeOffers(spc SchedPolicyContext, driver sched.SchedulerDri
 
 	// Switch scheduling policy only if feature enabled from CLI
 	if baseSchedRef.schedPolSwitchEnabled {
+		// Need to recompute the schedWindow for the next offer cycle.
+		// The next scheduling policy will schedule at max schedWindow number of tasks.
+		baseSchedRef.curSchedWindow = baseSchedRef.schedWindowResStrategy.Apply(
+			func() interface{} { return baseSchedRef.tasks })
 		// Switching to a random scheduling policy.
 		// TODO: Switch based on some criteria.
 		index := rand.Intn(len(SchedPolicies))
