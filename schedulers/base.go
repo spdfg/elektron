@@ -61,14 +61,14 @@ type BaseScheduler struct {
 
 	// Size of window of tasks that can be scheduled in the next offer cycle.
 	// The window size can be adjusted to make the most use of every resource offer.
-	// By default, the schedulingWindow would correspond to all the remaining tasks that haven't yet been scheduled.
-	schedulingWindow int
+	// By default, the schedWindowSize would correspond to the number of remaining tasks that haven't yet
+	// been scheduled.
+	schedWindowSize int
+	// Number of tasks in the window
+	numTasksInSchedWindow int
 
 	// Strategy to resize the schedulingWindow.
 	schedWindowResStrategy schedUtils.SchedWindowResizingStrategy
-	// Window of tasks that the current scheduling policy has to schedule.
-	// Once #schedWindow tasks are scheduled, the current scheduling policy has to stop scheduling.
-	curSchedWindow int
 
 	// Indicate whether the any resource offers from mesos have been received.
 	hasReceivedResourceOffers bool
@@ -188,6 +188,7 @@ func (s *BaseScheduler) Disconnected(sched.SchedulerDriver) {
 }
 
 func (s *BaseScheduler) ResourceOffers(driver sched.SchedulerDriver, offers []*mesos.Offer) {
+	// Recording the total amount of resources available across the cluster.
 	utilities.RecordTotalResourceAvailability(offers)
 	for _, offer := range offers {
 		if _, ok := s.HostNameToSlaveID[offer.GetHostname()]; !ok {
@@ -195,16 +196,18 @@ func (s *BaseScheduler) ResourceOffers(driver sched.SchedulerDriver, offers []*m
 		}
 	}
 	// If no resource offers have been received yet, and if scheduling policy switching has been enabled,
-	// then we would need to compute the scheduling window for the current scheduling policy.
+	// then we would need to compute the size of the scheduling window for the current scheduling policy.
 	// Initially the size of the scheduling window is 0. So, based on the total available resources on the cluster,
-	// the scheduling window is determined and the scheduling policy is then applied for the corresponding number
+	// the size of the window is determined and the scheduling policy is then applied for the corresponding number
 	// of tasks.
-	// Subsequently, the scheduling window is determined at the end of each offer cycle.
-	if !s.hasReceivedResourceOffers && s.schedPolSwitchEnabled {
-		s.curSchedWindow = s.schedWindowResStrategy.Apply(func() interface{} {
+	// Subsequently, the size of the scheduling window is determined at the end of each offer cycle.
+	if s.schedPolSwitchEnabled && !s.hasReceivedResourceOffers {
+		s.schedWindowSize, s.numTasksInSchedWindow = s.schedWindowResStrategy.Apply(func() interface{} {
 			return s.tasks
 		})
 	}
+	log.Printf("SchedWindowSize: %d, NumberOfTasksInWindow: %d", s.schedWindowSize, s.numTasksInSchedWindow)
+
 	s.curSchedPolicy.ConsumeOffers(s, driver, offers)
 	s.hasReceivedResourceOffers = true
 }

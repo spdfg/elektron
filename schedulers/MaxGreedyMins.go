@@ -7,7 +7,6 @@ import (
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 	sched "github.com/mesos/mesos-go/api/v0/scheduler"
 	"log"
-	"math/rand"
 )
 
 // Decides if to take an offer or not
@@ -59,6 +58,7 @@ func (s *MaxGreedyMins) CheckFit(
 
 		baseSchedRef.LogSchedTrace(taskToSchedule, offer)
 		*task.Instances--
+		s.numTasksScheduled++
 
 		if *task.Instances <= 0 {
 			// All instances of task have been scheduled, remove it
@@ -79,7 +79,11 @@ func (s *MaxGreedyMins) CheckFit(
 func (s *MaxGreedyMins) ConsumeOffers(spc SchedPolicyContext, driver sched.SchedulerDriver, offers []*mesos.Offer) {
 	log.Println("Max-GreedyMins scheduling...")
 	baseSchedRef := spc.(*BaseScheduler)
-	def.SortTasks(baseSchedRef.tasks, def.SortByWatts)
+	if baseSchedRef.schedPolSwitchEnabled {
+		SortNTasks(baseSchedRef.tasks, baseSchedRef.numTasksInSchedWindow, def.SortByWatts)
+	} else {
+		def.SortTasks(baseSchedRef.tasks, def.SortByWatts)
+	}
 	baseSchedRef.LogOffersReceived(offers)
 
 	for _, offer := range offers {
@@ -105,7 +109,13 @@ func (s *MaxGreedyMins) ConsumeOffers(spc SchedPolicyContext, driver sched.Sched
 		// Attempt to schedule a single instance of the heaviest workload available first
 		// Start from the back until one fits
 		for i := len(baseSchedRef.tasks) - 1; i >= 0; i-- {
-
+			// If scheduling policy switching enabled, then
+			// stop scheduling if the #baseSchedRef.schedWindowSize tasks have been scheduled.
+			if baseSchedRef.schedPolSwitchEnabled && (s.numTasksScheduled >= baseSchedRef.schedWindowSize) {
+				log.Printf("Stopped scheduling... Completed scheduling %d tasks.",
+					s.numTasksScheduled)
+				break // Offers will automatically get declined.
+			}
 			task := baseSchedRef.tasks[i]
 			wattsConsideration, err := def.WattsToConsider(task, baseSchedRef.classMapWatts, offer)
 			if err != nil {
@@ -131,6 +141,11 @@ func (s *MaxGreedyMins) ConsumeOffers(spc SchedPolicyContext, driver sched.Sched
 
 		// Pack the rest of the offer with the smallest tasks
 		for i := 0; i < len(baseSchedRef.tasks); i++ {
+			// If scheduling policy switching enabled, then
+			// stop scheduling if the #baseSchedRef.schedWindowSize tasks have been scheduled.
+			if baseSchedRef.schedPolSwitchEnabled && (s.numTasksScheduled >= baseSchedRef.schedWindowSize) {
+				break // Offers will automatically get declined.
+			}
 			task := baseSchedRef.tasks[i]
 			wattsConsideration, err := def.WattsToConsider(task, baseSchedRef.classMapWatts, offer)
 			if err != nil {
@@ -169,22 +184,5 @@ func (s *MaxGreedyMins) ConsumeOffers(spc SchedPolicyContext, driver sched.Sched
 		}
 	}
 
-	// Switch scheduling policy only if feature enabled from CLI
-	if baseSchedRef.schedPolSwitchEnabled {
-		// Need to recompute the schedWindow for the next offer cycle.
-		// The next scheduling policy will schedule at max schedWindow number of tasks.
-		baseSchedRef.curSchedWindow = baseSchedRef.schedWindowResStrategy.Apply(
-			func() interface{} { return baseSchedRef.tasks })
-		// Switching to a random scheduling policy.
-		// TODO: Switch based on some criteria.
-		index := rand.Intn(len(SchedPolicies))
-		for k, v := range SchedPolicies {
-			if index == 0 {
-				baseSchedRef.LogSchedPolicySwitch(k, v)
-				spc.SwitchSchedPol(v)
-				break
-			}
-			index--
-		}
-	}
+	s.switchIfNecessary(spc)
 }

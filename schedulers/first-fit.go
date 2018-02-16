@@ -7,7 +7,6 @@ import (
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 	sched "github.com/mesos/mesos-go/api/v0/scheduler"
 	"log"
-	"math/rand"
 )
 
 // Decides if to take an offer or not
@@ -55,6 +54,13 @@ func (s *FirstFit) ConsumeOffers(spc SchedPolicyContext, driver sched.SchedulerD
 		// First fit strategy
 		offerTaken := false
 		for i := 0; i < len(baseSchedRef.tasks); i++ {
+			// If scheduling policy switching enabled, then
+			// stop scheduling if the #baseSchedRef.schedWindowSize tasks have been scheduled.
+			if baseSchedRef.schedPolSwitchEnabled && (s.numTasksScheduled >= baseSchedRef.schedWindowSize) {
+				log.Printf("Stopped scheduling... Completed scheduling %d tasks.",
+					s.numTasksScheduled)
+				break // Offers will automatically get declined.
+			}
 			task := baseSchedRef.tasks[i]
 
 			// Don't take offer if it doesn't match our task's host requirement.
@@ -76,11 +82,11 @@ func (s *FirstFit) ConsumeOffers(spc SchedPolicyContext, driver sched.SchedulerD
 
 				baseSchedRef.LogSchedTrace(taskToSchedule, offer)
 				*task.Instances--
+				s.numTasksScheduled++
 
 				if *task.Instances <= 0 {
 					// All instances of task have been scheduled, remove it
-					baseSchedRef.tasks[i] = baseSchedRef.tasks[len(baseSchedRef.tasks)-1]
-					baseSchedRef.tasks = baseSchedRef.tasks[:len(baseSchedRef.tasks)-1]
+					baseSchedRef.tasks = append(baseSchedRef.tasks[:i], baseSchedRef.tasks[i+1:]...)
 
 					if len(baseSchedRef.tasks) <= 0 {
 						baseSchedRef.LogTerminateScheduler()
@@ -99,22 +105,5 @@ func (s *FirstFit) ConsumeOffers(spc SchedPolicyContext, driver sched.SchedulerD
 		}
 	}
 
-	// Switch scheduling policy only if feature enabled from CLI
-	if baseSchedRef.schedPolSwitchEnabled {
-		// Need to recompute the schedWindow for the next offer cycle.
-		// The next scheduling policy will schedule at max schedWindow number of tasks.
-		baseSchedRef.curSchedWindow = baseSchedRef.schedWindowResStrategy.Apply(
-			func() interface{} { return baseSchedRef.tasks })
-		// Switching to a random scheduling policy.
-		// TODO: Switch based on some criteria.
-		index := rand.Intn(len(SchedPolicies))
-		for k, v := range SchedPolicies {
-			if index == 0 {
-				baseSchedRef.LogSchedPolicySwitch(k, v)
-				spc.SwitchSchedPol(v)
-				break
-			}
-			index--
-		}
-	}
+	s.switchIfNecessary(spc)
 }

@@ -15,15 +15,19 @@ var SchedWindowResizingCritToStrategy = map[SchedulingWindowResizingCriteria]Sch
 
 // Interface for a scheduling window resizing strategy.
 type SchedWindowResizingStrategy interface {
-	// Apply the window resizing strategy and return the news scheduling window size.
-	Apply(func() interface{}) int
+	// Apply the window resizing strategy and return the size of the scheduling window and the number tasks that
+	// were traversed in the process.
+	// The size of the scheduling window would correspond to the total number of
+	// instances (flattened) that can be scheduled in the next offer cycle.
+	// The number of tasks would correspond to number of different tasks (instances not included).
+	Apply(func() interface{}) (int, int)
 }
 
 // Scheduling window resizing strategy that attempts to resize the scheduling window
 // to include as many tasks as possible so as to make the most use of the next offer cycle.
 type fillNextOfferCycle struct{}
 
-func (s *fillNextOfferCycle) Apply(getArgs func() interface{}) int {
+func (s *fillNextOfferCycle) Apply(getArgs func() interface{}) (int, int) {
 	return s.apply(getArgs().([]def.Task))
 }
 
@@ -33,7 +37,7 @@ func (s *fillNextOfferCycle) Apply(getArgs func() interface{}) int {
 //
 // Note: To be able to make the most use of the next offer cycle, one would need to perform a non-polynomial search
 // which is computationally expensive.
-func (s *fillNextOfferCycle) apply(taskQueue []def.Task) int {
+func (s *fillNextOfferCycle) apply(taskQueue []def.Task) (int, int) {
 	clusterwideResourceCount := utilities.GetClusterwideResourceAvailability()
 	newSchedWindow := 0
 	filledCPU := 0.0
@@ -49,7 +53,10 @@ func (s *fillNextOfferCycle) apply(taskQueue []def.Task) int {
 	}
 
 	done := false
+	// Track of number of tasks traversed.
+	numberOfTasksTraversed := 0
 	for _, task := range taskQueue {
+		numberOfTasksTraversed++
 		for i := *task.Instances; i > 0; i-- {
 			log.Printf("Checking if Instance #%d of Task[%s] can be scheduled "+
 				"during the next offer cycle...", i, task.Name)
@@ -59,6 +66,10 @@ func (s *fillNextOfferCycle) apply(taskQueue []def.Task) int {
 				newSchedWindow++
 			} else {
 				done = true
+				if i == *task.Instances {
+					// We don't count this task if none of the instances could be scheduled.
+					numberOfTasksTraversed--
+				}
 				break
 			}
 		}
@@ -66,5 +77,5 @@ func (s *fillNextOfferCycle) apply(taskQueue []def.Task) int {
 			break
 		}
 	}
-	return newSchedWindow
+	return newSchedWindow, numberOfTasksTraversed
 }

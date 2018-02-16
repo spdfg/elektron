@@ -132,3 +132,8 @@ func LaunchTasks(offerIDs []*mesos.OfferID, tasksToLaunch []*mesos.TaskInfo, dri
 		utilities.ResourceAvailabilityUpdate("ON_TASK_ACTIVE_STATE", *task.TaskId, *task.SlaveId)
 	}
 }
+
+// Sort N tasks in the TaskQueue
+func SortNTasks(tasks []def.Task, n int, sb def.SortBy) {
+	def.SortTasks(tasks[:n], sb)
+}
