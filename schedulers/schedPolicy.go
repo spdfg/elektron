@@ -33,8 +33,9 @@ func (bsps *baseSchedPolicyState) switchIfNecessary(spc SchedPolicyContext) {
 		// Switching to a random scheduling policy.
 		// TODO: Switch based on some criteria.
 		index := rand.Intn(len(SchedPolicies))
-		for _, v := range SchedPolicies {
+		for k, v := range SchedPolicies {
 			if index == 0 {
+				baseSchedRef.LogSchedPolicySwitch(k, v)
 				spc.SwitchSchedPol(v)
 				// Resetting the number of tasks scheduled.
 				bsps.numTasksScheduled = 0
