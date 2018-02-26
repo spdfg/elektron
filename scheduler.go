@@ -27,6 +27,7 @@ var classMapWatts = flag.Bool("classMapWatts", false, "Enable mapping of watts t
 var schedPolicyName = flag.String("schedPolicy", "first-fit", "Name of the scheduling policy to be used.\n\tUse option -listSchedPolicies to get the names of available scheduling policies")
 var listSchedPolicies = flag.Bool("listSchedPolicies", false, "List the names of the pluaggable scheduling policies.")
 var enableSchedPolicySwitch = flag.Bool("switchSchedPolicy", false, "Enable switching of scheduling policies at runtime.")
+var schedPolConfigFile = flag.String("schedPolConfig", "", "Config file that contains information for each scheduling policy.")
 
 // Short hand args
 func init() {
@@ -40,6 +41,7 @@ func init() {
 	flag.StringVar(schedPolicyName, "sp", "first-fit", "Name of the scheduling policy to be used.\n	Use option -listSchedPolicies to get the names of available scheduling policies (shorthand)")
 	flag.BoolVar(listSchedPolicies, "lsp", false, "Names of the pluaggable scheduling policies. (shorthand)")
 	flag.BoolVar(enableSchedPolicySwitch, "ssp", false, "Enable switching of scheduling policies at runtime.")
+	flag.StringVar(schedPolConfigFile, "spConfig", "", "Config file that contains information for each scheduling policy (shorthand).")
 }
 
 func listAllSchedulingPolicies() {
@@ -108,6 +110,15 @@ func main() {
 	logger.WriteLog(elecLogDef.GENERAL, "Scheduling the following tasks:")
 	for _, task := range tasks {
 		fmt.Println(task)
+	}
+
+	if *enableSchedPolicySwitch {
+		if spcf := *schedPolConfigFile; spcf == "" {
+			logger.WriteLog(elecLogDef.ERROR, "No file containing characteristics for scheduling policies")
+		} else {
+			// Initializing the characteristics of the scheduling policies.
+			schedulers.InitSchedPolicyCharacteristics(spcf)
+		}
 	}
 
 	shutdown := make(chan struct{})

@@ -20,6 +20,13 @@ type baseSchedPolicyState struct {
 	SchedPolicyState
 	// Keep track of the number of tasks that have been scheduled.
 	numTasksScheduled int
+	// Distribution of tasks that the scheduling policy is most appropriate for.
+	// This distribution corresponds to the ratio of low power consuming tasks to
+	// high power consuming tasks.
+	TaskDistribution float64 `json:"taskDist"`
+	// The average variance in cpu-share per task that this scheduling policy can cause.
+	// Note: This number corresponds to a given workload.
+	VarianceCpuSharePerTask float64 `json:"varCpuShare"`
 }
 
 func (bsps *baseSchedPolicyState) switchIfNecessary(spc SchedPolicyContext) {

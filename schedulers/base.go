@@ -74,7 +74,7 @@ type BaseScheduler struct {
 	hasReceivedResourceOffers bool
 }
 
-func (s *BaseScheduler) init(opts ...schedPolicyOption) {
+func (s *BaseScheduler) init(opts ...schedulerOptions) {
 	for _, opt := range opts {
 		// applying options
 		if err := opt(s); err != nil {
