@@ -30,7 +30,7 @@ func createLogDir(prefix string, startTime time.Time) string {
 	logDirName += "-"
 	logDirName += strconv.Itoa(startTime.Second())
 	if _, err := os.Stat(logDirName); os.IsNotExist(err) {
-		os.Mkdir(logDirName, 0700)
+		os.Mkdir(logDirName, 0755)
 	} else {
 		log.Println("Unable to create log directory: ", err)
 		logDirName = ""
