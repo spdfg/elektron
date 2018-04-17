@@ -8,20 +8,22 @@ import (
 
 // Names of different loggers
 const (
-	conLogger        = "console-logger"
-	schedTraceLogger = "schedTrace-logger"
-	pcpLogger        = "pcp-logger"
-	degColLogger     = "degCol-logger"
-	spsLogger        = "schedPolicySwitch-logger"
+	conLogger                   = "console-logger"
+	schedTraceLogger            = "schedTrace-logger"
+	pcpLogger                   = "pcp-logger"
+	degColLogger                = "degCol-logger"
+	spsLogger                   = "schedPolicySwitch-logger"
+	clsfnTaskDistOverheadLogger = "classificationOverhead-logger"
 )
 
 // Logger class factory
 var Loggers map[string]loggerObserver = map[string]loggerObserver{
-	conLogger:        nil,
-	schedTraceLogger: nil,
-	pcpLogger:        nil,
-	degColLogger:     nil,
-	spsLogger:        nil,
+	conLogger:                   nil,
+	schedTraceLogger:            nil,
+	pcpLogger:                   nil,
+	degColLogger:                nil,
+	spsLogger:                   nil,
+	clsfnTaskDistOverheadLogger: nil,
 }
 
 // Logger options to help initialize loggers
@@ -38,11 +40,12 @@ func withLogDirectory(startTime time.Time, prefix string) loggerOption {
 func withLoggerSpecifics(prefix string) loggerOption {
 	return func(l loggerObserver) error {
 		l.(*loggerObserverImpl).logObserverSpecifics = map[string]*specifics{
-			conLogger:        &specifics{},
-			schedTraceLogger: &specifics{},
-			pcpLogger:        &specifics{},
-			degColLogger:     &specifics{},
-			spsLogger:        &specifics{},
+			conLogger:                   &specifics{},
+			schedTraceLogger:            &specifics{},
+			pcpLogger:                   &specifics{},
+			degColLogger:                &specifics{},
+			spsLogger:                   &specifics{},
+			clsfnTaskDistOverheadLogger: &specifics{},
 		}
 		l.(*loggerObserverImpl).setLogFilePrefix(prefix)
 		l.(*loggerObserverImpl).setLogFile()
@@ -70,6 +73,9 @@ func attachAllLoggers(lg *LoggerDriver, startTime time.Time, prefix string) {
 	Loggers[spsLogger] = &SchedPolicySwitchLogger{
 		loggerObserverImpl: *loi,
 	}
+	Loggers[clsfnTaskDistOverheadLogger] = &ClsfnTaskDistOverheadLogger{
+		loggerObserverImpl: *loi,
+	}
 
 	for _, lmt := range GetLogMessageTypes() {
 		switch lmt {
@@ -89,6 +95,8 @@ func attachAllLoggers(lg *LoggerDriver, startTime time.Time, prefix string) {
 			lg.attach(DEG_COL, Loggers[degColLogger])
 		case SPS.String():
 			lg.attach(SPS, Loggers[spsLogger])
+		case CLSFN_TASKDIST_OVERHEAD.String():
+			lg.attach(CLSFN_TASKDIST_OVERHEAD, Loggers[clsfnTaskDistOverheadLogger])
 		}
 	}
 }

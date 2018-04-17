@@ -84,6 +84,15 @@ func (loi *loggerObserverImpl) setLogFilePrefix(prefix string) {
 		schedPolicySwitchLogFilePrefix = loi.logDirectory + "/" + schedPolicySwitchLogFilePrefix
 	}
 	loi.logObserverSpecifics[spsLogger].logFilePrefix = schedPolicySwitchLogFilePrefix
+
+	// Setting logFilePrefix for clsfnTaskDist logger.
+	// Execution time of every call to def.GetTaskDistribution(...) would be recorded and logged in this file.
+	// The overhead would be logged in microseconds.
+	clsfnTaskDistOverheadLogFilePrefix := prefix + "_classificationOverhead.log"
+	if loi.logDirectory != "" {
+		clsfnTaskDistOverheadLogFilePrefix = loi.logDirectory + "/" + clsfnTaskDistOverheadLogFilePrefix
+	}
+	loi.logObserverSpecifics[clsfnTaskDistOverheadLogger].logFilePrefix = clsfnTaskDistOverheadLogFilePrefix
 }
 
 func (loi *loggerObserverImpl) setLogDirectory(dirName string) {

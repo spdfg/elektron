@@ -5,6 +5,7 @@ import (
 	elecLogDef "bitbucket.org/sunybingcloud/elektron/logging/def"
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 	sched "github.com/mesos/mesos-go/api/v0/scheduler"
+	"time"
 )
 
 // Implements mesos scheduler.
@@ -72,4 +73,6 @@ type ElectronScheduler interface {
 	LogTaskStatusUpdate(status *mesos.TaskStatus)
 	// Log Scheduling policy switches (if any)
 	LogSchedulingPolicySwitch()
+	// Log the computation overhead of classifying tasks in the scheduling window.
+	LogClsfnAndTaskDistOverhead(overhead time.Duration)
 }

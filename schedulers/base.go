@@ -404,3 +404,8 @@ func (s *BaseScheduler) LogSchedPolicySwitch(taskDist float64, name string, next
 		s.Log(elecLogDef.GENERAL, fmt.Sprintf("Switching... TaskDistribution[%d] ==> %s", taskDist, name))
 	}
 }
+
+func (s *BaseScheduler) LogClsfnAndTaskDistOverhead(overhead time.Duration) {
+	// Logging the overhead in microseconds.
+	s.Log(elecLogDef.CLSFN_TASKDIST_OVERHEAD, fmt.Sprintf("%f", float64(overhead.Nanoseconds())/1000.0))
+}

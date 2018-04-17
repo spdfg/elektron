@@ -20,6 +20,7 @@ func newLogger() *LoggerDriver {
 			PCP:         true,
 			DEG_COL:     true,
 			SPS:         true,
+			CLSFN_TASKDIST_OVERHEAD: true,
 		},
 	}
 	return logger

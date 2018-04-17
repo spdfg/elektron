@@ -6,7 +6,6 @@ import (
 	"bitbucket.org/sunybingcloud/elektron/utilities/offerUtils"
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 	sched "github.com/mesos/mesos-go/api/v0/scheduler"
-	"log"
 )
 
 // Decides if to take an offer or not
