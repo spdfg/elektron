@@ -29,6 +29,8 @@ var listSchedPolicies = flag.Bool("listSchedPolicies", false, "List the names of
 var enableSchedPolicySwitch = flag.Bool("switchSchedPolicy", false, "Enable switching of scheduling policies at runtime.")
 var schedPolConfigFile = flag.String("schedPolConfig", "", "Config file that contains information for each scheduling policy.")
 var fixFirstSchedPol = flag.String("fixFirstSchedPol", "", "Name of the scheduling policy to be deployed first, regardless of the distribution of tasks, provided switching is enabled.")
+var fixSchedWindow = flag.Bool("fixSchedWindow", false, "Fix the size of the scheduling window that every deployed scheduling policy should schedule, provided switching is enabled.")
+var schedWindowSize = flag.Int("schedWindowSize", 200, "Size of the scheduling window if fixSchedWindow is set.")
 
 // Short hand args
 func init() {
@@ -43,7 +45,9 @@ func init() {
 	flag.BoolVar(listSchedPolicies, "lsp", false, "Names of the pluaggable scheduling policies. (shorthand)")
 	flag.BoolVar(enableSchedPolicySwitch, "ssp", false, "Enable switching of scheduling policies at runtime.")
 	flag.StringVar(schedPolConfigFile, "spConfig", "", "Config file that contains information for each scheduling policy (shorthand).")
-	flag.StringVar(fixFirstSchedPol, "fxFstSchedPol", "", "Name of the schedulin gpolicy to be deployed first, regardless of the distribution of tasks, provided switching is enabled (shorthand).")
+	flag.StringVar(fixFirstSchedPol, "fxFstSchedPol", "", "Name of the scheduling gpolicy to be deployed first, regardless of the distribution of tasks, provided switching is enabled (shorthand).")
+	flag.BoolVar(fixSchedWindow, "fixSw", false, "Fix the size of the scheduling window that every deployed scheduling policy should schedule, provided switching is enabled (shorthand).")
+	flag.IntVar(schedWindowSize, "swSize", 200, "Size of the scheduling window if fixSchedWindow is set (shorthand).")
 }
 
 func listAllSchedulingPolicies() {
@@ -138,7 +142,8 @@ func main() {
 		schedulers.WithPCPLog(pcpLog),
 		schedulers.WithLoggingChannels(logMType, logMsg),
 		schedulers.WithSchedPolSwitchEnabled(*enableSchedPolicySwitch),
-		schedulers.WithNameOfFirstSchedPolToFix(*fixFirstSchedPol))
+		schedulers.WithNameOfFirstSchedPolToFix(*fixFirstSchedPol),
+		schedulers.WithFixedSchedulingWindow(*fixSchedWindow, *schedWindowSize))
 	driver, err := sched.NewMesosSchedulerDriver(sched.DriverConfig{
 		Master: *master,
 		Framework: &mesos.FrameworkInfo{

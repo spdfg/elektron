@@ -141,6 +141,26 @@ func WithNameOfFirstSchedPolToFix(nameOfFirstSchedPol string) schedulerOptions {
 	}
 }
 
+func WithFixedSchedulingWindow(toFixSchedWindow bool, fixedSchedWindowSize int) schedulerOptions {
+	return func(s ElectronScheduler) error {
+		if toFixSchedWindow {
+			if fixedSchedWindowSize <= 0 {
+				return errors.New("Invalid value of scheduling window size. Please provide a value > 0.")
+			}
+			lmt := elecLogDef.WARNING
+			msgColor := elecLogDef.LogMessageColors[lmt]
+			msg := msgColor.Sprintf("Fixing the size of the scheduling window to %d...", fixedSchedWindowSize)
+			s.(*BaseScheduler).Log(lmt, msg)
+			s.(*BaseScheduler).toFixSchedWindow = toFixSchedWindow
+			s.(*BaseScheduler).schedWindowSize = fixedSchedWindowSize
+		}
+		// There shouldn't be any error for this scheduler option.
+		// If toFixSchedWindow is set to false, then the fixedSchedWindowSize would be ignored. In this case,
+		// 	the size of the scheduling window would be determined at runtime.
+		return nil
+	}
+}
+
 // Launch tasks.
 func LaunchTasks(offerIDs []*mesos.OfferID, tasksToLaunch []*mesos.TaskInfo, driver sched.SchedulerDriver) {
 	driver.LaunchTasks(offerIDs, tasksToLaunch, mesosUtils.DefaultFilter)

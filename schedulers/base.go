@@ -71,6 +71,9 @@ type BaseScheduler struct {
 	// Number of tasks in the window
 	numTasksInSchedWindow int
 
+	// Whether the scheduling window needs to be fixed.
+	toFixSchedWindow bool // If yes, then schedWindowSize is initialized and kept unchanged.
+
 	// Strategy to resize the schedulingWindow.
 	schedWindowResStrategy schedUtils.SchedWindowResizingStrategy
 
@@ -399,9 +402,14 @@ func (s *BaseScheduler) LogTaskStatusUpdate(status *mesos.TaskStatus) {
 }
 
 func (s *BaseScheduler) LogSchedPolicySwitch(taskDist float64, name string, nextPolicy SchedPolicyState) {
-	if s.curSchedPolicy != nextPolicy {
+	log := func() {
 		s.Log(elecLogDef.SPS, name)
-		s.Log(elecLogDef.GENERAL, fmt.Sprintf("Switching... TaskDistribution[%d] ==> %s", taskDist, name))
+		s.Log(elecLogDef.GENERAL, fmt.Sprintf("Switching... TaskDistribution[%f] ==> %s", taskDist, name))
+	}
+	if s.hasReceivedResourceOffers && (s.curSchedPolicy != nextPolicy) {
+		log()
+	} else if !s.hasReceivedResourceOffers {
+		log()
 	}
 }
 

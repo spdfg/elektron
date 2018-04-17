@@ -86,14 +86,14 @@ func (s *fillNextOfferCycle) apply(taskQueue []def.Task) (int, int) {
 	// Setting window as the length of the entire queue.
 	// Also setting numberOfTasksTraversed to the number of tasks in the entire queue.
 	// TODO: Create another resizing strategy that sizes the window to the length of the entire pending queue.
-	flattenedLength := 0
-	numTasks := 0
-	for _, ts := range taskQueue {
-		numTasks++
-		flattenedLength += *ts.Instances
-	}
-	newSchedWindow = flattenedLength
-	numberOfTasksTraversed = numTasks
+	//	flattenedLength := 0
+	//	numTasks := 0
+	//	for _, ts := range taskQueue {
+	//		numTasks++
+	//		flattenedLength += *ts.Instances
+	//	}
+	//	newSchedWindow = flattenedLength
+	//	numberOfTasksTraversed = numTasks
 
 	return newSchedWindow, numberOfTasksTraversed
 }
