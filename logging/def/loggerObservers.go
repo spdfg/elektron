@@ -93,6 +93,15 @@ func (loi *loggerObserverImpl) setLogFilePrefix(prefix string) {
 		clsfnTaskDistOverheadLogFilePrefix = loi.logDirectory + "/" + clsfnTaskDistOverheadLogFilePrefix
 	}
 	loi.logObserverSpecifics[clsfnTaskDistOverheadLogger].logFilePrefix = clsfnTaskDistOverheadLogFilePrefix
+
+	// Setting logFilePrefix for schedWindow logger.
+	// Going to log the time stamp when the scheduling window was determined
+	// 	and the size of the scheduling window.
+	schedWindowLogFilePrefix := prefix + "_schedWindow.log"
+	if loi.logDirectory != "" {
+		schedWindowLogFilePrefix = loi.logDirectory + "/" + schedWindowLogFilePrefix
+	}
+	loi.logObserverSpecifics[schedWindowLogger].logFilePrefix = schedWindowLogFilePrefix
 }
 
 func (loi *loggerObserverImpl) setLogDirectory(dirName string) {

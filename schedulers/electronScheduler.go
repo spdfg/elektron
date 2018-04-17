@@ -72,7 +72,7 @@ type ElectronScheduler interface {
 	// Log Status update of a task
 	LogTaskStatusUpdate(status *mesos.TaskStatus)
 	// Log Scheduling policy switches (if any)
-	LogSchedulingPolicySwitch()
+	LogSchedPolicySwitch(name string, nextPolicy SchedPolicyState)
 	// Log the computation overhead of classifying tasks in the scheduling window.
 	LogClsfnAndTaskDistOverhead(overhead time.Duration)
 }

@@ -62,6 +62,8 @@ type BaseScheduler struct {
 	// This scheduling policy would be deployed first regardless of the distribution of tasks in the TaskQueue.
 	// Note: Scheduling policy switching needs to be enabled.
 	nameOfFstSchedPolToDeploy string
+	// Scheduling policy switching criteria.
+	schedPolSwitchCriteria string
 
 	// Size of window of tasks that can be scheduled in the next offer cycle.
 	// The window size can be adjusted to make the most use of every resource offer.
@@ -195,8 +197,8 @@ func (s *BaseScheduler) ResourceOffers(driver sched.SchedulerDriver, offers []*m
 	}
 	// Switch just before consuming the resource offers.
 	s.curSchedPolicy.SwitchIfNecessary(s)
-	s.Log(elecLogDef.GENERAL, fmt.Sprintf("SchedWindowSize[%d], #TasksInWindow[%d]",
-		s.schedWindowSize, s.numTasksInSchedWindow))
+	//	s.Log(elecLogDef.GENERAL, fmt.Sprintf("SchedWindowSize[%d], #TasksInWindow[%d]",
+	//		s.schedWindowSize, s.numTasksInSchedWindow))
 	s.curSchedPolicy.ConsumeOffers(s, driver, offers)
 	s.hasReceivedResourceOffers = true
 }
@@ -211,16 +213,16 @@ func (s *BaseScheduler) StatusUpdate(driver sched.SchedulerDriver, status *mesos
 		}
 		// Add task to list of tasks running on node
 		s.Running[*status.SlaveId.Value][*status.TaskId.Value] = true
-		s.TasksRunningMutex.Unlock()
 		s.tasksRunning++
+		s.TasksRunningMutex.Unlock()
 	} else if IsTerminal(status.State) {
 		// Update resource availability.
 		utilities.ResourceAvailabilityUpdate("ON_TASK_TERMINAL_STATE",
 			*status.TaskId, *status.SlaveId)
 		s.TasksRunningMutex.Lock()
 		delete(s.Running[*status.SlaveId.Value], *status.TaskId.Value)
-		s.TasksRunningMutex.Unlock()
 		s.tasksRunning--
+		s.TasksRunningMutex.Unlock()
 		if s.tasksRunning == 0 {
 			select {
 			case <-s.Shutdown:
@@ -401,16 +403,18 @@ func (s *BaseScheduler) LogTaskStatusUpdate(status *mesos.TaskStatus) {
 	s.Log(lmt, msg)
 }
 
-func (s *BaseScheduler) LogSchedPolicySwitch(taskDist float64, name string, nextPolicy SchedPolicyState) {
-	log := func() {
+func (s *BaseScheduler) LogSchedPolicySwitch(name string, nextPolicy SchedPolicyState) {
+	logSPS := func() {
 		s.Log(elecLogDef.SPS, name)
-		s.Log(elecLogDef.GENERAL, fmt.Sprintf("Switching... TaskDistribution[%f] ==> %s", taskDist, name))
 	}
 	if s.hasReceivedResourceOffers && (s.curSchedPolicy != nextPolicy) {
-		log()
+		logSPS()
 	} else if !s.hasReceivedResourceOffers {
-		log()
+		logSPS()
 	}
+	// Logging the size of the scheduling window and the scheduling policy
+	// 	that is going to schedule the tasks in the scheduling window.
+	s.Log(elecLogDef.SCHED_WINDOW, fmt.Sprintf("%d %s", s.schedWindowSize, name))
 }
 
 func (s *BaseScheduler) LogClsfnAndTaskDistOverhead(overhead time.Duration) {

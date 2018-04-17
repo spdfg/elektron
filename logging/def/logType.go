@@ -16,6 +16,7 @@ var (
 	DEG_COL                 = messageNametoMessageType("DEG_COL")
 	SPS                     = messageNametoMessageType("SPS")
 	CLSFN_TASKDIST_OVERHEAD = messageNametoMessageType("CLSFN_TASKDIST_OVERHEAD")
+	SCHED_WINDOW            = messageNametoMessageType("SCHED_WINDOW")
 )
 
 // Text colors for the different types of log messages.

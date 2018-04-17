@@ -228,6 +228,8 @@ func GetTaskDistributionInWindow(windowSize int, tasks []Task) (float64, error) 
 	// The first cluster would corresponding to the light power consuming tasks.
 	// The second cluster would corresponding to the high power consuming tasks.
 	lpcTasksTotalInst := getTotalInstances(taskClusters[0].Tasks, taskExceedingWindow)
+	fmt.Printf("lpc:%d\n", lpcTasksTotalInst)
 	hpcTasksTotalInst := getTotalInstances(taskClusters[1].Tasks, taskExceedingWindow)
+	fmt.Printf("hpc:%d\n", hpcTasksTotalInst)
 	return float64(lpcTasksTotalInst) / float64(hpcTasksTotalInst), nil
 }

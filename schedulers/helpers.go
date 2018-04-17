@@ -117,9 +117,14 @@ func WithLoggingChannels(lmt chan elecLogDef.LogMessageType, msg chan string) sc
 	}
 }
 
-func WithSchedPolSwitchEnabled(enableSchedPolicySwitch bool) schedulerOptions {
+func WithSchedPolSwitchEnabled(enableSchedPolicySwitch bool, switchingCriteria string) schedulerOptions {
 	return func(s ElectronScheduler) error {
 		s.(*BaseScheduler).schedPolSwitchEnabled = enableSchedPolicySwitch
+		// Checking if valid switching criteria.
+		if _, ok := switchBasedOn[switchingCriteria]; !ok {
+			return errors.New("Invalid scheduling policy switching criteria.")
+		}
+		s.(*BaseScheduler).schedPolSwitchCriteria = switchingCriteria
 		return nil
 	}
 }

@@ -21,6 +21,7 @@ func newLogger() *LoggerDriver {
 			DEG_COL:     true,
 			SPS:         true,
 			CLSFN_TASKDIST_OVERHEAD: true,
+			SCHED_WINDOW:            true,
 		},
 	}
 	return logger

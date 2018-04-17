@@ -88,6 +88,22 @@ func InitSchedPolicyCharacteristics(schedPoliciesConfigFilename string) error {
 				index++
 			}
 		}
+
+		// Initializing the next and previous policy based on the the round-robin ordering.
+		// The next policy for policy at N would correspond to the value at index N+1 in schedPoliciesToSwitch.
+		for curPolicyIndex := 0; curPolicyIndex < len(schedPoliciesToSwitch); curPolicyIndex++ {
+			info := struct {
+				nextPolicyName string
+				prevPolicyName string
+			}{}
+			if curPolicyIndex == 0 {
+				info.prevPolicyName = schedPoliciesToSwitch[len(schedPoliciesToSwitch)-1].spName
+			} else {
+				info.prevPolicyName = schedPoliciesToSwitch[curPolicyIndex-1].spName
+			}
+			info.nextPolicyName = schedPoliciesToSwitch[(curPolicyIndex+1)%len(schedPoliciesToSwitch)].spName
+			schedPoliciesToSwitch[curPolicyIndex].sp.UpdateLinks(info)
+		}
 	}
 
 	return nil

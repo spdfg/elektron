@@ -14,6 +14,7 @@ const (
 	degColLogger                = "degCol-logger"
 	spsLogger                   = "schedPolicySwitch-logger"
 	clsfnTaskDistOverheadLogger = "classificationOverhead-logger"
+	schedWindowLogger           = "schedWindow-logger"
 )
 
 // Logger class factory
@@ -24,6 +25,7 @@ var Loggers map[string]loggerObserver = map[string]loggerObserver{
 	degColLogger:                nil,
 	spsLogger:                   nil,
 	clsfnTaskDistOverheadLogger: nil,
+	schedWindowLogger:           nil,
 }
 
 // Logger options to help initialize loggers
@@ -46,6 +48,7 @@ func withLoggerSpecifics(prefix string) loggerOption {
 			degColLogger:                &specifics{},
 			spsLogger:                   &specifics{},
 			clsfnTaskDistOverheadLogger: &specifics{},
+			schedWindowLogger:           &specifics{},
 		}
 		l.(*loggerObserverImpl).setLogFilePrefix(prefix)
 		l.(*loggerObserverImpl).setLogFile()
@@ -76,6 +79,9 @@ func attachAllLoggers(lg *LoggerDriver, startTime time.Time, prefix string) {
 	Loggers[clsfnTaskDistOverheadLogger] = &ClsfnTaskDistOverheadLogger{
 		loggerObserverImpl: *loi,
 	}
+	Loggers[schedWindowLogger] = &SchedWindowLogger{
+		loggerObserverImpl: *loi,
+	}
 
 	for _, lmt := range GetLogMessageTypes() {
 		switch lmt {
@@ -97,6 +103,8 @@ func attachAllLoggers(lg *LoggerDriver, startTime time.Time, prefix string) {
 			lg.attach(SPS, Loggers[spsLogger])
 		case CLSFN_TASKDIST_OVERHEAD.String():
 			lg.attach(CLSFN_TASKDIST_OVERHEAD, Loggers[clsfnTaskDistOverheadLogger])
+		case SCHED_WINDOW.String():
+			lg.attach(SCHED_WINDOW, Loggers[schedWindowLogger])
 		}
 	}
 }

@@ -31,6 +31,7 @@ var schedPolConfigFile = flag.String("schedPolConfig", "", "Config file that con
 var fixFirstSchedPol = flag.String("fixFirstSchedPol", "", "Name of the scheduling policy to be deployed first, regardless of the distribution of tasks, provided switching is enabled.")
 var fixSchedWindow = flag.Bool("fixSchedWindow", false, "Fix the size of the scheduling window that every deployed scheduling policy should schedule, provided switching is enabled.")
 var schedWindowSize = flag.Int("schedWindowSize", 200, "Size of the scheduling window if fixSchedWindow is set.")
+var schedPolSwitchCriteria = flag.String("schedPolSwitchCriteria", "taskDist", "Scheduling policy switching criteria.")
 
 // Short hand args
 func init() {
@@ -48,6 +49,7 @@ func init() {
 	flag.StringVar(fixFirstSchedPol, "fxFstSchedPol", "", "Name of the scheduling gpolicy to be deployed first, regardless of the distribution of tasks, provided switching is enabled (shorthand).")
 	flag.BoolVar(fixSchedWindow, "fixSw", false, "Fix the size of the scheduling window that every deployed scheduling policy should schedule, provided switching is enabled (shorthand).")
 	flag.IntVar(schedWindowSize, "swSize", 200, "Size of the scheduling window if fixSchedWindow is set (shorthand).")
+	flag.StringVar(schedPolSwitchCriteria, "spsCriteria", "taskDist", "Scheduling policy switching criteria (shorthand).")
 }
 
 func listAllSchedulingPolicies() {
@@ -141,7 +143,7 @@ func main() {
 		schedulers.WithDone(done),
 		schedulers.WithPCPLog(pcpLog),
 		schedulers.WithLoggingChannels(logMType, logMsg),
-		schedulers.WithSchedPolSwitchEnabled(*enableSchedPolicySwitch),
+		schedulers.WithSchedPolSwitchEnabled(*enableSchedPolicySwitch, *schedPolSwitchCriteria),
 		schedulers.WithNameOfFirstSchedPolToFix(*fixFirstSchedPol),
 		schedulers.WithFixedSchedulingWindow(*fixSchedWindow, *schedWindowSize))
 	driver, err := sched.NewMesosSchedulerDriver(sched.DriverConfig{
