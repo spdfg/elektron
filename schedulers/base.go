@@ -58,6 +58,10 @@ type BaseScheduler struct {
 
 	// Whether switching of scheduling policies at runtime has been enabled
 	schedPolSwitchEnabled bool
+	// Name of the first scheduling policy to be deployed, if provided.
+	// This scheduling policy would be deployed first regardless of the distribution of tasks in the TaskQueue.
+	// Note: Scheduling policy switching needs to be enabled.
+	nameOfFstSchedPolToDeploy string
 
 	// Size of window of tasks that can be scheduled in the next offer cycle.
 	// The window size can be adjusted to make the most use of every resource offer.
@@ -186,19 +190,10 @@ func (s *BaseScheduler) ResourceOffers(driver sched.SchedulerDriver, offers []*m
 			s.HostNameToSlaveID[offer.GetHostname()] = *offer.SlaveId.Value
 		}
 	}
-	// If no resource offers have been received yet, and if scheduling policy switching has been enabled,
-	// then we would need to compute the size of the scheduling window for the current scheduling policy.
-	// Initially the size of the scheduling window is 0. So, based on the total available resources on the cluster,
-	// the size of the window is determined and the scheduling policy is then applied for the corresponding number
-	// of tasks.
-	// Subsequently, the size of the scheduling window is determined at the end of each offer cycle.
-	if s.schedPolSwitchEnabled && !s.hasReceivedResourceOffers {
-		s.schedWindowSize, s.numTasksInSchedWindow = s.schedWindowResStrategy.Apply(func() interface{} {
-			return s.tasks
-		})
-	}
-	log.Printf("SchedWindowSize: %d, NumberOfTasksInWindow: %d", s.schedWindowSize, s.numTasksInSchedWindow)
-
+	// Switch just before consuming the resource offers.
+	s.curSchedPolicy.SwitchIfNecessary(s)
+	s.Log(elecLogDef.GENERAL, fmt.Sprintf("SchedWindowSize[%d], #TasksInWindow[%d]",
+		s.schedWindowSize, s.numTasksInSchedWindow))
 	s.curSchedPolicy.ConsumeOffers(s, driver, offers)
 	s.hasReceivedResourceOffers = true
 }
@@ -403,8 +398,9 @@ func (s *BaseScheduler) LogTaskStatusUpdate(status *mesos.TaskStatus) {
 	s.Log(lmt, msg)
 }
 
-func (s *BaseScheduler) LogSchedPolicySwitch(name string, nextPolicy SchedPolicyState) {
+func (s *BaseScheduler) LogSchedPolicySwitch(taskDist float64, name string, nextPolicy SchedPolicyState) {
 	if s.curSchedPolicy != nextPolicy {
 		s.Log(elecLogDef.SPS, name)
+		s.Log(elecLogDef.GENERAL, fmt.Sprintf("Switching... TaskDistribution[%d] ==> %s", taskDist, name))
 	}
 }

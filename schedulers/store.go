@@ -1,10 +1,12 @@
 package schedulers
 
 import (
+	"bitbucket.org/sunybingcloud/electron/utilities"
 	"encoding/json"
 	sched "github.com/mesos/mesos-go/api/v0/scheduler"
 	"github.com/pkg/errors"
 	"os"
+	"sort"
 )
 
 // Names of different scheduling policies.
@@ -22,6 +24,15 @@ var SchedPolicies map[string]SchedPolicyState = map[string]SchedPolicyState{
 	mgm: &MaxGreedyMins{},
 	mm:  &MaxMin{},
 }
+
+// Scheduling policies to choose when switching
+var schedPoliciesToSwitch map[int]struct {
+	spName string
+	sp     SchedPolicyState
+} = make(map[int]struct {
+	spName string
+	sp     SchedPolicyState
+})
 
 // Initialize scheduling policy characteristics using the provided config file.
 func InitSchedPolicyCharacteristics(schedPoliciesConfigFilename string) error {
@@ -50,6 +61,31 @@ func InitSchedPolicyCharacteristics(schedPoliciesConfigFilename string) error {
 			case *MaxGreedyMins:
 				t.TaskDistribution = schedPolConfig[schedPolName].TaskDistribution
 				t.VarianceCpuSharePerTask = schedPolConfig[schedPolName].VarianceCpuSharePerTask
+			}
+		}
+
+		// Initialize schedPoliciesToSwitch to allow binary searching for scheduling policy switching.
+		spInformation := map[string]float64{}
+		for spName, sp := range SchedPolicies {
+			spInformation[spName] = sp.GetInfo().taskDist
+		}
+		spInformationPairList := utilities.GetPairList(spInformation)
+		// Sorting spInformationPairList in non-increasing order of taskDist.
+		sort.SliceStable(spInformationPairList, func(i, j int) bool {
+			return spInformationPairList[i].Value < spInformationPairList[j].Value
+		})
+		// Initializing scheduling policies that are setup for switching.
+		index := 0
+		for _, spInformationPair := range spInformationPairList {
+			if spInformationPair.Value != 0 {
+				schedPoliciesToSwitch[index] = struct {
+					spName string
+					sp     SchedPolicyState
+				}{
+					spName: spInformationPair.Key,
+					sp:     SchedPolicies[spInformationPair.Key],
+				}
+				index++
 			}
 		}
 	}

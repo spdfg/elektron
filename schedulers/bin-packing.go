@@ -34,7 +34,6 @@ type BinPackSortedWatts struct {
 }
 
 func (s *BinPackSortedWatts) ConsumeOffers(spc SchedPolicyContext, driver sched.SchedulerDriver, offers []*mesos.Offer) {
-	log.Println("BPSW scheduling...")
 	baseSchedRef := spc.(*BaseScheduler)
 	if baseSchedRef.schedPolSwitchEnabled {
 		SortNTasks(baseSchedRef.tasks, baseSchedRef.numTasksInSchedWindow, def.SortByWatts)
@@ -78,8 +77,6 @@ func (s *BinPackSortedWatts) ConsumeOffers(spc SchedPolicyContext, driver sched.
 				// stop scheduling if the #baseSchedRef.schedWindowSize tasks have been scheduled.
 				if baseSchedRef.schedPolSwitchEnabled &&
 					(s.numTasksScheduled >= baseSchedRef.schedWindowSize) {
-					log.Printf("Stopped scheduling... Completed scheduling %d tasks.",
-						s.numTasksScheduled)
 					break // Offers will automatically get declined.
 				}
 				// Does the task fit
@@ -107,7 +104,7 @@ func (s *BinPackSortedWatts) ConsumeOffers(spc SchedPolicyContext, driver sched.
 						}
 					}
 				} else {
-					break // Continue on to next offer.
+					break // Continue on to next task
 				}
 			}
 		}
@@ -123,6 +120,4 @@ func (s *BinPackSortedWatts) ConsumeOffers(spc SchedPolicyContext, driver sched.
 			driver.DeclineOffer(offer.Id, mesosUtils.DefaultFilter)
 		}
 	}
-
-	s.switchIfNecessary(spc)
 }

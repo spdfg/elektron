@@ -77,5 +77,23 @@ func (s *fillNextOfferCycle) apply(taskQueue []def.Task) (int, int) {
 			break
 		}
 	}
+	// Hacking...
+	// 2^window is window<=7
+	//	if newSchedWindow <= 7 {
+	//		newSchedWindow = int(math.Pow(2.0, float64(newSchedWindow)))
+	//	}
+	// Another hack. Getting rid of window to see whether the idle power consumption can be amortized.
+	// Setting window as the length of the entire queue.
+	// Also setting numberOfTasksTraversed to the number of tasks in the entire queue.
+	// TODO: Create another resizing strategy that sizes the window to the length of the entire pending queue.
+	flattenedLength := 0
+	numTasks := 0
+	for _, ts := range taskQueue {
+		numTasks++
+		flattenedLength += *ts.Instances
+	}
+	newSchedWindow = flattenedLength
+	numberOfTasksTraversed = numTasks
+
 	return newSchedWindow, numberOfTasksTraversed
 }

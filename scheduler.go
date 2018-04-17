@@ -28,6 +28,7 @@ var schedPolicyName = flag.String("schedPolicy", "first-fit", "Name of the sched
 var listSchedPolicies = flag.Bool("listSchedPolicies", false, "List the names of the pluaggable scheduling policies.")
 var enableSchedPolicySwitch = flag.Bool("switchSchedPolicy", false, "Enable switching of scheduling policies at runtime.")
 var schedPolConfigFile = flag.String("schedPolConfig", "", "Config file that contains information for each scheduling policy.")
+var fixFirstSchedPol = flag.String("fixFirstSchedPol", "", "Name of the scheduling policy to be deployed first, regardless of the distribution of tasks, provided switching is enabled.")
 
 // Short hand args
 func init() {
@@ -42,6 +43,7 @@ func init() {
 	flag.BoolVar(listSchedPolicies, "lsp", false, "Names of the pluaggable scheduling policies. (shorthand)")
 	flag.BoolVar(enableSchedPolicySwitch, "ssp", false, "Enable switching of scheduling policies at runtime.")
 	flag.StringVar(schedPolConfigFile, "spConfig", "", "Config file that contains information for each scheduling policy (shorthand).")
+	flag.StringVar(fixFirstSchedPol, "fxFstSchedPol", "", "Name of the schedulin gpolicy to be deployed first, regardless of the distribution of tasks, provided switching is enabled (shorthand).")
 }
 
 func listAllSchedulingPolicies() {
@@ -135,7 +137,8 @@ func main() {
 		schedulers.WithDone(done),
 		schedulers.WithPCPLog(pcpLog),
 		schedulers.WithLoggingChannels(logMType, logMsg),
-		schedulers.WithSchedPolSwitchEnabled(*enableSchedPolicySwitch))
+		schedulers.WithSchedPolSwitchEnabled(*enableSchedPolicySwitch),
+		schedulers.WithNameOfFirstSchedPolToFix(*fixFirstSchedPol))
 	driver, err := sched.NewMesosSchedulerDriver(sched.DriverConfig{
 		Master: *master,
 		Framework: &mesos.FrameworkInfo{

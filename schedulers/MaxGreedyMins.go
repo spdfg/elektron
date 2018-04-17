@@ -77,7 +77,6 @@ func (s *MaxGreedyMins) CheckFit(
 }
 
 func (s *MaxGreedyMins) ConsumeOffers(spc SchedPolicyContext, driver sched.SchedulerDriver, offers []*mesos.Offer) {
-	log.Println("Max-GreedyMins scheduling...")
 	baseSchedRef := spc.(*BaseScheduler)
 	if baseSchedRef.schedPolSwitchEnabled {
 		SortNTasks(baseSchedRef.tasks, baseSchedRef.numTasksInSchedWindow, def.SortByWatts)
@@ -112,8 +111,6 @@ func (s *MaxGreedyMins) ConsumeOffers(spc SchedPolicyContext, driver sched.Sched
 			// If scheduling policy switching enabled, then
 			// stop scheduling if the #baseSchedRef.schedWindowSize tasks have been scheduled.
 			if baseSchedRef.schedPolSwitchEnabled && (s.numTasksScheduled >= baseSchedRef.schedWindowSize) {
-				log.Printf("Stopped scheduling... Completed scheduling %d tasks.",
-					s.numTasksScheduled)
 				break // Offers will automatically get declined.
 			}
 			task := baseSchedRef.tasks[i]
@@ -141,11 +138,6 @@ func (s *MaxGreedyMins) ConsumeOffers(spc SchedPolicyContext, driver sched.Sched
 
 		// Pack the rest of the offer with the smallest tasks
 		for i := 0; i < len(baseSchedRef.tasks); i++ {
-			// If scheduling policy switching enabled, then
-			// stop scheduling if the #baseSchedRef.schedWindowSize tasks have been scheduled.
-			if baseSchedRef.schedPolSwitchEnabled && (s.numTasksScheduled >= baseSchedRef.schedWindowSize) {
-				break // Offers will automatically get declined.
-			}
 			task := baseSchedRef.tasks[i]
 			wattsConsideration, err := def.WattsToConsider(task, baseSchedRef.classMapWatts, offer)
 			if err != nil {
@@ -159,6 +151,11 @@ func (s *MaxGreedyMins) ConsumeOffers(spc SchedPolicyContext, driver sched.Sched
 			}
 
 			for *task.Instances > 0 {
+				// If scheduling policy switching enabled, then
+				// stop scheduling if the #baseSchedRef.schedWindowSize tasks have been scheduled.
+				if baseSchedRef.schedPolSwitchEnabled && (s.numTasksScheduled >= baseSchedRef.schedWindowSize) {
+					break // Offers will automatically get declined.
+				}
 				// TODO: Fix this so index doesn't need to be passed
 				taken, taskToSchedule := s.CheckFit(spc, i, task, wattsConsideration, offer,
 					&totalCPU, &totalRAM, &totalWatts)
@@ -183,6 +180,4 @@ func (s *MaxGreedyMins) ConsumeOffers(spc SchedPolicyContext, driver sched.Sched
 			driver.DeclineOffer(offer.Id, mesosUtils.DefaultFilter)
 		}
 	}
-
-	s.switchIfNecessary(spc)
 }

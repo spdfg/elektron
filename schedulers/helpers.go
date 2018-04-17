@@ -124,6 +124,23 @@ func WithSchedPolSwitchEnabled(enableSchedPolicySwitch bool) schedulerOptions {
 	}
 }
 
+func WithNameOfFirstSchedPolToFix(nameOfFirstSchedPol string) schedulerOptions {
+	return func(s ElectronScheduler) error {
+		if nameOfFirstSchedPol == "" {
+			lmt := elecLogDef.WARNING
+			msgColor := elecLogDef.LogMessageColors[lmt]
+			msg := msgColor.Sprintf("First scheduling policy to deploy not mentioned. This is now going to be determined at runtime.")
+			s.(*BaseScheduler).Log(lmt, msg)
+			return nil
+		}
+		if _, ok := SchedPolicies[nameOfFirstSchedPol]; !ok {
+			return errors.New("Invalid name of scheduling policy.")
+		}
+		s.(*BaseScheduler).nameOfFstSchedPolToDeploy = nameOfFirstSchedPol
+		return nil
+	}
+}
+
 // Launch tasks.
 func LaunchTasks(offerIDs []*mesos.OfferID, tasksToLaunch []*mesos.TaskInfo, driver sched.SchedulerDriver) {
 	driver.LaunchTasks(offerIDs, tasksToLaunch, mesosUtils.DefaultFilter)

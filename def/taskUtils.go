@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/mash/gokmeans"
+	"github.com/montanaflynn/stats"
 	"log"
 	"sort"
 )
@@ -69,16 +70,31 @@ func getObservations(tasks []Task, taskObservation func(task Task) []float64) []
 	return observations
 }
 
-// Size tasks based on the power consumption.
-// TODO: Size the cluster in a better way other than just taking an aggregate of the watts resource requirement.
-func clusterSize(tasks []Task, taskObservation func(task Task) []float64) float64 {
-	size := 0.0
+// Sizing each task cluster using the average MMMPU requirement of the task in the cluster.
+func clusterSizeAvgMMMPU(tasks []Task, taskObservation func(task Task) []float64) float64 {
+	mmmpuValues := []float64{}
+	// Total sum of the Median of Median Max Power Usage values for all tasks.
+	total := 0.0
 	for _, task := range tasks {
-		for _, observation := range taskObservation(task) {
-			size += observation
+		observations := taskObservation(task)
+		if len(observations) > 0 {
+			// taskObservation would give us the mmpu values. We would need to take the median of these
+			// values to obtain the Median of Median Max Power Usage value.
+			if medianValue, err := stats.Median(observations); err == nil {
+				mmmpuValues = append(mmmpuValues, medianValue)
+				total += medianValue
+			} else {
+				// skip this value
+				// there is an error in the task config.
+				log.Println(err)
+			}
+		} else {
+			// There is only one observation for the task.
+			mmmpuValues = append(mmmpuValues, observations[0])
 		}
 	}
-	return size
+
+	return total / float64(len(mmmpuValues))
 }
 
 // Order clusters in increasing order of task heaviness.
@@ -96,12 +112,12 @@ func labelAndOrder(clusters map[int][]Task, numberOfClusters int, taskObservatio
 	}
 
 	for i := 0; i < numberOfClusters-1; i++ {
-		// Sizing the current cluster.
-		sizeI := clusterSize(clusters[i], taskObservation)
+		// Sizing the current cluster based on average Median of Median Max Power Usage of tasks.
+		sizeI := clusterSizeAvgMMMPU(clusters[i], taskObservation)
 
 		// Comparing with the other clusters.
 		for j := i + 1; j < numberOfClusters; j++ {
-			sizeJ := clusterSize(clusters[j], taskObservation)
+			sizeJ := clusterSizeAvgMMMPU(clusters[j], taskObservation)
 			if sizeI > sizeJ {
 				sizedClusters[i].SizeScore++
 			} else {
@@ -158,4 +174,60 @@ func GetResourceRequirement(taskID string) (TaskResources, error) {
 		// Shouldn't be here.
 		return TaskResources{}, errors.New("Invalid TaskID: " + taskID)
 	}
+}
+
+// Determine the distribution of light power consuming and heavy power consuming tasks in a given window.
+func GetTaskDistributionInWindow(windowSize int, tasks []Task) (float64, error) {
+	getTotalInstances := func(ts []Task, taskExceedingWindow struct {
+		taskName       string
+		instsToDiscard int
+	}) int {
+		total := 0
+		for _, t := range ts {
+			if t.Name == taskExceedingWindow.taskName {
+				total += (*t.Instances - taskExceedingWindow.instsToDiscard)
+				continue
+			}
+			total += *t.Instances
+		}
+		return total
+	}
+
+	getTasksInWindow := func() (tasksInWindow []Task, taskExceedingWindow struct {
+		taskName       string
+		instsToDiscard int
+	}) {
+		tasksTraversed := 0
+		// Name of task, only few instances of which fall within the window.
+		lastTaskName := ""
+		for _, task := range tasks {
+			tasksInWindow = append(tasksInWindow, task)
+			tasksTraversed += *task.Instances
+			lastTaskName = task.Name
+			if tasksTraversed >= windowSize {
+				taskExceedingWindow.taskName = lastTaskName
+				taskExceedingWindow.instsToDiscard = tasksTraversed - windowSize
+				break
+			}
+		}
+
+		return
+	}
+
+	// Retrieving the tasks that are in the window.
+	tasksInWIndow, taskExceedingWindow := getTasksInWindow()
+	// Classifying the tasks based on Median of Median Max Power Usage values.
+	taskClusters := ClassifyTasks(tasksInWIndow, 2)
+	// First we'll need to check if the tasks in the window could be classified into 2 clusters.
+	// If yes, then we proceed with determining the distribution.
+	// Else, we throw an error stating that the distribution is even as only one cluster could be formed.
+	if len(taskClusters[1].Tasks) == 0 {
+		return -1.0, errors.New("Only one cluster could be formed.")
+	}
+
+	// The first cluster would corresponding to the light power consuming tasks.
+	// The second cluster would corresponding to the high power consuming tasks.
+	lpcTasksTotalInst := getTotalInstances(taskClusters[0].Tasks, taskExceedingWindow)
+	hpcTasksTotalInst := getTotalInstances(taskClusters[1].Tasks, taskExceedingWindow)
+	return float64(lpcTasksTotalInst) / float64(hpcTasksTotalInst), nil
 }

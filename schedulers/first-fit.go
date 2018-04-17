@@ -34,7 +34,6 @@ type FirstFit struct {
 }
 
 func (s *FirstFit) ConsumeOffers(spc SchedPolicyContext, driver sched.SchedulerDriver, offers []*mesos.Offer) {
-	log.Println("FirstFit scheduling...")
 	baseSchedRef := spc.(*BaseScheduler)
 	baseSchedRef.LogOffersReceived(offers)
 
@@ -57,8 +56,6 @@ func (s *FirstFit) ConsumeOffers(spc SchedPolicyContext, driver sched.SchedulerD
 			// If scheduling policy switching enabled, then
 			// stop scheduling if the #baseSchedRef.schedWindowSize tasks have been scheduled.
 			if baseSchedRef.schedPolSwitchEnabled && (s.numTasksScheduled >= baseSchedRef.schedWindowSize) {
-				log.Printf("Stopped scheduling... Completed scheduling %d tasks.",
-					s.numTasksScheduled)
 				break // Offers will automatically get declined.
 			}
 			task := baseSchedRef.tasks[i]
@@ -104,6 +101,4 @@ func (s *FirstFit) ConsumeOffers(spc SchedPolicyContext, driver sched.SchedulerD
 			driver.DeclineOffer(offer.Id, mesosUtils.DefaultFilter)
 		}
 	}
-
-	s.switchIfNecessary(spc)
 }

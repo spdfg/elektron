@@ -76,7 +76,6 @@ func (s *MaxMin) CheckFit(
 }
 
 func (s *MaxMin) ConsumeOffers(spc SchedPolicyContext, driver sched.SchedulerDriver, offers []*mesos.Offer) {
-	log.Println("Max-Min scheduling...")
 	baseSchedRef := spc.(*BaseScheduler)
 	if baseSchedRef.schedPolSwitchEnabled {
 		SortNTasks(baseSchedRef.tasks, baseSchedRef.numTasksInSchedWindow, def.SortByWatts)
@@ -116,8 +115,6 @@ func (s *MaxMin) ConsumeOffers(spc SchedPolicyContext, driver sched.SchedulerDri
 			// stop scheduling if the #baseSchedRef.schedWindowSize tasks have been scheduled.
 			if baseSchedRef.schedPolSwitchEnabled &&
 				(s.numTasksScheduled >= baseSchedRef.schedWindowSize) {
-				log.Printf("Stopped scheduling... Completed scheduling %d tasks.",
-					s.numTasksScheduled)
 				break // Offers will automatically get declined.
 			}
 			// We need to pick a min task or a max task
@@ -173,6 +170,4 @@ func (s *MaxMin) ConsumeOffers(spc SchedPolicyContext, driver sched.SchedulerDri
 			driver.DeclineOffer(offer.Id, mesosUtils.DefaultFilter)
 		}
 	}
-
-	s.switchIfNecessary(spc)
 }
