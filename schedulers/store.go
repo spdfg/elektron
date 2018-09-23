@@ -1,7 +1,7 @@
 package schedulers
 
 import (
-	"bitbucket.org/sunybingcloud/electron/utilities"
+	"bitbucket.org/sunybingcloud/elektron/utilities"
 	"encoding/json"
 	sched "github.com/mesos/mesos-go/api/v0/scheduler"
 	"github.com/pkg/errors"
