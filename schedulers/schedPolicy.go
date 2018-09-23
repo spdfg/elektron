@@ -1,7 +1,7 @@
 package schedulers
 
 import (
-	"bitbucket.org/sunybingcloud/electron/def"
+	"bitbucket.org/sunybingcloud/elektron/def"
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 	sched "github.com/mesos/mesos-go/api/v0/scheduler"
 	"log"
