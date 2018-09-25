@@ -1,8 +1,14 @@
 Elektron: A Pluggable Mesos framework with power-aware capabilities
 ===================================================================
 
-Elektron is a Mesos framework that behaves as a playground for developers to experiment with different scheduling policies to launch ad-hoc jobs.
-Elektron is designed as a lightweight, configurable framework, which can be used in conjunction with built-in power-capping policies to reduce the peak power and/or energy usage of co-scheduled tasks.
+_Elektron_ is a Mesos framework that behaves as a playground for developers to experiment with different scheduling policies to launch ad-hoc jobs. It is designed as a lightweight, configurable framework, which can be used in conjunction with built-in power-capping policies to reduce the peak power and/or energy usage of co-scheduled tasks.
+
+_Elektron_ meets the need for a more fine-grained control in
+order to make informed choices regarding resources offered
+by Mesos. It acts as a light-weight framework capable of
+scheduling tasks in Docker containers on Mesos. However, in
+addition to being a scheduler, Elektron also takes advantage
+of tools such as [Performance Co-Pilot](http://pcp.io/) and [RAPL](https://01.org/blogs/2014/running-average-power-limit--rapl) to help contain the power envelope within defined thresholds, reduce peak power consumption, and also reduce total energy consumption. Electron is able to leverage the Mesos-provided resource abstraction to allow different algorithms to decide how to consume resource offers made by a Mesos Master.
 
 #Features
 * [Pluggable Scheduling Policies](docs/SchedulingPolicies.md)
