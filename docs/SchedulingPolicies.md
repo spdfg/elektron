@@ -1,6 +1,19 @@
 Elektron: Pluggable Scheduling Policies
 =======================================
 
+_Elektron_ is capable of deploying different scheduling policies. The scheduling policy to be plugged in can be specified using the `-schedPolicy` command-line option.
+
+For example, to run _Elektron_ with the First-Fit scheduling policy, use the below command.
+```commandline
+./elektron -w <workload> -schedPolicy first-fit
+```
+
+To get the list of all scheduling policies that can be plugged into _Elektron_, use the `-listSchedPolicies` command-line option as shown below.
+
+```commandline
+./elektron -listSchedPolicies
+```
+
 ##__Scheduling Policies__
 
  * **First Fit** - *Find the first task in the job queue whose 
