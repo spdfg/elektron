@@ -6,14 +6,24 @@ _Elektron_ is a Mesos framework that behaves as a playground for developers to e
 However, in addition to being a scheduler, Elektron also takes advantage of tools such as [Performance Co-Pilot](http://pcp.io/) and [RAPL](https://01.org/blogs/2014/running-average-power-limit--rapl) to help contain the power envelope within defined thresholds, reduce peak power consumption, and also reduce total energy consumption. Elektron is able to leverage the Mesos-provided resource abstraction to allow different algorithms to decide how to consume resource offers made by a Mesos Master.
 
 #Architecture
+![](https://bitbucket.org/sunybingcloud/elektron/src/spsCherryPick/docs/ElekArch.png)
 
-![Elektron](docs/Elektron-Architecture.png)
-
-
-#Features
+#Usage
 * [Pluggable Scheduling Policies](docs/SchedulingPolicies.md)
-* [Pluggable Power-Capping Strategies](docs/PowerCappingStrategies.md)
-* Cluster resource monitoring
+* [Pluggable Power-Capping strategies](docs/PowerCappingStrategies.md)
+* [Scheduling Policy Switching](docs/SchedulingPolicySwitching.md)
+
+#Logging
+Please go through the [logging library doc](docs/Logging.md) to understand how the logging library has been setup. There are also instructions on how one can add additional loggers.
+
+#Data
+* [Cluster Resource Consumption](docs/data/ClusterResourceConsumption.md)
+* [Schedule Trace](docs/data/ScheduledTrace.md)
+* [Degree of Collocation](docs/data/DegreeOfCollocation.md)
+* When scheduling policy switching enabled.
+    - [Task Classification Overhead](docs/data/withSpsEnabled/TaskClassificationOverhead.md)
+    - [Scheduling Policy Switch Trace](docs/data/withSpsEnabled/SchedulingPolicySwitchTrace.md)
+    - [Scheduling Window](docs/data/withSpsEnabled/SchedulingWindow.md)
 
 #Software Requirements
 **Requires [Performance Co-Pilot](http://pcp.io/) tool pmdumptext to be installed on the
