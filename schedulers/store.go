@@ -1,12 +1,13 @@
 package schedulers
 
 import (
-	"gitlab.com/spdf/elektron/utilities"
 	"encoding/json"
-	sched "github.com/mesos/mesos-go/api/v0/scheduler"
-	"github.com/pkg/errors"
 	"os"
 	"sort"
+
+	sched "github.com/mesos/mesos-go/api/v0/scheduler"
+	"github.com/pkg/errors"
+	"gitlab.com/spdf/elektron/utilities"
 )
 
 // Names of different scheduling policies.

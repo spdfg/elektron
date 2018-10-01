@@ -1,12 +1,13 @@
 package schedulers
 
 import (
+	"log"
+
+	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
+	sched "github.com/mesos/mesos-go/api/v0/scheduler"
 	"gitlab.com/spdf/elektron/def"
 	"gitlab.com/spdf/elektron/utilities/mesosUtils"
 	"gitlab.com/spdf/elektron/utilities/offerUtils"
-	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
-	sched "github.com/mesos/mesos-go/api/v0/scheduler"
-	"log"
 )
 
 // Decides if to take an offer or not

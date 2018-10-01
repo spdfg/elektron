@@ -2,6 +2,7 @@ package schedulers
 
 import (
 	"fmt"
+
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 )
 

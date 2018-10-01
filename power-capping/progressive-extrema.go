@@ -1,11 +1,6 @@
 package pcp
 
 import (
-	"gitlab.com/spdf/elektron/constants"
-	elecLogDef "gitlab.com/spdf/elektron/logging/def"
-	"gitlab.com/spdf/elektron/pcp"
-	"gitlab.com/spdf/elektron/rapl"
-	"gitlab.com/spdf/elektron/utilities"
 	"bufio"
 	"container/ring"
 	"fmt"
@@ -17,6 +12,12 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	"gitlab.com/spdf/elektron/constants"
+	elecLogDef "gitlab.com/spdf/elektron/logging/def"
+	"gitlab.com/spdf/elektron/pcp"
+	"gitlab.com/spdf/elektron/rapl"
+	"gitlab.com/spdf/elektron/utilities"
 )
 
 func round(num float64) int {

@@ -1,11 +1,12 @@
 package rapl
 
 import (
-	elekEnv "gitlab.com/spdf/elektron/environment"
-	"github.com/pkg/errors"
-	"golang.org/x/crypto/ssh"
 	"os"
 	"strconv"
+
+	"github.com/pkg/errors"
+	elekEnv "gitlab.com/spdf/elektron/environment"
+	"golang.org/x/crypto/ssh"
 )
 
 func Cap(host, username string, percentage float64) error {

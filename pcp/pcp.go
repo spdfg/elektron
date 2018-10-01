@@ -1,16 +1,17 @@
 package pcp
 
 import (
-	elecLogDef "gitlab.com/spdf/elektron/logging/def"
-	"gitlab.com/spdf/elektron/schedulers"
 	"bufio"
 	"fmt"
-	"github.com/mesos/mesos-go/api/v0/scheduler"
-	"github.com/montanaflynn/stats"
 	"log"
 	"os/exec"
 	"syscall"
 	"time"
+
+	"github.com/mesos/mesos-go/api/v0/scheduler"
+	"github.com/montanaflynn/stats"
+	elecLogDef "gitlab.com/spdf/elektron/logging/def"
+	"gitlab.com/spdf/elektron/schedulers"
 )
 
 func Start(quit chan struct{}, logging *bool, logMType chan elecLogDef.LogMessageType, logMsg chan string, s scheduler.Scheduler) {

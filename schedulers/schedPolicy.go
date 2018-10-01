@@ -1,13 +1,14 @@
 package schedulers
 
 import (
-	"gitlab.com/spdf/elektron/def"
-	elecLogDef "gitlab.com/spdf/elektron/logging/def"
 	"fmt"
-	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
-	sched "github.com/mesos/mesos-go/api/v0/scheduler"
 	"log"
 	"time"
+
+	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
+	sched "github.com/mesos/mesos-go/api/v0/scheduler"
+	"gitlab.com/spdf/elektron/def"
+	elecLogDef "gitlab.com/spdf/elektron/logging/def"
 )
 
 type SchedPolicyContext interface {

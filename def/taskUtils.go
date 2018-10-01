@@ -3,10 +3,11 @@ package def
 import (
 	"errors"
 	"fmt"
-	"github.com/mash/gokmeans"
-	"github.com/montanaflynn/stats"
 	"log"
 	"sort"
+
+	"github.com/mash/gokmeans"
+	"github.com/montanaflynn/stats"
 )
 
 // Information about a cluster of tasks.

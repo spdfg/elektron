@@ -1,19 +1,20 @@
 package schedulers
 
 import (
-	"gitlab.com/spdf/elektron/def"
-	elecLogDef "gitlab.com/spdf/elektron/logging/def"
-        "gitlab.com/spdf/elektron/utilities"
-	"gitlab.com/spdf/elektron/utilities/schedUtils"
 	"bytes"
 	"fmt"
+	"log"
+	"sync"
+	"time"
+
 	"github.com/golang/protobuf/proto"
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 	"github.com/mesos/mesos-go/api/v0/mesosutil"
 	sched "github.com/mesos/mesos-go/api/v0/scheduler"
-	"log"
-	"sync"
-	"time"
+	"gitlab.com/spdf/elektron/def"
+	elecLogDef "gitlab.com/spdf/elektron/logging/def"
+	"gitlab.com/spdf/elektron/utilities"
+	"gitlab.com/spdf/elektron/utilities/schedUtils"
 )
 
 type BaseScheduler struct {

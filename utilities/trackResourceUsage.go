@@ -1,11 +1,12 @@
 package utilities
 
 import (
+	"errors"
+	"sync"
+
+	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 	"gitlab.com/spdf/elektron/def"
 	"gitlab.com/spdf/elektron/utilities/offerUtils"
-	"errors"
-	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
-	"sync"
 )
 
 type TrackResourceUsage struct {

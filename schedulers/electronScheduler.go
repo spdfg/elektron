@@ -1,11 +1,12 @@
 package schedulers
 
 import (
-	"gitlab.com/spdf/elektron/def"
-	elecLogDef "gitlab.com/spdf/elektron/logging/def"
+	"time"
+
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 	sched "github.com/mesos/mesos-go/api/v0/scheduler"
-	"time"
+	"gitlab.com/spdf/elektron/def"
+	elecLogDef "gitlab.com/spdf/elektron/logging/def"
 )
 
 // Implements mesos scheduler.

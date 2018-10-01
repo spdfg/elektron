@@ -1,9 +1,10 @@
 package logging
 
 import (
-	logUtils "gitlab.com/spdf/elektron/logging/utils"
 	"strings"
 	"time"
+
+	logUtils "gitlab.com/spdf/elektron/logging/utils"
 )
 
 // Names of different loggers

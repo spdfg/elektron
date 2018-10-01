@@ -1,9 +1,10 @@
 package schedUtils
 
 import (
+	"log"
+
 	"gitlab.com/spdf/elektron/def"
 	"gitlab.com/spdf/elektron/utilities"
-	"log"
 )
 
 // Criteria for resizing the scheduling window.

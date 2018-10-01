@@ -1,14 +1,14 @@
 package schedulers
 
 import (
+	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
+	sched "github.com/mesos/mesos-go/api/v0/scheduler"
+	"github.com/pkg/errors"
 	"gitlab.com/spdf/elektron/constants"
 	"gitlab.com/spdf/elektron/def"
 	elecLogDef "gitlab.com/spdf/elektron/logging/def"
 	"gitlab.com/spdf/elektron/utilities"
 	"gitlab.com/spdf/elektron/utilities/mesosUtils"
-	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
-	sched "github.com/mesos/mesos-go/api/v0/scheduler"
-	"github.com/pkg/errors"
 )
 
 func coLocated(tasks map[string]bool, s BaseScheduler) {

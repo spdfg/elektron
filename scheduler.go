@@ -1,20 +1,21 @@
 package main
 
 import (
-	"gitlab.com/spdf/elektron/def"
-	elecLogDef "gitlab.com/spdf/elektron/logging/def"
-	"gitlab.com/spdf/elektron/pcp"
-	"gitlab.com/spdf/elektron/schedulers"
 	"flag"
 	"fmt"
-	"github.com/golang/protobuf/proto"
-	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
-	sched "github.com/mesos/mesos-go/api/v0/scheduler"
 	"log"
 	"os"
 	"os/signal"
 	"strings"
 	"time"
+
+	"github.com/golang/protobuf/proto"
+	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
+	sched "github.com/mesos/mesos-go/api/v0/scheduler"
+	"gitlab.com/spdf/elektron/def"
+	elecLogDef "gitlab.com/spdf/elektron/logging/def"
+	"gitlab.com/spdf/elektron/pcp"
+	"gitlab.com/spdf/elektron/schedulers"
 )
 
 var master = flag.String("master", "", "Location of leading Mesos master -- <mesos-master>:<port>")

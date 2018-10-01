@@ -1,10 +1,11 @@
 package offerUtils
 
 import (
-	"gitlab.com/spdf/elektron/constants"
-	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 	"log"
 	"strings"
+
+	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
+	"gitlab.com/spdf/elektron/constants"
 )
 
 func OfferAgg(offer *mesos.Offer) (float64, float64, float64) {
