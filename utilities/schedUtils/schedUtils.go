@@ -1,8 +1,8 @@
 package schedUtils
 
 import (
-	"bitbucket.org/sunybingcloud/elektron/def"
-	"bitbucket.org/sunybingcloud/elektron/utilities"
+	"gitlab.com/spdf/elektron/def"
+	"gitlab.com/spdf/elektron/utilities"
 	"log"
 )
 

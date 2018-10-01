@@ -1,11 +1,11 @@
 package schedulers
 
 import (
-	"bitbucket.org/sunybingcloud/elektron/constants"
-	"bitbucket.org/sunybingcloud/elektron/def"
-	elecLogDef "bitbucket.org/sunybingcloud/elektron/logging/def"
-	"bitbucket.org/sunybingcloud/elektron/utilities"
-	"bitbucket.org/sunybingcloud/elektron/utilities/mesosUtils"
+	"gitlab.com/spdf/elektron/constants"
+	"gitlab.com/spdf/elektron/def"
+	elecLogDef "gitlab.com/spdf/elektron/logging/def"
+	"gitlab.com/spdf/elektron/utilities"
+	"gitlab.com/spdf/elektron/utilities/mesosUtils"
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 	sched "github.com/mesos/mesos-go/api/v0/scheduler"
 	"github.com/pkg/errors"

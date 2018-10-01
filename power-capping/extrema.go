@@ -1,9 +1,9 @@
 package pcp
 
 import (
-	elecLogDef "bitbucket.org/sunybingcloud/elektron/logging/def"
-	"bitbucket.org/sunybingcloud/elektron/pcp"
-	"bitbucket.org/sunybingcloud/elektron/rapl"
+	elecLogDef "gitlab.com/spdf/elektron/logging/def"
+	"gitlab.com/spdf/elektron/pcp"
+	"gitlab.com/spdf/elektron/rapl"
 	"bufio"
 	"container/ring"
 	"fmt"

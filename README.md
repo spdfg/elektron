@@ -6,7 +6,7 @@ _Elektron_ is a [Mesos](mesos.apache.org) framework that behaves as a playground
 However, in addition to being a scheduler, Elektron also takes advantage of tools such as [Performance Co-Pilot](http://pcp.io/) and [RAPL](https://01.org/blogs/2014/running-average-power-limit--rapl) to help contain the power envelope within defined thresholds, reduce peak power consumption, and also reduce total energy consumption. Elektron is able to leverage the Mesos-provided resource abstraction to allow different algorithms to decide how to consume resource offers made by a Mesos Master.
 
 #Architecture
-![](https://bitbucket.org/sunybingcloud/elektron/src/spsCherryPick/docs/ElekArch.png)
+![](docs/ElekArch.png)
 
 #Usage
 * [Pluggable Scheduling Policies](docs/SchedulingPolicies.md)
@@ -30,7 +30,7 @@ Please go through the [logging library doc](docs/Logging.md) to understand how t
 machine on which electron is launched for logging to work and PCP collector agents installed
 on the Mesos Agents**
 
-Compatible with the following versions,
+Compatible with the following versions:
 
 * Mesos 1.5.0
 * Go 1.9.7

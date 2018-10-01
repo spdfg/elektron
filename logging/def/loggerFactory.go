@@ -1,7 +1,7 @@
 package logging
 
 import (
-	logUtils "bitbucket.org/sunybingcloud/elektron/logging/utils"
+	logUtils "gitlab.com/spdf/elektron/logging/utils"
 	"strings"
 	"time"
 )

@@ -1,8 +1,8 @@
 package utilities
 
 import (
-	"bitbucket.org/sunybingcloud/elektron/def"
-	"bitbucket.org/sunybingcloud/elektron/utilities/offerUtils"
+	"gitlab.com/spdf/elektron/def"
+	"gitlab.com/spdf/elektron/utilities/offerUtils"
 	"errors"
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 	"sync"

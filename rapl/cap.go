@@ -1,7 +1,7 @@
 package rapl
 
 import (
-	elekEnv "bitbucket.org/sunybingcloud/elektron/environment"
+	elekEnv "gitlab.com/spdf/elektron/environment"
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/ssh"
 	"os"

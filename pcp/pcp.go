@@ -1,8 +1,8 @@
 package pcp
 
 import (
-	elecLogDef "bitbucket.org/sunybingcloud/elektron/logging/def"
-	"bitbucket.org/sunybingcloud/elektron/schedulers"
+	elecLogDef "gitlab.com/spdf/elektron/logging/def"
+	"gitlab.com/spdf/elektron/schedulers"
 	"bufio"
 	"fmt"
 	"github.com/mesos/mesos-go/api/v0/scheduler"

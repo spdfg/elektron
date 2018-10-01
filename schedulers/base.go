@@ -1,10 +1,10 @@
 package schedulers
 
 import (
-	"bitbucket.org/sunybingcloud/elektron/def"
-	elecLogDef "bitbucket.org/sunybingcloud/elektron/logging/def"
-        "bitbucket.org/sunybingcloud/elektron/utilities"
-	"bitbucket.org/sunybingcloud/elektron/utilities/schedUtils"
+	"gitlab.com/spdf/elektron/def"
+	elecLogDef "gitlab.com/spdf/elektron/logging/def"
+        "gitlab.com/spdf/elektron/utilities"
+	"gitlab.com/spdf/elektron/utilities/schedUtils"
 	"bytes"
 	"fmt"
 	"github.com/golang/protobuf/proto"
