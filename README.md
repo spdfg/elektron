@@ -45,13 +45,22 @@ Compile the source code using the `go build` tool as shown below.
 ```commandline
 go build -o elektron
 ```
-How to run (Use the --help option to get information about other command-line options):
+How to run (Use the --help option to get information about other command-line options): 
 
-`./elektron -workload <workload json>`
+Use the `-logPrefix` option to provide the prefix for the log file names. 
+
+`./elektron -master <host:port> -workload <workload json>`
+
+### Plug-in Scheduling Policy
+Use the `-schedPolicy` option with the name of the scheduling policy to be deployed.
+
+`./elektron -master <host:port> -workload <workload json> -schedPolicy <scheduling policy name>`
+
+_Note_: To obtain the list of possible scheduling policy names, use the `-listSchedPolicies` option.
 
 To run electron with Scheduling Policy Switching Enabled, run the following command,
 
-`./electron -workload <workload json> -ssp -spConfig <schedPolicy config file>`
+`./electron -master <host:port> -workload <workload json> -ssp -spConfig <schedPolicy config file>`
 
 Workload schema:
 
