@@ -1,4 +1,4 @@
-package pcp
+package powerCap
 
 import (
 	"bufio"
