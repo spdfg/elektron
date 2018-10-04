@@ -1,14 +1,11 @@
 {
 	"bin-packing": {
-		"taskDist": 10.0,
-		"varCpuShare": 0.64
+		"taskDist": 10.0
 	},
 	"max-min": {
-		"taskDist": 0.416,
-		"varCpuShare": 0.35
+		"taskDist": 0.416
 	},
 	"max-greedymins": {
-		"taskDist": 6.667,
-		"varCpuShare": 0.89
+		"taskDist": 6.667
 	}
 }
