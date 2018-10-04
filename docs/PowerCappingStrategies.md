@@ -1,7 +1,6 @@
-Elektron: Power-Capping Strategies
-==================================
+# Power-Capping Strategies
 
-##__Power-Capping Policies__
+## Power-Capping Policies
 
 * **Extrema** - A dynamic power-capping strategy that is able to make smart trade-offs
 between makespan and power consumption. *Extrema* reacts to power trends in the

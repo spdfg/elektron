@@ -1,9 +1,8 @@
-Elektron: Pluggable Scheduling Policies
-=======================================
+# Pluggable Scheduling Policies
 
 _Elektron_ is capable of deploying different scheduling policies. The scheduling policy to be plugged in can be specified using the `-schedPolicy` command-line option.
 
-##__Scheduling Policies__
+## Scheduling Policies
 
  * **First Fit** - *Find the first task in the job queue whose 
  resource constraints are satisfied by the resources available in
