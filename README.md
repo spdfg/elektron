@@ -10,7 +10,7 @@ However, in addition to being a scheduler, Elektron also takes advantage of tool
 
 # Usage
 * [Pluggable Scheduling Policies](docs/SchedulingPolicies.md)
-* [Pluggable Power-Capping strategies](docs/PowerCappingStrategies.md)
+* [Power-Capping strategies](docs/PowerCappingStrategies.md)
 * [Scheduling Policy Switching](docs/SchedulingPolicySwitching.md)
 
 # Logging
