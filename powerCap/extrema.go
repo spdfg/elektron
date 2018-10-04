@@ -18,9 +18,9 @@ import (
 )
 
 func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, hiThreshold, loThreshold float64,
-	logMType chan elekLogDef.LogMessageType, logMsg chan string) {
+	logMType chan elekLogDef.LogMessageType, logMsg chan string, pcpConfigFile string) {
 
-	const pcpCommand string = "pmdumptext -m -l -f '' -t 1.0 -d , -c config"
+	const pcpCommand string = "pmdumptext -m -l -f '' -t 1.0 -d , -c " + pcpConfigFile
 	cmd := exec.Command("sh", "-c", pcpCommand)
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 

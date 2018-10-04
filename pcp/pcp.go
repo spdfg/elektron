@@ -14,9 +14,10 @@ import (
 	"gitlab.com/spdf/elektron/schedulers"
 )
 
-func Start(quit chan struct{}, logging *bool, logMType chan elekLogDef.LogMessageType, logMsg chan string, s scheduler.Scheduler) {
+func Start(quit chan struct{}, logging *bool, logMType chan elekLogDef.LogMessageType,
+	logMsg chan string, pcpConfigFile string, s scheduler.Scheduler) {
 	baseSchedRef := s.(*schedulers.BaseScheduler)
-	const pcpCommand string = "pmdumptext -m -l -f '' -t 1.0 -d , -c config"
+	const pcpCommand string = "pmdumptext -m -l -f '' -t 1.0 -d , -c " + pcpConfigFile
 	cmd := exec.Command("sh", "-c", pcpCommand)
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 

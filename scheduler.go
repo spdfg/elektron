@@ -22,6 +22,8 @@ import (
 var master = flag.String("master", "", "Location of leading Mesos master -- <mesos-master>:<port>")
 var tasksFile = flag.String("workload", "", "JSON file containing task definitions")
 var wattsAsAResource = flag.Bool("wattsAsAResource", false, "Enable Watts as a Resource")
+var pcpConfigFile = flag.String("pcpConfigFile", "config", "PCP config file name (if file not " +
+	"present in the same directory, then provide path).")
 var pcplogPrefix = flag.String("logPrefix", "", "Prefix for pcplog")
 var powerCapPolicy = flag.String("powercap", "", "Power Capping policy. (default (''), extrema, prog-extrema).")
 var hiThreshold = flag.Float64("hiThreshold", 0.0, "Upperbound for when we should start capping")
@@ -41,6 +43,8 @@ func init() {
 	flag.StringVar(master, "m", "", "Location of leading Mesos master (shorthand)")
 	flag.StringVar(tasksFile, "w", "", "JSON file containing task definitions (shorthand)")
 	flag.BoolVar(wattsAsAResource, "waar", false, "Enable Watts as a Resource (shorthand)")
+	flag.StringVar(pcpConfigFile, "pcpCF", "config", "PCP config file name (if not present in" +
+		" the same directory, then provide path) (shorthand).")
 	flag.StringVar(pcplogPrefix, "p", "", "Prefix for pcplog (shorthand)")
         flag.StringVar(powerCapPolicy, "pc", "", "Power Capping policy. (default (''), extrema, prog-extrema) (shorthand).")
 	flag.Float64Var(hiThreshold, "ht", 700.0, "Upperbound for when we should start capping (shorthand)")
@@ -195,14 +199,20 @@ func main() {
 		}
 	}
 
+	// Checking if pcp config file exists.
+	if _, err := os.Stat(*pcpConfigFile); os.IsNotExist(err) {
+		logger.WriteLog(elekLogDef.ERROR, "PCP config file does not exist!")
+		os.Exit(1)
+	}
+
 	if noPowercap {
-		go pcp.Start(pcpLog, &recordPCP, logMType, logMsg, scheduler)
+		go pcp.Start(pcpLog, &recordPCP, logMType, logMsg, *pcpConfigFile, scheduler)
 	} else if extrema {
 		go powerCap.StartPCPLogAndExtremaDynamicCap(pcpLog, &recordPCP, *hiThreshold,
-			*loThreshold, logMType, logMsg)
+			*loThreshold, logMType, logMsg, *pcpConfigFile)
 	} else if progExtrema {
 		go powerCap.StartPCPLogAndProgressiveExtremaCap(pcpLog, &recordPCP, *hiThreshold,
-			*loThreshold, logMType, logMsg)
+			*loThreshold, logMType, logMsg, *pcpConfigFile)
 	}
 
 	time.Sleep(1 * time.Second) // Take a second between starting PCP log and continuing
