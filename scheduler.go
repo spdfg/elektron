@@ -16,12 +16,14 @@ import (
 	elecLogDef "gitlab.com/spdf/elektron/logging/def"
 	"gitlab.com/spdf/elektron/pcp"
 	"gitlab.com/spdf/elektron/schedulers"
+	"gitlab.com/spdf/elektron/powerCap"
 )
 
 var master = flag.String("master", "", "Location of leading Mesos master -- <mesos-master>:<port>")
 var tasksFile = flag.String("workload", "", "JSON file containing task definitions")
 var wattsAsAResource = flag.Bool("wattsAsAResource", false, "Enable Watts as a Resource")
 var pcplogPrefix = flag.String("logPrefix", "", "Prefix for pcplog")
+var powerCapPolicy = flag.String("powercap", "", "Power Capping policy. (default (''), extrema, prog-extrema).")
 var hiThreshold = flag.Float64("hiThreshold", 0.0, "Upperbound for when we should start capping")
 var loThreshold = flag.Float64("loThreshold", 0.0, "Lowerbound for when we should start uncapping")
 var classMapWatts = flag.Bool("classMapWatts", false, "Enable mapping of watts to power class of node")
@@ -40,6 +42,7 @@ func init() {
 	flag.StringVar(tasksFile, "w", "", "JSON file containing task definitions (shorthand)")
 	flag.BoolVar(wattsAsAResource, "waar", false, "Enable Watts as a Resource (shorthand)")
 	flag.StringVar(pcplogPrefix, "p", "", "Prefix for pcplog (shorthand)")
+        flag.StringVar(powerCapPolicy, "pc", "", "Power Capping policy. (default (''), extrema, prog-extrema) (shorthand).")
 	flag.Float64Var(hiThreshold, "ht", 700.0, "Upperbound for when we should start capping (shorthand)")
 	flag.Float64Var(loThreshold, "lt", 400.0, "Lowerbound for when we should start uncapping (shorthand)")
 	flag.BoolVar(classMapWatts, "cmw", false, "Enable mapping of watts to power class of node (shorthand)")
@@ -160,9 +163,48 @@ func main() {
 		return
 	}
 
-	go pcp.Start(pcpLog, &recordPCP, logMType, logMsg, scheduler)
-	//go pcp.StartPCPLogAndExtremaDynamicCap(pcpLog, &recordPCP, *hiThreshold, *loThreshold, logMType, logMsg)
-	//go pcp.StartPCPLogAndProgressiveExtremaCap(pcpLog, &recordPCP, *hiThreshold, *loThreshold, logMType, logMsg)
+	// Power Capping policy (if required).
+	var noPowercap, extrema, progExtrema bool
+	var powercapValues map[string]struct{} = map[string]struct{} {
+		"": {},
+		"extrema": {},
+		"progExtrema": {},
+	}
+
+	if _, ok := powercapValues[*powerCapPolicy]; !ok {
+		logger.WriteLog(elecLogDef.ERROR, "Incorrect power capping policy specified.")
+		os.Exit(1)
+	} else {
+		// Indicating which power capping policy to use, if any.
+		if *powerCapPolicy == "" {
+			noPowercap = true
+		} else {
+			if *powerCapPolicy == "extrema" {
+				extrema = true
+			} else {
+				progExtrema = true
+			}
+			// High and Low Thresholds.
+			// These values are not used to configure the scheduler.
+			// hiThreshold and loThreshold are passed to the powercappers.
+			if *hiThreshold < *loThreshold {
+				logger.WriteLog(elecLogDef.ERROR, "High threshold is of a"+
+					" lower value than low threshold.")
+				os.Exit(1)
+			}
+		}
+	}
+
+	if noPowercap {
+		go pcp.Start(pcpLog, &recordPCP, logMType, logMsg, scheduler)
+	} else if extrema {
+		go powerCap.StartPCPLogAndExtremaDynamicCap(pcpLog, &recordPCP, *hiThreshold,
+			*loThreshold, logMType, logMsg)
+	} else if progExtrema {
+		go powerCap.StartPCPLogAndProgressiveExtremaCap(pcpLog, &recordPCP, *hiThreshold,
+			*loThreshold, logMType, logMsg)
+	}
+
 	time.Sleep(1 * time.Second) // Take a second between starting PCP log and continuing
 
 	// Attempt to handle SIGINT to not leave pmdumptext running.
