@@ -49,18 +49,33 @@ How to run (Use the --help option to get information about other command-line op
 
 Use the `-logPrefix` option to provide the prefix for the log file names. 
 
-`./elektron -master <host:port> -workload <workload json>`
+```commandline
+./elektron -master <host:port> -workload <workload json>
+```
+
+### Power Capping
+_Elektron_ is also capable of running power capping policies along with scheduling policies. 
+
+Use the `-powercap` option with the name of the power capping policy to be run.
+
+```commandline
+./elektron -master <host:port> -workload <workload json> -powercap <powercap policy name>
+```
 
 ### Plug-in Scheduling Policy
-Use the `-schedPolicy` option with the name of the scheduling policy to be deployed.
+Use the `-schedPolicy` option with the name of the scheduling policy to be deployed.<br>The default scheduling policy is First Fit.
 
-`./elektron -master <host:port> -workload <workload json> -schedPolicy <scheduling policy name>`
+```commandline
+./elektron -master <host:port> -workload <workload json> -schedPolicy <scheduling policy name>
+```
 
 _Note_: To obtain the list of possible scheduling policy names, use the `-listSchedPolicies` option.
 
 To run electron with Scheduling Policy Switching Enabled, run the following command,
 
-`./electron -master <host:port> -workload <workload json> -ssp -spConfig <schedPolicy config file>`
+```commandline
+./elektron -master <host:port> -workload <workload json> -ssp -spConfig <schedPolicy config file>
+```
 
 Workload schema:
 
