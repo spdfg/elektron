@@ -5,18 +5,18 @@ _Elektron_ is a [Mesos](mesos.apache.org) framework that behaves as a playground
 
 However, in addition to being a scheduler, Elektron also takes advantage of tools such as [Performance Co-Pilot](http://pcp.io/) and [RAPL](https://01.org/blogs/2014/running-average-power-limit--rapl) to help contain the power envelope within defined thresholds, reduce peak power consumption, and also reduce total energy consumption. Elektron is able to leverage the Mesos-provided resource abstraction to allow different algorithms to decide how to consume resource offers made by a Mesos Master.
 
-# Architecture
+## Architecture
 ![](docs/ElekArch.png)
 
-# Usage
+## Usage
 * [Pluggable Scheduling Policies](docs/SchedulingPolicies.md)
 * [Power-Capping strategies](docs/PowerCappingStrategies.md)
 * [Scheduling Policy Switching](docs/SchedulingPolicySwitching.md)
 
-# Logging
+## Logging
 Please go through the [logging library doc](docs/Logging.md) to understand how the logging library has been setup. There are also instructions on how one can add additional loggers.
 
-# Data
+## Data
 * [Cluster Resource Consumption](docs/data/ClusterResourceConsumption.md)
 * [Schedule Trace](docs/data/ScheduledTrace.md)
 * [Degree of Collocation](docs/data/DegreeOfCollocation.md)
@@ -25,7 +25,7 @@ Please go through the [logging library doc](docs/Logging.md) to understand how t
     - [Scheduling Policy Switch Trace](docs/data/withSpsEnabled/SchedulingPolicySwitchTrace.md)
     - [Scheduling Window](docs/data/withSpsEnabled/SchedulingWindow.md)
 
-# Software Requirements
+## Software Requirements
 **Requires [Performance Co-Pilot](http://pcp.io/) tool pmdumptext to be installed on the
 machine on which electron is launched for logging to work and PCP collector agents installed
 on the Mesos Agents**
@@ -35,7 +35,7 @@ Compatible with the following versions:
 * Mesos 1.5.0
 * Go 1.9.7
 
-# Build and Run
+## Build and Run
 Compile the source code using the `go build` tool as shown below.
 ```commandline
 go build -o elektron
