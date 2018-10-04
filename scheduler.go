@@ -63,7 +63,7 @@ func init() {
 func listAllSchedulingPolicies() {
 	fmt.Println("Scheduling Policies")
 	fmt.Println("-------------------")
-	for policyName, _ := range schedulers.SchedPolicies {
+	for policyName := range schedulers.SchedPolicies {
 		fmt.Println(policyName)
 	}
 }
