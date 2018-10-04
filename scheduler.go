@@ -218,7 +218,7 @@ func main() {
 			return
 		}
 
-		log.Printf("Received SIGINT...stopping")
+		log.Println("Received SIGINT...stopping")
 		close(done)
 	}()
 
@@ -245,7 +245,7 @@ func main() {
 
 	}()
 
-	log.Printf("Starting...")
+	log.Println("Starting...")
 	if status, err := driver.Run(); err != nil {
 		log.Printf("Framework stopped with status %s and error: %s\n", status.String(), err.Error())
 	}
