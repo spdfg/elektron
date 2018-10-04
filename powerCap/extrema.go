@@ -20,8 +20,8 @@ import (
 func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, hiThreshold, loThreshold float64,
 	logMType chan elekLogDef.LogMessageType, logMsg chan string, pcpConfigFile string) {
 
-	const pcpCommand string = "pmdumptext -m -l -f '' -t 1.0 -d , -c " + pcpConfigFile
-	cmd := exec.Command("sh", "-c", pcpCommand)
+	const pcpCommand string = "pmdumptext -m -l -f '' -t 1.0 -d , -c "
+	cmd := exec.Command("sh", "-c", pcpCommand, pcpConfigFile)
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
 	if hiThreshold < loThreshold {
