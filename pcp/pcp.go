@@ -17,8 +17,8 @@ import (
 func Start(quit chan struct{}, logging *bool, logMType chan elekLogDef.LogMessageType,
 	logMsg chan string, pcpConfigFile string, s scheduler.Scheduler) {
 	baseSchedRef := s.(*schedulers.BaseScheduler)
-	const pcpCommand string = "pmdumptext -m -l -f '' -t 1.0 -d , -c "
-	cmd := exec.Command("sh", "-c", pcpCommand, pcpConfigFile)
+	var pcpCommand string = "pmdumptext -m -l -f '' -t 1.0 -d , -c " + pcpConfigFile
+	cmd := exec.Command("sh", "-c", pcpCommand)
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
 	pipe, err := cmd.StdoutPipe()
