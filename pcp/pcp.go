@@ -10,11 +10,11 @@ import (
 
 	"github.com/mesos/mesos-go/api/v0/scheduler"
 	"github.com/montanaflynn/stats"
-	elecLogDef "gitlab.com/spdf/elektron/logging/def"
+	elekLogDef "gitlab.com/spdf/elektron/logging/def"
 	"gitlab.com/spdf/elektron/schedulers"
 )
 
-func Start(quit chan struct{}, logging *bool, logMType chan elecLogDef.LogMessageType, logMsg chan string, s scheduler.Scheduler) {
+func Start(quit chan struct{}, logging *bool, logMType chan elekLogDef.LogMessageType, logMsg chan string, s scheduler.Scheduler) {
 	baseSchedRef := s.(*schedulers.BaseScheduler)
 	const pcpCommand string = "pmdumptext -m -l -f '' -t 1.0 -d , -c config"
 	cmd := exec.Command("sh", "-c", pcpCommand)
@@ -33,10 +33,10 @@ func Start(quit chan struct{}, logging *bool, logMType chan elecLogDef.LogMessag
 		scanner.Scan()
 
 		// Write to logfile
-		logMType <- elecLogDef.PCP
+		logMType <- elekLogDef.PCP
 		logMsg <- scanner.Text()
 
-		logMType <- elecLogDef.DEG_COL
+		logMType <- elekLogDef.DEG_COL
 		logMsg <- "CPU Variance, CPU Task Share Variance, Memory Variance, Memory Task Share Variance"
 
 		// Throw away first set of results
@@ -48,7 +48,7 @@ func Start(quit chan struct{}, logging *bool, logMType chan elecLogDef.LogMessag
 			text := scanner.Text()
 
 			if *logging {
-				logMType <- elecLogDef.PCP
+				logMType <- elekLogDef.PCP
 				logMsg <- text
 			}
 
@@ -84,12 +84,12 @@ func Start(quit chan struct{}, logging *bool, logMType chan elecLogDef.LogMessag
 			memVariance, _ := stats.Variance(memUtils)
 			memTaskSharesVariance, _ := stats.Variance(memTaskShares)
 
-			logMType <- elecLogDef.DEG_COL
+			logMType <- elekLogDef.DEG_COL
 			logMsg <- fmt.Sprintf("%f, %f, %f, %f", cpuVariance, cpuTaskSharesVariance, memVariance, memTaskSharesVariance)
 		}
 	}(logging)
 
-	logMType <- elecLogDef.GENERAL
+	logMType <- elekLogDef.GENERAL
 	logMsg <- "PCP logging started"
 
 	if err := cmd.Start(); err != nil {
@@ -100,7 +100,7 @@ func Start(quit chan struct{}, logging *bool, logMType chan elecLogDef.LogMessag
 
 	select {
 	case <-quit:
-		logMType <- elecLogDef.GENERAL
+		logMType <- elekLogDef.GENERAL
 		logMsg <- "Stopping PCP logging in 5 seconds"
 		time.Sleep(5 * time.Second)
 

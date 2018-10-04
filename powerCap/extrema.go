@@ -12,13 +12,13 @@ import (
 	"syscall"
 	"time"
 
-	elecLogDef "gitlab.com/spdf/elektron/logging/def"
+	elekLogDef "gitlab.com/spdf/elektron/logging/def"
 	"gitlab.com/spdf/elektron/pcp"
 	"gitlab.com/spdf/elektron/rapl"
 )
 
 func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, hiThreshold, loThreshold float64,
-	logMType chan elecLogDef.LogMessageType, logMsg chan string) {
+	logMType chan elekLogDef.LogMessageType, logMsg chan string) {
 
 	const pcpCommand string = "pmdumptext -m -l -f '' -t 1.0 -d , -c config"
 	cmd := exec.Command("sh", "-c", pcpCommand)
@@ -41,7 +41,7 @@ func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, hiThresh
 		scanner.Scan()
 
 		// Write to logfile
-		logMType <- elecLogDef.PCP
+		logMType <- elekLogDef.PCP
 		logMsg <- scanner.Text()
 
 		headers := strings.Split(scanner.Text(), ",")
@@ -77,10 +77,10 @@ func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, hiThresh
 		for scanner.Scan() {
 
 			if *logging {
-				logMType <- elecLogDef.GENERAL
+				logMType <- elekLogDef.GENERAL
 				logMsg <- "Logging PCP..."
 				split := strings.Split(scanner.Text(), ",")
-				logMType <- elecLogDef.PCP
+				logMType <- elekLogDef.PCP
 				logMsg <- scanner.Text()
 
 				totalPower := 0.0
@@ -92,7 +92,7 @@ func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, hiThresh
 					powerHistories[host].Value = power
 					powerHistories[host] = powerHistories[host].Next()
 
-					logMType <- elecLogDef.GENERAL
+					logMType <- elekLogDef.GENERAL
 					logMsg <- fmt.Sprintf("Host: %s, Power: %f", indexToHost[powerIndex], (power * pcp.RAPLUnits))
 
 					totalPower += power
@@ -104,11 +104,11 @@ func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, hiThresh
 
 				clusterMean := pcp.AverageClusterPowerHistory(clusterPowerHist)
 
-				logMType <- elecLogDef.GENERAL
+				logMType <- elekLogDef.GENERAL
 				logMsg <- fmt.Sprintf("Total power: %f, %d Sec Avg: %f", clusterPower, clusterPowerHist.Len(), clusterMean)
 
 				if clusterMean > hiThreshold {
-					logMType <- elecLogDef.GENERAL
+					logMType <- elekLogDef.GENERAL
 					logMsg <- "Need to cap a node"
 					// Create statics for all victims and choose one to cap
 					victims := make([]pcp.Victim, 0, 8)
@@ -130,10 +130,10 @@ func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, hiThresh
 						if !cappedHosts[victim.Host] {
 							cappedHosts[victim.Host] = true
 							orderCapped = append(orderCapped, victim.Host)
-							logMType <- elecLogDef.GENERAL
+							logMType <- elekLogDef.GENERAL
 							logMsg <- fmt.Sprintf("Capping Victim %s Avg. Wattage: %f", victim.Host, victim.Watts*pcp.RAPLUnits)
 							if err := rapl.Cap(victim.Host, "rapl", 50); err != nil {
-								logMType <- elecLogDef.ERROR
+								logMType <- elekLogDef.ERROR
 								logMsg <- "Error capping host"
 							}
 							break // Only cap one machine at at time.
@@ -148,10 +148,10 @@ func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, hiThresh
 						cappedHosts[host] = false
 						// User RAPL package to send uncap.
 						log.Printf("Uncapping host %s", host)
-						logMType <- elecLogDef.GENERAL
+						logMType <- elekLogDef.GENERAL
 						logMsg <- fmt.Sprintf("Uncapped host %s", host)
 						if err := rapl.Cap(host, "rapl", 100); err != nil {
-							logMType <- elecLogDef.ERROR
+							logMType <- elekLogDef.ERROR
 							logMsg <- "Error capping host"
 						}
 					}
@@ -162,7 +162,7 @@ func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, hiThresh
 		}
 	}(logging, hiThreshold, loThreshold)
 
-	logMType <- elecLogDef.GENERAL
+	logMType <- elekLogDef.GENERAL
 	logMsg <- "PCP logging started"
 
 	if err := cmd.Start(); err != nil {
@@ -173,7 +173,7 @@ func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, hiThresh
 
 	select {
 	case <-quit:
-		logMType <- elecLogDef.GENERAL
+		logMType <- elekLogDef.GENERAL
 		logMsg <- "Stopping PCP logging in 5 seconds"
 		time.Sleep(5 * time.Second)
 

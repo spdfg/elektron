@@ -13,7 +13,7 @@ import (
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 	sched "github.com/mesos/mesos-go/api/v0/scheduler"
 	"gitlab.com/spdf/elektron/def"
-	elecLogDef "gitlab.com/spdf/elektron/logging/def"
+	elekLogDef "gitlab.com/spdf/elektron/logging/def"
 	"gitlab.com/spdf/elektron/pcp"
 	"gitlab.com/spdf/elektron/schedulers"
 	"gitlab.com/spdf/elektron/powerCap"
@@ -82,9 +82,9 @@ func main() {
 	logPrefix := *pcplogPrefix + "_" + formattedStartTime
 
 	// creating logger and attaching different logging platforms
-	logger := elecLogDef.BuildLogger(startTime, logPrefix)
+	logger := elekLogDef.BuildLogger(startTime, logPrefix)
 	// logging channels
-	logMType := make(chan elecLogDef.LogMessageType)
+	logMType := make(chan elekLogDef.LogMessageType)
 	logMsg := make(chan string)
 	go logger.Listen(logMType, logMsg)
 
@@ -101,32 +101,32 @@ func main() {
 
 	if *tasksFile == "" {
 		//fmt.Println("No file containing tasks specifiction provided.")
-		logger.WriteLog(elecLogDef.ERROR, "No file containing tasks specification provided")
+		logger.WriteLog(elekLogDef.ERROR, "No file containing tasks specification provided")
 		os.Exit(1)
 	}
 
 	if *hiThreshold < *loThreshold {
 		//fmt.Println("High threshold is of a lower value than low threshold.")
-		logger.WriteLog(elecLogDef.ERROR, "High threshold is of a lower value than low threshold")
+		logger.WriteLog(elekLogDef.ERROR, "High threshold is of a lower value than low threshold")
 		os.Exit(1)
 	}
 
 	tasks, err := def.TasksFromJSON(*tasksFile)
 	if err != nil || len(tasks) == 0 {
 		//fmt.Println("Invalid tasks specification file provided")
-		logger.WriteLog(elecLogDef.ERROR, "Invalid tasks specification file provided")
+		logger.WriteLog(elekLogDef.ERROR, "Invalid tasks specification file provided")
 		os.Exit(1)
 	}
 
 	//log.Println("Scheduling the following tasks:")
-	logger.WriteLog(elecLogDef.GENERAL, "Scheduling the following tasks:")
+	logger.WriteLog(elekLogDef.GENERAL, "Scheduling the following tasks:")
 	for _, task := range tasks {
 		fmt.Println(task)
 	}
 
 	if *enableSchedPolicySwitch {
 		if spcf := *schedPolConfigFile; spcf == "" {
-			logger.WriteLog(elecLogDef.ERROR, "No file containing characteristics for scheduling policies")
+			logger.WriteLog(elekLogDef.ERROR, "No file containing characteristics for scheduling policies")
 		} else {
 			// Initializing the characteristics of the scheduling policies.
 			schedulers.InitSchedPolicyCharacteristics(spcf)
@@ -172,7 +172,7 @@ func main() {
 	}
 
 	if _, ok := powercapValues[*powerCapPolicy]; !ok {
-		logger.WriteLog(elecLogDef.ERROR, "Incorrect power capping policy specified.")
+		logger.WriteLog(elekLogDef.ERROR, "Incorrect power capping policy specified.")
 		os.Exit(1)
 	} else {
 		// Indicating which power capping policy to use, if any.
@@ -188,7 +188,7 @@ func main() {
 			// These values are not used to configure the scheduler.
 			// hiThreshold and loThreshold are passed to the powercappers.
 			if *hiThreshold < *loThreshold {
-				logger.WriteLog(elecLogDef.ERROR, "High threshold is of a"+
+				logger.WriteLog(elekLogDef.ERROR, "High threshold is of a"+
 					" lower value than low threshold.")
 				os.Exit(1)
 			}

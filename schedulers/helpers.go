@@ -6,7 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"gitlab.com/spdf/elektron/constants"
 	"gitlab.com/spdf/elektron/def"
-	elecLogDef "gitlab.com/spdf/elektron/logging/def"
+	elekLogDef "gitlab.com/spdf/elektron/logging/def"
 	"gitlab.com/spdf/elektron/utilities"
 	"gitlab.com/spdf/elektron/utilities/mesosUtils"
 )
@@ -14,10 +14,10 @@ import (
 func coLocated(tasks map[string]bool, s BaseScheduler) {
 
 	for task := range tasks {
-		s.Log(elecLogDef.GENERAL, task)
+		s.Log(elekLogDef.GENERAL, task)
 	}
 
-	s.Log(elecLogDef.GENERAL, "---------------------")
+	s.Log(elekLogDef.GENERAL, "---------------------")
 }
 
 // Get the powerClass of the given hostname.
@@ -109,7 +109,7 @@ func WithPCPLog(pcpLog chan struct{}) schedulerOptions {
 	}
 }
 
-func WithLoggingChannels(lmt chan elecLogDef.LogMessageType, msg chan string) schedulerOptions {
+func WithLoggingChannels(lmt chan elekLogDef.LogMessageType, msg chan string) schedulerOptions {
 	return func(s ElectronScheduler) error {
 		s.(*BaseScheduler).logMsgType = lmt
 		s.(*BaseScheduler).logMsg = msg
@@ -132,8 +132,8 @@ func WithSchedPolSwitchEnabled(enableSchedPolicySwitch bool, switchingCriteria s
 func WithNameOfFirstSchedPolToFix(nameOfFirstSchedPol string) schedulerOptions {
 	return func(s ElectronScheduler) error {
 		if nameOfFirstSchedPol == "" {
-			lmt := elecLogDef.WARNING
-			msgColor := elecLogDef.LogMessageColors[lmt]
+			lmt := elekLogDef.WARNING
+			msgColor := elekLogDef.LogMessageColors[lmt]
 			msg := msgColor.Sprintf("First scheduling policy to deploy not mentioned. This is now going to be determined at runtime.")
 			s.(*BaseScheduler).Log(lmt, msg)
 			return nil
@@ -152,8 +152,8 @@ func WithFixedSchedulingWindow(toFixSchedWindow bool, fixedSchedWindowSize int) 
 			if fixedSchedWindowSize <= 0 {
 				return errors.New("Invalid value of scheduling window size. Please provide a value > 0.")
 			}
-			lmt := elecLogDef.WARNING
-			msgColor := elecLogDef.LogMessageColors[lmt]
+			lmt := elekLogDef.WARNING
+			msgColor := elekLogDef.LogMessageColors[lmt]
 			msg := msgColor.Sprintf("Fixing the size of the scheduling window to %d...", fixedSchedWindowSize)
 			s.(*BaseScheduler).Log(lmt, msg)
 			s.(*BaseScheduler).toFixSchedWindow = toFixSchedWindow
