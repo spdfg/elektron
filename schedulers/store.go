@@ -111,11 +111,11 @@ func InitSchedPolicyCharacteristics(schedPoliciesConfigFilename string) error {
 }
 
 // build the scheduler with the options being applied
-func buildScheduler(s sched.Scheduler, opts ...schedulerOptions) {
+func buildScheduler(s sched.Scheduler, opts ...SchedulerOptions) {
 	s.(ElectronScheduler).init(opts...)
 }
 
-func SchedFactory(opts ...schedulerOptions) sched.Scheduler {
+func SchedFactory(opts ...SchedulerOptions) sched.Scheduler {
 	s := &BaseScheduler{}
 	buildScheduler(s, opts...)
 	return s

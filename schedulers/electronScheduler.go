@@ -12,7 +12,7 @@ import (
 // Implements mesos scheduler.
 type ElectronScheduler interface {
 	sched.Scheduler
-	init(opts ...schedulerOptions)
+	init(opts ...SchedulerOptions)
 
 	// Interface for log messages.
 	// Every ElectronScheduler implementer should provide definitions for these functions.
