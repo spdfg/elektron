@@ -18,17 +18,8 @@ _Elektron_ is comprised of three main components: _Task Queue_, _Scheduler_ and 
 * [Power-Capping strategies](docs/PowerCappingStrategies.md)
 * [Scheduling Policy Switching](docs/SchedulingPolicySwitching.md)
 
-## Logging
-Please go through the [logging library doc](docs/Logging.md) to understand how the logging library has been setup. There are also instructions on how one can add additional loggers.
-
-## Data
-* [Cluster Resource Consumption](docs/data/ClusterResourceConsumption.md)
-* [Schedule Trace](docs/data/ScheduledTrace.md)
-* [Degree of Collocation](docs/data/DegreeOfCollocation.md)
-* When scheduling policy switching enabled.
-    - [Task Classification Overhead](docs/data/withSpsEnabled/TaskClassificationOverhead.md)
-    - [Scheduling Policy Switch Trace](docs/data/withSpsEnabled/SchedulingPolicySwitchTrace.md)
-    - [Scheduling Window](docs/data/withSpsEnabled/SchedulingWindow.md)
+## Logs
+Please go through the [log info](docs/Logging.md) to get information on different data that are logged.
 
 ## Software Requirements
 **Requires [Performance Co-Pilot](http://pcp.io/) tool pmdumptext to be installed on the
