@@ -45,13 +45,38 @@ Compile the source code using the `go build` tool as shown below.
 ```commandline
 go build -o elektron
 ```
-How to run (Use the --help option to get information about other command-line options): 
+Use the --help option to get information about other command-line options 
 
-Use the `-logPrefix` option to provide the prefix for the log file names. 
+### Workload
+Use the `-workload` option to specify the location of the workload json file. Below is an example workload.
+```json
+[
+   {
+      "name": "minife",
+      "cpu": 3.0,
+      "ram": 4096,
+      "watts": 63.141,
+      "image": "rdelvalle/minife:electron1",
+      "cmd": "cd src && mpirun -np 3 miniFE.x -nx 100 -ny 100 -nz 100",
+      "inst": 10
+   },
+   {
+      "name": "dgemm",
+      "cpu": 3.0,
+      "ram": 32,
+      "watts": 85.903,
+      "image": "rdelvalle/dgemm:electron1",
+      "cmd": "/./mt-dgemm 1024",
+      "inst": 10
+   }
+]
+```
 
 ```commandline
 ./elektron -master <host:port> -workload <workload json>
 ```
+
+Use the `-logPrefix` option to provide the prefix for the log file names.
 
 ### Plug-in Power Capping
 _Elektron_ is also capable of running power capping policies along with scheduling policies. 
@@ -90,40 +115,3 @@ The following options can be used when scheduling policy switching is enabled.
 * `-fixSchedWindow` - Allow the size of the scheduling window to be fixed.
 * `-schedWindowSize` - Specify the size of the scheduling window (value=int). If no scheduling window size specified and `fixSchedWindow` option is enabled, the default size of 200 is used.
 * `-schedPolSwitchCriteria` - Criteria to be used when deciding the next scheduling policy to switch to. Default criteria is task distribution (_taskDist_) based. However, one can either switch based on a Round Robin (_round-robin_) or Reverse Round Robin (_rev-round-robin_) order.
-
-Workload schema:
-
-```
-[
-   {
-      "name": "minife",
-      "cpu": 3.0,
-      "ram": 4096,
-      "watts": 63.141,
-      "class_to_watts": {
-        "A": 93.062,
-        "B": 65.552,
-        "C": 57.897,
-        "D": 60.729
-      },
-      "image": "rdelvalle/minife:electron1",
-      "cmd": "cd src && mpirun -np 3 miniFE.x -nx 100 -ny 100 -nz 100",
-      "inst": 10
-   },
-   {
-      "name": "dgemm",
-      "cpu": 3.0,
-      "ram": 32,
-      "watts": 85.903,
-      "class_to_watts": {
-        "A": 114.789,
-        "B": 89.133,
-        "C": 82.672,
-        "D": 81.944
-      },
-      "image": "rdelvalle/dgemm:electron1",
-      "cmd": "/./mt-dgemm 1024",
-      "inst": 10
-   }
-]
-```
