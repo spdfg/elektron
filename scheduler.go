@@ -182,7 +182,7 @@ func main() {
 			} else if *powerCapPolicy == "prog-extrema" {
 				progExtrema = true
 			}
-                        // High and Low thresholds are currently only needed for extrema and
+			// High and Low thresholds are currently only needed for extrema and
 			// progressive extrema.
 			if extrema || progExtrema {
 				// High and Low Thresholds.
@@ -235,10 +235,10 @@ func main() {
 		go pcp.Start(pcpLog, &recordPCP, logMType, logMsg, *pcpConfigFile, scheduler)
 	} else if extrema {
 		go powerCap.StartPCPLogAndExtremaDynamicCap(pcpLog, &recordPCP, *hiThreshold,
-			*loThreshold, logMType, logMsg, *pcpConfigFile)
+			*loThreshold, logMType, logMsg, *pcpConfigFile, scheduler)
 	} else if progExtrema {
 		go powerCap.StartPCPLogAndProgressiveExtremaCap(pcpLog, &recordPCP, *hiThreshold,
-			*loThreshold, logMType, logMsg, *pcpConfigFile)
+			*loThreshold, logMType, logMsg, *pcpConfigFile, scheduler)
 	}
 
 	// Take a second between starting PCP log and continuing.
