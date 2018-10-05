@@ -179,16 +179,20 @@ func main() {
 		} else {
 			if *powerCapPolicy == "extrema" {
 				extrema = true
-			} else {
+			} else if *powerCapPolicy == "prog-extrema" {
 				progExtrema = true
 			}
-			// High and Low Thresholds.
-			// These values are not used to configure the scheduler.
-			// hiThreshold and loThreshold are passed to the powercappers.
-			if *hiThreshold < *loThreshold {
-				logger.WriteLog(elekLogDef.ERROR, "High threshold is of a"+
-					" lower value than low threshold.")
-				os.Exit(1)
+                        // High and Low thresholds are currently only needed for extrema and
+			// progressive extrema.
+			if extrema || progExtrema {
+				// High and Low Thresholds.
+				// These values are not used to configure the scheduler.
+				// hiThreshold and loThreshold are passed to the powercappers.
+				if *hiThreshold < *loThreshold {
+					logger.WriteLog(elekLogDef.ERROR, "High threshold is of a"+
+						" lower value than low threshold.")
+					os.Exit(1)
+				}
 			}
 		}
 	}
