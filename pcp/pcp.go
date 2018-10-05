@@ -55,10 +55,10 @@ func Start(quit chan struct{}, logging *bool, logMType chan elekLogDef.LogMessag
 
 			seconds++
 
-			memUtils := memUtilPerNode(text)
+			memUtils := MemUtilPerNode(text)
 			memTaskShares := make([]float64, len(memUtils))
 
-			cpuUtils := cpuUtilPerNode(text)
+			cpuUtils := CpuUtilPerNode(text)
 			cpuTaskShares := make([]float64, len(cpuUtils))
 
 			for i := 0; i < 8; i++ {

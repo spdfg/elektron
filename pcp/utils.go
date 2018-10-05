@@ -56,7 +56,7 @@ func utilization(used string, free string) float64 {
 	return u / (u + f)
 }
 
-func cpuUtilPerNode(text string) []float64 {
+func CpuUtilPerNode(text string) []float64 {
 	tokenSlice := strings.Split(text, ",")
 	cpuUtil := make([]float64, 8)
 	for i := 0; i < 8; i++ {
@@ -65,7 +65,7 @@ func cpuUtilPerNode(text string) []float64 {
 	return cpuUtil
 }
 
-func memUtilPerNode(text string) []float64 {
+func MemUtilPerNode(text string) []float64 {
 	tokenSlice := strings.Split(text, ",")
 	memUtil := make([]float64, 8)
 	for i := 0; i < 8; i++ {

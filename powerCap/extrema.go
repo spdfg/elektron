@@ -12,14 +12,18 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/mesos/mesos-go/api/v0/scheduler"
+	"github.com/montanaflynn/stats"
 	elekLogDef "gitlab.com/spdf/elektron/logging/def"
 	"gitlab.com/spdf/elektron/pcp"
 	"gitlab.com/spdf/elektron/rapl"
+	"gitlab.com/spdf/elektron/schedulers"
 )
 
 func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, hiThreshold, loThreshold float64,
-	logMType chan elekLogDef.LogMessageType, logMsg chan string, pcpConfigFile string) {
+	logMType chan elekLogDef.LogMessageType, logMsg chan string, pcpConfigFile string, s scheduler.Scheduler) {
 
+	baseSchedRef := s.(*schedulers.BaseScheduler)
 	var pcpCommand string = "pmdumptext -m -l -f '' -t 1.0 -d , -c " + pcpConfigFile
 	cmd := exec.Command("sh", "-c", pcpCommand, pcpConfigFile)
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
@@ -45,6 +49,9 @@ func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, hiThresh
 		logMsg <- scanner.Text()
 
 		headers := strings.Split(scanner.Text(), ",")
+
+		logMType <- elekLogDef.DEG_COL
+		logMsg <- "CPU Variance, CPU Task Share Variance, Memory Variance, Memory Task Share Variance"
 
 		powerIndexes := make([]int, 0, 0)
 		powerHistories := make(map[string]*ring.Ring)
@@ -79,9 +86,43 @@ func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, hiThresh
 			if *logging {
 				logMType <- elekLogDef.GENERAL
 				logMsg <- "Logging PCP..."
-				split := strings.Split(scanner.Text(), ",")
+				text := scanner.Text()
+				split := strings.Split(text, ",")
 				logMType <- elekLogDef.PCP
-				logMsg <- scanner.Text()
+				logMsg <- text
+
+				memUtils := pcp.MemUtilPerNode(text)
+				memTaskShares := make([]float64, len(memUtils))
+
+				cpuUtils := pcp.CpuUtilPerNode(text)
+				cpuTaskShares := make([]float64, len(cpuUtils))
+
+				for i := 0; i < 8; i++ {
+					host := fmt.Sprintf("stratos-00%d.cs.binghamton.edu", i+1)
+					if slaveID, ok := baseSchedRef.HostNameToSlaveID[host]; ok {
+						baseSchedRef.TasksRunningMutex.Lock()
+						tasksRunning := len(baseSchedRef.Running[slaveID])
+						baseSchedRef.TasksRunningMutex.Unlock()
+						if tasksRunning > 0 {
+							cpuTaskShares[i] = cpuUtils[i] / float64(tasksRunning)
+							memTaskShares[i] = memUtils[i] / float64(tasksRunning)
+						}
+					}
+				}
+
+				// Variance in resource utilization shows how the current workload has been distributed.
+				// However, if the number of tasks running are not equally distributed, utilization variance figures become
+				// less relevant as they do not express the distribution of CPU intensive tasks.
+				// We thus also calculate `task share variance`, which basically signifies how the workload is distributed
+				// across each node per share.
+
+				cpuVariance, _ := stats.Variance(cpuUtils)
+				cpuTaskSharesVariance, _ := stats.Variance(cpuTaskShares)
+				memVariance, _ := stats.Variance(memUtils)
+				memTaskSharesVariance, _ := stats.Variance(memTaskShares)
+
+				logMType <- elekLogDef.DEG_COL
+				logMsg <- fmt.Sprintf("%f, %f, %f, %f", cpuVariance, cpuTaskSharesVariance, memVariance, memTaskSharesVariance)
 
 				totalPower := 0.0
 				for _, powerIndex := range powerIndexes {
