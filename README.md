@@ -53,7 +53,7 @@ Use the `-logPrefix` option to provide the prefix for the log file names.
 ./elektron -master <host:port> -workload <workload json>
 ```
 
-### Power Capping
+### Plug-in Power Capping
 _Elektron_ is also capable of running power capping policies along with scheduling policies. 
 
 Use the `-powercap` option with the name of the power capping policy to be run.
@@ -61,6 +61,10 @@ Use the `-powercap` option with the name of the power capping policy to be run.
 ```commandline
 ./elektron -master <host:port> -workload <workload json> -powercap <powercap policy name>
 ```
+
+If the power capping policy is _Extrema_ or _Progressive Extrema_, then the following options must also be specified.
+* `-hiThreshold` - If the average historical power consumption of the cluster exceeds this value, then one or more nodes would be power capped.
+* `-loThreshold` - If the average historical power consumption of the cluster is lesser than this value, then one or more nodes would be uncapped.
 
 ### Plug-in Scheduling Policy
 Use the `-schedPolicy` option with the name of the scheduling policy to be deployed.<br>The default scheduling policy is First Fit.
