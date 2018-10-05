@@ -75,11 +75,21 @@ Use the `-schedPolicy` option with the name of the scheduling policy to be deplo
 
 _Note_: To obtain the list of possible scheduling policy names, use the `-listSchedPolicies` option.
 
-To run electron with Scheduling Policy Switching Enabled, run the following command,
+### Enable Scheduling Policy Switching
+Use the `-switchSchedPolicy` option to enable scheduling policy switching.<br>
+
+One needs to also provide a scheduling policy configuration file (see [schedPolConfig](./schedPolConfig.json) for reference).<br>
+Use the `-schedPolConfig` option to specify the path of the scheduling policy configuration file.
 
 ```commandline
-./elektron -master <host:port> -workload <workload json> -ssp -spConfig <schedPolicy config file>
+./elektron -master <host:port> -workload <workload json> -switchSchedPolicy -schedPolConfig <schedPolicy config file>
 ```
+
+The following options can be used when scheduling policy switching is enabled.
+* `-fixFirstSchedPol` - Fix the first scheduling policy that is deployed (value=int)
+* `-fixSchedWindow` - Allow the size of the scheduling window to be fixed.
+* `-schedWindowSize` - Specify the size of the scheduling window (value=int). If no scheduling window size specified and `fixSchedWindow` option is enabled, the default size of 200 is used.
+* `-schedPolSwitchCriteria` - Criteria to be used when deciding the next scheduling policy to switch to. Default criteria is task distribution (_taskDist_) based. However, one can either switch based on a Round Robin (_round-robin_) or Reverse Round Robin (_rev-round-robin_) order.
 
 Workload schema:
 
