@@ -232,13 +232,13 @@ func main() {
 
 	// Starting PCP logging.
 	if noPowercap {
-		go pcp.Start(pcpLog, &recordPCP, logMType, logMsg, *pcpConfigFile, scheduler)
+		go pcp.Start(pcpLog, &recordPCP, logMType, logMsg, *pcpConfigFile)
 	} else if extrema {
 		go powerCap.StartPCPLogAndExtremaDynamicCap(pcpLog, &recordPCP, *hiThreshold,
-			*loThreshold, logMType, logMsg, *pcpConfigFile, scheduler)
+			*loThreshold, logMType, logMsg, *pcpConfigFile)
 	} else if progExtrema {
 		go powerCap.StartPCPLogAndProgressiveExtremaCap(pcpLog, &recordPCP, *hiThreshold,
-			*loThreshold, logMType, logMsg, *pcpConfigFile, scheduler)
+			*loThreshold, logMType, logMsg, *pcpConfigFile)
 	}
 
 	// Take a second between starting PCP log and continuing.

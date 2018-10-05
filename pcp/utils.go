@@ -3,8 +3,6 @@ package pcp
 import (
 	"container/ring"
 	"math"
-	"strconv"
-	"strings"
 )
 
 var RAPLUnits = math.Pow(2, -32)
@@ -48,28 +46,4 @@ func AverageClusterPowerHistory(history *ring.Ring) float64 {
 	}
 
 	return (total / count)
-}
-
-func utilization(used string, free string) float64 {
-	u, _ := strconv.ParseFloat(used, 64)
-	f, _ := strconv.ParseFloat(free, 64)
-	return u / (u + f)
-}
-
-func CpuUtilPerNode(text string) []float64 {
-	tokenSlice := strings.Split(text, ",")
-	cpuUtil := make([]float64, 8)
-	for i := 0; i < 8; i++ {
-		cpuUtil[i] = utilization(tokenSlice[8+i], tokenSlice[24+i])
-	}
-	return cpuUtil
-}
-
-func MemUtilPerNode(text string) []float64 {
-	tokenSlice := strings.Split(text, ",")
-	memUtil := make([]float64, 8)
-	for i := 0; i < 8; i++ {
-		memUtil[i] = utilization(tokenSlice[40+i], tokenSlice[32+i])
-	}
-	return memUtil
 }

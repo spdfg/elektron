@@ -12,7 +12,6 @@ const (
 	conLogger                   = "console-logger"
 	schedTraceLogger            = "schedTrace-logger"
 	pcpLogger                   = "pcp-logger"
-	degColLogger                = "degCol-logger"
 	spsLogger                   = "schedPolicySwitch-logger"
 	clsfnTaskDistOverheadLogger = "classificationOverhead-logger"
 	schedWindowLogger           = "schedWindow-logger"
@@ -23,7 +22,6 @@ var Loggers map[string]loggerObserver = map[string]loggerObserver{
 	conLogger:                   nil,
 	schedTraceLogger:            nil,
 	pcpLogger:                   nil,
-	degColLogger:                nil,
 	spsLogger:                   nil,
 	clsfnTaskDistOverheadLogger: nil,
 	schedWindowLogger:           nil,
@@ -46,7 +44,6 @@ func withLoggerSpecifics(prefix string) loggerOption {
 			conLogger:                   &specifics{},
 			schedTraceLogger:            &specifics{},
 			pcpLogger:                   &specifics{},
-			degColLogger:                &specifics{},
 			spsLogger:                   &specifics{},
 			clsfnTaskDistOverheadLogger: &specifics{},
 			schedWindowLogger:           &specifics{},
@@ -69,9 +66,6 @@ func attachAllLoggers(lg *LoggerDriver, startTime time.Time, prefix string) {
 		loggerObserverImpl: *loi,
 	}
 	Loggers[pcpLogger] = &PCPLogger{
-		loggerObserverImpl: *loi,
-	}
-	Loggers[degColLogger] = &DegColLogger{
 		loggerObserverImpl: *loi,
 	}
 	Loggers[spsLogger] = &SchedPolicySwitchLogger{
@@ -98,8 +92,6 @@ func attachAllLoggers(lg *LoggerDriver, startTime time.Time, prefix string) {
 			lg.attach(SUCCESS, Loggers[conLogger])
 		case PCP.String():
 			lg.attach(PCP, Loggers[pcpLogger])
-		case DEG_COL.String():
-			lg.attach(DEG_COL, Loggers[degColLogger])
 		case SPS.String():
 			lg.attach(SPS, Loggers[spsLogger])
 		case CLSFN_TASKDIST_OVERHEAD.String():

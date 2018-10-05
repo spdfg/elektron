@@ -18,7 +18,6 @@ func newLogger() *LoggerDriver {
 			SCHED_TRACE: true,
 			SUCCESS:     true,
 			PCP:         true,
-			DEG_COL:     true,
 			SPS:         true,
 			CLSFN_TASKDIST_OVERHEAD: true,
 			SCHED_WINDOW:            true,

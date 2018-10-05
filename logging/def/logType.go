@@ -13,7 +13,6 @@ var (
 	SUCCESS                 = messageNametoMessageType("SUCCESS")
 	SCHED_TRACE             = messageNametoMessageType("SCHED_TRACE")
 	PCP                     = messageNametoMessageType("PCP")
-	DEG_COL                 = messageNametoMessageType("DEG_COL")
 	SPS                     = messageNametoMessageType("SPS")
 	CLSFN_TASKDIST_OVERHEAD = messageNametoMessageType("CLSFN_TASKDIST_OVERHEAD")
 	SCHED_WINDOW            = messageNametoMessageType("SCHED_WINDOW")
