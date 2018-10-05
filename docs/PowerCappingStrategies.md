@@ -1,5 +1,7 @@
 # Power-Capping Strategies
 
+_Elektron_ is capable of deploying different power capping strategies. The power capping strategy to be plugged in can be specified using the `-powercap` command-line option.
+
 ## Power-Capping Policies
 
 * **Extrema** - A dynamic power-capping strategy that is able to make smart trade-offs

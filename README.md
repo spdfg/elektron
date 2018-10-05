@@ -15,7 +15,7 @@ _Elektron_ is comprised of three main components: _Task Queue_, _Scheduler_ and 
 
 ## Usage
 * [Pluggable Scheduling Policies](docs/SchedulingPolicies.md)
-* [Power-Capping strategies](docs/PowerCappingStrategies.md)
+* [Pluggable Power-Capping strategies](docs/PowerCappingStrategies.md)
 * [Scheduling Policy Switching](docs/SchedulingPolicySwitching.md)
 
 ## Logs
