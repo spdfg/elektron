@@ -70,7 +70,7 @@ If the power capping policy is _Extrema_ or _Progressive Extrema_, then the foll
 Use the `-schedPolicy` option with the name of the scheduling policy to be deployed.<br>The default scheduling policy is First Fit.
 
 ```commandline
-./elektron -master <host:port> -workload <workload json> -schedPolicy <scheduling policy name>
+./elektron -master <host:port> -workload <workload json> -schedPolicy <sched policy name>
 ```
 
 _Note_: To obtain the list of possible scheduling policy names, use the `-listSchedPolicies` option.
@@ -82,7 +82,7 @@ One needs to also provide a scheduling policy configuration file (see [schedPolC
 Use the `-schedPolConfig` option to specify the path of the scheduling policy configuration file.
 
 ```commandline
-./elektron -master <host:port> -workload <workload json> -switchSchedPolicy -schedPolConfig <schedPolicy config file>
+./elektron -master <host:port> -workload <workload json> -switchSchedPolicy -schedPolConfig <config file>
 ```
 
 The following options can be used when scheduling policy switching is enabled.
