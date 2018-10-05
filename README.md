@@ -19,7 +19,7 @@ _Elektron_ is comprised of three main components: _Task Queue_, _Scheduler_ and 
 * [Scheduling Policy Switching](docs/SchedulingPolicySwitching.md)
 
 ## Logs
-Please go through the [log info](docs/Logging.md) to get information on different data that are logged.
+Please go through the [log info](docs/Logs.md) to get information on different data that are logged.
 
 ## Software Requirements
 **Requires [Performance Co-Pilot](http://pcp.io/) tool pmdumptext to be installed on the
