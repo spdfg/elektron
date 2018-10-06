@@ -13,7 +13,7 @@ _Elektron_ is comprised of three main components: _Task Queue_, _Scheduler_ and 
 * **Scheduler** - Matches tasks' resource requirements with Mesos resource offers. Tasks that matched offers are then launched on the corresponding nodes.
 * **Power Capper** - The Power Capper monitors the power consumption of the nodes in the cluster through the use of [Performance Co-Pilot](http://pcp.io/). A power capping policy uses this information and decides to power cap or power uncap one or more nodes in the cluster using [RAPL](https://01.org/blogs/2014/running-average-power-limit--rapl).
 
-## Usage
+## Features
 * [Pluggable Scheduling Policies](docs/SchedulingPolicies.md)
 * [Pluggable Power-Capping strategies](docs/PowerCappingStrategies.md)
 * [Scheduling Policy Switching](docs/SchedulingPolicySwitching.md)
