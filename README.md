@@ -36,7 +36,7 @@ Compile the source code using the `go build` tool as shown below.
 ```commandline
 go build -o elektron
 ```
-Use the --help option to get information about other command-line options 
+Use the `-h` option to get information about other command-line options 
 
 ### Workload
 Use the `-workload` option to specify the location of the workload json file. Below is an example workload.
