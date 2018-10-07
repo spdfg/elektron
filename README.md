@@ -13,6 +13,13 @@ _Elektron_ is comprised of three main components: _Task Queue_, _Scheduler_ and 
 * **Scheduler** - Matches tasks' resource requirements with Mesos resource offers. Tasks that matched offers are then launched on the corresponding nodes.
 * **Power Capper** - The Power Capper monitors the power consumption of the nodes in the cluster through the use of [Performance Co-Pilot](http://pcp.io/). A power capping policy uses this information and decides to power cap or power uncap one or more nodes in the cluster using [RAPL](https://01.org/blogs/2014/running-average-power-limit--rapl).
 
+## Published Research using Elektron
+* Pradyumna Kaushik, Akash Kothawale, Renan DelValle, Abhishek Jain, Madhusudhan Govindaraju, “Analysis of Dynamically Switching Energy-Aware Scheduling Policies for Varying Workloads”, in the 11th IEEE International Conference on Cloud Computing (IEEE Cloud), 2018.
+* Renan Delvalle, Pradyumna Kaushik, Abhishek Jain, Jessica Hartog, Madhusudhan Govindaraju, “Exploiting Efficiency Opportunities Based on Workloads with Electron on Heterogeneous Clusters”, in the The 10th IEEE/ACM International Conference on Utility and Cloud Computing (UCC 2017), 2017.
+* Renan DelValle, Abhishek Jain, Pradyumna Kaushik, Jessica Hartog, Madhusudhan Govindaraju, “Electron: Towards Efficient Resource Management on Heterogeneous Clusters with Apache Mesos”, in the IEEE International Conference on Cloud Computing (CLOUD), Applications Track, 2017
+
+Note: Elektron was previously known as Electron. We decided to change the name of the framework to avoid confusion with other projects named Electron.
+
 ## Features
 * [Pluggable Scheduling Policies](docs/SchedulingPolicies.md)
 * [Pluggable Power-Capping strategies](docs/PowerCappingStrategies.md)
