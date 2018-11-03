@@ -1,0 +1,18 @@
+image: golang:1.11
+
+cache:
+  paths:
+    - /apt-cache
+    - /go/src/github.com
+    - /go/src/golang.org
+    - /go/src/google.golang.org
+    - /go/src/gopkg.in
+
+before_script:
+  - mkdir -p /go/src/gitlab.com/spdf /go/src/_/builds
+  - cp -r $CI_PROJECT_DIR /go/src/gitlab.com/spdf/elektron
+  - ln -s /go/src/gitlab.com/spdf /go/src/_/builds/elektron
+
+build:
+  script:
+    - go build -o elektron /go/src/gitlab.com/spdf/elektron
