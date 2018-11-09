@@ -1,24 +1,25 @@
 // Copyright (C) 2018 spdf
-// 
+//
 // This file is part of Elektron.
-// 
+//
 // Elektron is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // Elektron is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with Elektron.  If not, see <http://www.gnu.org/licenses/>.
-// 
+//
 
 package schedulers
 
 import (
+	"fmt"
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 	sched "github.com/mesos/mesos-go/api/v0/scheduler"
 	"github.com/pkg/errors"
@@ -27,6 +28,7 @@ import (
 	elekLogDef "gitlab.com/spdf/elektron/logging/def"
 	"gitlab.com/spdf/elektron/utilities"
 	"gitlab.com/spdf/elektron/utilities/mesosUtils"
+	"log"
 )
 
 func coLocated(tasks map[string]bool, s BaseScheduler) {
@@ -150,10 +152,8 @@ func WithSchedPolSwitchEnabled(enableSchedPolicySwitch bool, switchingCriteria s
 func WithNameOfFirstSchedPolToFix(nameOfFirstSchedPol string) SchedulerOptions {
 	return func(s ElectronScheduler) error {
 		if nameOfFirstSchedPol == "" {
-			lmt := elekLogDef.WARNING
-			msgColor := elekLogDef.LogMessageColors[lmt]
-			msg := msgColor.Sprintf("First scheduling policy to deploy not mentioned. This is now going to be determined at runtime.")
-			s.(*BaseScheduler).Log(lmt, msg)
+			log.Println("First scheduling policy to deploy not mentioned. This is now" +
+				" going to be determined at runtime.")
 			return nil
 		}
 		if _, ok := SchedPolicies[nameOfFirstSchedPol]; !ok {
@@ -170,15 +170,13 @@ func WithFixedSchedulingWindow(toFixSchedWindow bool, fixedSchedWindowSize int) 
 			if fixedSchedWindowSize <= 0 {
 				return errors.New("Invalid value of scheduling window size. Please provide a value > 0.")
 			}
-			lmt := elekLogDef.WARNING
-			msgColor := elekLogDef.LogMessageColors[lmt]
-			msg := msgColor.Sprintf("Fixing the size of the scheduling window to %d...", fixedSchedWindowSize)
-			s.(*BaseScheduler).Log(lmt, msg)
+			log.Println(fmt.Sprintf("Fixing the size of the scheduling window to %d.."+
+				".", fixedSchedWindowSize))
 			s.(*BaseScheduler).toFixSchedWindow = toFixSchedWindow
 			s.(*BaseScheduler).schedWindowSize = fixedSchedWindowSize
 		}
 		// There shouldn't be any error for this scheduler option.
-		// If toFixSchedWindow is set to false, then the fixedSchedWindowSize would be ignored. In this case,
+		// If fixSchedWindow is set to false, then the fixedSchedWindowSize would be ignored. In this case,
 		// 	the size of the scheduling window would be determined at runtime.
 		return nil
 	}
