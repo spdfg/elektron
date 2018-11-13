@@ -1,20 +1,20 @@
 // Copyright (C) 2018 spdf
-// 
+//
 // This file is part of Elektron.
-// 
+//
 // Elektron is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // Elektron is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with Elektron.  If not, see <http://www.gnu.org/licenses/>.
-// 
+//
 
 package main
 
@@ -95,19 +95,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Creating logger and attaching different logging platforms.
-	startTime := time.Now()
-	formattedStartTime := startTime.Format("20060102150405")
-	// Checking if prefix contains any special characters
-	if strings.Contains(*pcplogPrefix, "/") {
-		log.Fatal("log file prefix should not contain '/'.")
-	}
-	logPrefix := *pcplogPrefix + "_" + formattedStartTime
-	logger := elekLogDef.BuildLogger(startTime, logPrefix)
 	// Logging channels.
 	logMType := make(chan elekLogDef.LogMessageType)
 	logMsg := make(chan string)
-	go logger.Listen(logMType, logMsg)
 
 	// First we need to build the scheduler using scheduler options.
 	var schedOptions []schedulers.SchedulerOptions = make([]schedulers.SchedulerOptions, 0, 10)
@@ -149,9 +139,7 @@ func main() {
 	if *enableSchedPolicySwitch {
 		// Scheduling policy config file required.
 		if spcf := *schedPolConfigFile; spcf == "" {
-			logger.WriteLog(elekLogDef.ERROR, "No file containing characteristics for"+
-				" scheduling policies")
-			os.Exit(1)
+			log.Fatal("Scheduling policy characteristics file not provided.")
 		} else {
 			// Initializing the characteristics of the scheduling policies.
 			schedulers.InitSchedPolicyCharacteristics(spcf)
@@ -169,7 +157,7 @@ func main() {
 	// If CMW is disabled, then the Median of Medians Max Peak Power Usage value is used
 	//	as the watts value for each task.
 	if *wattsAsAResource {
-		logger.WriteLog(elekLogDef.GENERAL, "WaaR enabled...")
+		log.Println("WaaR enabled...")
 		schedOptions = append(schedOptions, schedulers.WithWattsAsAResource(*wattsAsAResource))
 		schedOptions = append(schedOptions, schedulers.WithClassMapWatts(*classMapWatts))
 	}
@@ -186,8 +174,7 @@ func main() {
 		"prog-extrema": {},
 	}
 	if _, ok := powercapValues[*powerCapPolicy]; !ok {
-		logger.WriteLog(elekLogDef.ERROR, "Incorrect power-capping algorithm specified.")
-		os.Exit(1)
+		log.Fatal("Incorrect power-capping algorithm specified.")
 	} else {
 		// Indicating which power capping algorithm to use, if any.
 		// The pcp-logging with/without power capping will be run after the
@@ -207,9 +194,8 @@ func main() {
 				// These values are not used to configure the scheduler.
 				// hiThreshold and loThreshold are passed to the powercappers.
 				if *hiThreshold < *loThreshold {
-					logger.WriteLog(elekLogDef.ERROR, "High threshold is of a"+
-						" lower value than low threshold.")
-					os.Exit(1)
+					log.Fatal("High threshold is of a lower value than low " +
+						"threshold.")
 				}
 			}
 		}
@@ -218,15 +204,11 @@ func main() {
 	// Tasks
 	// If httpServer is disabled, then path of file containing workload needs to be provided.
 	if *tasksFile == "" {
-		logger.WriteLog(elekLogDef.ERROR, "No file containing tasks specification"+
-			" provided.")
-		os.Exit(1)
+		log.Fatal("Tasks specifications file not provided.")
 	}
 	tasks, err := def.TasksFromJSON(*tasksFile)
 	if err != nil || len(tasks) == 0 {
-		logger.WriteLog(elekLogDef.ERROR, "Invalid tasks specification file "+
-			"provided.")
-		os.Exit(1)
+		log.Fatal("Invalid tasks specification file provided.")
 	}
 	schedOptions = append(schedOptions, schedulers.WithTasks(tasks))
 
@@ -243,10 +225,21 @@ func main() {
 		Scheduler: scheduler,
 	})
 	if err != nil {
-		logger.WriteLog(elekLogDef.ERROR, fmt.Sprintf("Unable to create scheduler driver:"+
-			" %s", err))
-		os.Exit(1)
+		log.Fatal(fmt.Sprintf("Unable to create scheduler driver: %s", err))
 	}
+
+	// If here, then all command-line arguments validate.
+	// Creating logger and attaching different logging platforms.
+	startTime := time.Now()
+	formattedStartTime := startTime.Format("20060102150405")
+	// Checking if prefix contains any special characters.
+	if strings.Contains(*pcplogPrefix, "/") {
+		log.Fatal("log file prefix should not contain '/'.")
+	}
+	logPrefix := *pcplogPrefix + "_" + formattedStartTime
+	logger := elekLogDef.BuildLogger(startTime, logPrefix)
+	// Starting the logging go-routine.
+	go logger.Listen(logMType, logMsg)
 
 	// Starting PCP logging.
 	if noPowercap {
