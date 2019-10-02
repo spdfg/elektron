@@ -1,18 +1,18 @@
-image: golang:1.11
+image: golang:1.12
 
 cache:
   paths:
-    - /apt-cache
-    - /go/src/github.com
-    - /go/src/golang.org
-    - /go/src/google.golang.org
-    - /go/src/gopkg.in
+    - /go/pkg/mod/github.com
+    - /go/pkg/mod/golang.org
+    - /go/pkg/mod/google.golang.org
 
 before_script:
-  - mkdir -p /go/src/gitlab.com/spdf /go/src/_/builds
-  - cp -r $CI_PROJECT_DIR /go/src/gitlab.com/spdf/elektron
-  - ln -s /go/src/gitlab.com/spdf /go/src/_/builds/elektron
+  - export GOPATH="/go"
+  - mkdir -p $GOPATH/pkg/mod github.com $GOPATH/pkg/mod/golang.org $GOPATH/pkg/mod/google.golang.org
+  - cp -r $CI_PROJECT_DIR /elektron
+  - cd /elektron
+  - go mod download
 
 build:
   script:
-    - go build -o elektron /go/src/gitlab.com/spdf/elektron
+    - go build -v -o elektron

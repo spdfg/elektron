@@ -38,7 +38,16 @@ on the Mesos Agents**
 Compatible with the following versions:
 
 * Mesos 1.5.0
-* Go 1.9.7
+* Go 1.9.7 (if using go vendor for dependency management)
+* Go 1.11+ (if using go modules for dependency management)
+
+## Downloading Dependencies
+[Go Modules](https://blog.golang.org/using-go-modules) can now be used for dependency management.
+To download the dependencies, run the below command.
+```commandline
+go mod download
+```
+_Note that you would require Go version 1.11+ to be able to use go modules._
 
 ## Build and Run
 Compile the source code using the `go build` tool as shown below.
