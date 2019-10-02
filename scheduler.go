@@ -16,7 +16,7 @@
 // along with Elektron.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-package main
+package main // import gitlab.com/spdf/elektron
 
 import (
 	"flag"
