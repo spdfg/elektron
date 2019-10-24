@@ -6,7 +6,7 @@ import "math"
 func Sum(input Float64Data) (sum float64, err error) {
 
 	if input.Len() == 0 {
-		return math.NaN(), EmptyInputErr
+		return math.NaN(), EmptyInput
 	}
 
 	// Add em up

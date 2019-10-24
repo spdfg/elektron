@@ -1,13 +1,17 @@
 language: go
 go:
-  - stable
-  - master
+  - 1.1
+  - 1.2
+  - 1.3
+  - 1.4
+  - 1.5
+  - tip
 before_install:
-  - go get github.com/mattn/goveralls
+  - sudo pip install codecov
 script:
-  - go test -v -covermode=count -coverprofile=coverage.out
+  - go test
 after_success:
-  - $GOPATH/bin/goveralls -coverprofile=coverage.out -service=travis-ci
+  - codecov
 notifications:
   email:
     recipients:

@@ -14,7 +14,7 @@ type Coordinate struct {
 func LinearRegression(s Series) (regressions Series, err error) {
 
 	if len(s) == 0 {
-		return nil, EmptyInputErr
+		return nil, EmptyInput
 	}
 
 	// Placeholder for the math to be done
@@ -44,21 +44,19 @@ func LinearRegression(s Series) (regressions Series, err error) {
 	}
 
 	return regressions, nil
+
 }
 
 // ExponentialRegression returns an exponential regression on data series
 func ExponentialRegression(s Series) (regressions Series, err error) {
 
 	if len(s) == 0 {
-		return nil, EmptyInputErr
+		return nil, EmptyInput
 	}
 
 	var sum [6]float64
 
 	for i := 0; i < len(s); i++ {
-		if s[i].Y < 0 {
-			return nil, YCoordErr
-		}
 		sum[0] += s[i].X
 		sum[1] += s[i].Y
 		sum[2] += s[i].X * s[i].X * s[i].Y
@@ -79,13 +77,14 @@ func ExponentialRegression(s Series) (regressions Series, err error) {
 	}
 
 	return regressions, nil
+
 }
 
 // LogarithmicRegression returns an logarithmic regression on data series
 func LogarithmicRegression(s Series) (regressions Series, err error) {
 
 	if len(s) == 0 {
-		return nil, EmptyInputErr
+		return nil, EmptyInput
 	}
 
 	var sum [4]float64
@@ -110,4 +109,5 @@ func LogarithmicRegression(s Series) (regressions Series, err error) {
 	}
 
 	return regressions, nil
+
 }

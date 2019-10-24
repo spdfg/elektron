@@ -1,14 +1,12 @@
 package stats
 
-import (
-	"math"
-)
+import "math"
 
 // Percentile finds the relative standing in a slice of floats
 func Percentile(input Float64Data, percent float64) (percentile float64, err error) {
 
 	if input.Len() == 0 {
-		return math.NaN(), EmptyInputErr
+		return math.NaN(), EmptyInput
 	}
 
 	if percent <= 0 || percent > 100 {
@@ -54,7 +52,7 @@ func PercentileNearestRank(input Float64Data, percent float64) (percentile float
 
 	// Return an error for empty slices
 	if il == 0 {
-		return math.NaN(), EmptyInputErr
+		return math.NaN(), EmptyInput
 	}
 
 	// Return error for less than 0 or greater than 100 percentages

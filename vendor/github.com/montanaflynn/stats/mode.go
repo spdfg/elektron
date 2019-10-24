@@ -7,7 +7,7 @@ func Mode(input Float64Data) (mode []float64, err error) {
 	if l == 1 {
 		return input, nil
 	} else if l == 0 {
-		return nil, EmptyInputErr
+		return nil, EmptyInput
 	}
 
 	c := sortedCopyDif(input)

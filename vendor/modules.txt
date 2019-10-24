@@ -2,21 +2,21 @@
 github.com/davecgh/go-spew/spew
 # github.com/fatih/color v1.7.0
 github.com/fatih/color
-# github.com/gogo/protobuf v1.3.0
+# github.com/gogo/protobuf v1.1.1
 github.com/gogo/protobuf/proto
 # github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 github.com/golang/glog
-# github.com/golang/protobuf v1.3.2
+# github.com/golang/protobuf v1.2.0
 github.com/golang/protobuf/proto
 # github.com/google/uuid v1.0.0
 github.com/google/uuid
-# github.com/mash/gokmeans v0.0.0-20170215130432-ea22cff45f59
+# github.com/mash/gokmeans v0.0.0-20140614041449-8bbf08905a7e
 github.com/mash/gokmeans
-# github.com/mattn/go-colorable v0.1.2
+# github.com/mattn/go-colorable v0.0.9
 github.com/mattn/go-colorable
-# github.com/mattn/go-isatty v0.0.9
+# github.com/mattn/go-isatty v0.0.4
 github.com/mattn/go-isatty
-# github.com/mesos/mesos-go v0.0.10
+# github.com/mesos/mesos-go v0.0.8
 github.com/mesos/mesos-go/api/v0/mesosproto
 github.com/mesos/mesos-go/api/v0/scheduler
 github.com/mesos/mesos-go/api/v0/mesosutil
@@ -32,19 +32,19 @@ github.com/mesos/mesos-go/api/v0/messenger
 github.com/mesos/mesos-go/api/v0/messenger/sessionid
 github.com/mesos/mesos-go/api/v0/upid
 github.com/mesos/mesos-go/api/v0/auth/sasl/mech
-# github.com/montanaflynn/stats v0.5.0
+# github.com/montanaflynn/stats v0.0.0-20171201202039-1bf9dbcd8cbe
 github.com/montanaflynn/stats
-# github.com/pborman/uuid v1.2.0
+# github.com/pborman/uuid v0.0.0-20180906182336-adf5a7427709
 github.com/pborman/uuid
-# github.com/pkg/errors v0.8.1
+# github.com/pkg/errors v0.8.0
 github.com/pkg/errors
 # github.com/pmezard/go-difflib v1.0.0
 github.com/pmezard/go-difflib/difflib
-# github.com/samuel/go-zookeeper v0.0.0-20190923202752-2cc03de413da
+# github.com/samuel/go-zookeeper v0.0.0-20180130194729-c4fab1ac1bec
 github.com/samuel/go-zookeeper/zk
 # github.com/stretchr/testify v1.4.0
 github.com/stretchr/testify/assert
-# golang.org/x/crypto v0.0.0-20190927123631-a832865fa7ad
+# golang.org/x/crypto v0.0.0-20180927165925-5295e8364332
 golang.org/x/crypto/ssh
 golang.org/x/crypto/curve25519
 golang.org/x/crypto/ed25519
@@ -52,10 +52,9 @@ golang.org/x/crypto/internal/chacha20
 golang.org/x/crypto/poly1305
 golang.org/x/crypto/ed25519/internal/edwards25519
 golang.org/x/crypto/internal/subtle
-# golang.org/x/net v0.0.0-20190404232315-eb5bcb51f2a3
+# golang.org/x/net v0.0.0-20180926154720-4dfa2610cdf3
 golang.org/x/net/context
-# golang.org/x/sys v0.0.0-20190813064441-fde4db37ae7a
+# golang.org/x/sys v0.0.0-20180928133829-e4b3c5e90611
 golang.org/x/sys/unix
-golang.org/x/sys/cpu
 # gopkg.in/yaml.v2 v2.2.2
 gopkg.in/yaml.v2
