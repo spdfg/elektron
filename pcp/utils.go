@@ -41,6 +41,7 @@ func AverageNodePowerHistory(history *ring.Ring) float64 {
 		return 0.0
 	}
 
+	// TODO (pkaushik) handle cases when DRAM power is not being monitored.
 	count /= 4 // Two PKGs, two DRAM for all nodes currently.
 
 	return (total / count)
