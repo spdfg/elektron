@@ -1,4 +1,4 @@
-name: Go
+name: Build and Test Elektron
 on:
   push:
     branches: [master]
