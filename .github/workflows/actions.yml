@@ -1,0 +1,29 @@
+name: Go
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-18.04
+    steps:
+    - name: Golang Setup
+      uses: actions/setup-go@v1
+      with:
+        go-version: 1.12.9
+      id: go
+
+    - name: Checkout Code
+      uses: actions/checkout@v1
+
+    - name: Get Dependencies using Go Modules
+      run: go mod download
+
+    - name: Build Elektron
+      run: go build -v -o elektron
+    
+    - name: Run Unit Tests
+      run: go test -v ./...
