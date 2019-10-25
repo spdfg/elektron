@@ -1,7 +1,7 @@
 Elektron: A Pluggable Mesos framework with power-aware capabilities
 ===================================================================
 
-![build and test](https://github.com/spdfg/elektron/workflows/Build%20and%20Test%20Elektron/badge.svg?branch=master)
+![build and test](https://github.com/spdfg/elektron/workflows/Build%20and%20Test%20Elektron/badge.svg)
 
 _Elektron_ is a [Mesos](mesos.apache.org) framework that behaves as a playground to experiment with different scheduling policies to schedule ad-hoc jobs in docker containers. It is designed as a lightweight, configurable framework, which can be used in conjunction with built-in power-capping policies to reduce the peak power and/or energy usage of co-scheduled tasks.
 
