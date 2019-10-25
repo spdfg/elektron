@@ -25,7 +25,7 @@ import (
 	"syscall"
 	"time"
 
-	elekLogDef "gitlab.com/spdf/elektron/logging/def"
+	elekLogDef "github.com/spdf/elektron/logging/def"
 )
 
 func Start(quit chan struct{}, logging *bool, logMType chan elekLogDef.LogMessageType,

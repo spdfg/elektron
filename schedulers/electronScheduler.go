@@ -23,8 +23,8 @@ import (
 
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 	sched "github.com/mesos/mesos-go/api/v0/scheduler"
-	"gitlab.com/spdf/elektron/def"
-	elekLogDef "gitlab.com/spdf/elektron/logging/def"
+	"github.com/spdf/elektron/def"
+	elekLogDef "github.com/spdf/elektron/logging/def"
 )
 
 // Implements mesos scheduler.

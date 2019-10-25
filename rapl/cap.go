@@ -23,7 +23,7 @@ import (
 	"strconv"
 
 	"github.com/pkg/errors"
-	elekEnv "gitlab.com/spdf/elektron/environment"
+	elekEnv "github.com/spdf/elektron/environment"
 	"golang.org/x/crypto/ssh"
 	"strings"
 )

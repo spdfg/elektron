@@ -23,9 +23,9 @@ import (
 
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 	sched "github.com/mesos/mesos-go/api/v0/scheduler"
-	"gitlab.com/spdf/elektron/def"
-	"gitlab.com/spdf/elektron/utilities/mesosUtils"
-	"gitlab.com/spdf/elektron/utilities/offerUtils"
+	"github.com/spdf/elektron/def"
+	"github.com/spdf/elektron/utilities/mesosUtils"
+	"github.com/spdf/elektron/utilities/offerUtils"
 )
 
 // Decides if to take an offer or not

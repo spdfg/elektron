@@ -22,7 +22,7 @@ import (
 	"strings"
 	"time"
 
-	logUtils "gitlab.com/spdf/elektron/logging/utils"
+	logUtils "github.com/spdf/elektron/logging/utils"
 )
 
 // Names of different loggers

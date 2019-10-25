@@ -29,10 +29,10 @@ import (
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 	"github.com/mesos/mesos-go/api/v0/mesosutil"
 	sched "github.com/mesos/mesos-go/api/v0/scheduler"
-	"gitlab.com/spdf/elektron/def"
-	elekLogDef "gitlab.com/spdf/elektron/logging/def"
-	"gitlab.com/spdf/elektron/utilities"
-	"gitlab.com/spdf/elektron/utilities/schedUtils"
+	"github.com/spdf/elektron/def"
+	elekLogDef "github.com/spdf/elektron/logging/def"
+	"github.com/spdf/elektron/utilities"
+	"github.com/spdf/elektron/utilities/schedUtils"
 )
 
 type BaseScheduler struct {

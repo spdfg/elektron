@@ -24,8 +24,8 @@ import (
 
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 	"github.com/pkg/errors"
-	"gitlab.com/spdf/elektron/constants"
-	"gitlab.com/spdf/elektron/utilities/offerUtils"
+	"github.com/spdf/elektron/constants"
+	"github.com/spdf/elektron/utilities/offerUtils"
 )
 
 type Task struct {

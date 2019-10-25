@@ -25,7 +25,7 @@ import (
 
 	sched "github.com/mesos/mesos-go/api/v0/scheduler"
 	"github.com/pkg/errors"
-	"gitlab.com/spdf/elektron/utilities"
+	"github.com/spdf/elektron/utilities"
 )
 
 // Names of different scheduling policies.

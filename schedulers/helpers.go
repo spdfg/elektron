@@ -23,11 +23,11 @@ import (
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 	sched "github.com/mesos/mesos-go/api/v0/scheduler"
 	"github.com/pkg/errors"
-	"gitlab.com/spdf/elektron/constants"
-	"gitlab.com/spdf/elektron/def"
-	elekLogDef "gitlab.com/spdf/elektron/logging/def"
-	"gitlab.com/spdf/elektron/utilities"
-	"gitlab.com/spdf/elektron/utilities/mesosUtils"
+	"github.com/spdf/elektron/constants"
+	"github.com/spdf/elektron/def"
+	elekLogDef "github.com/spdf/elektron/logging/def"
+	"github.com/spdf/elektron/utilities"
+	"github.com/spdf/elektron/utilities/mesosUtils"
 	"log"
 )
 

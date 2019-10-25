@@ -31,11 +31,11 @@ import (
 	"syscall"
 	"time"
 
-	"gitlab.com/spdf/elektron/constants"
-	elekLogDef "gitlab.com/spdf/elektron/logging/def"
-	"gitlab.com/spdf/elektron/pcp"
-	"gitlab.com/spdf/elektron/rapl"
-	"gitlab.com/spdf/elektron/utilities"
+	"github.com/spdf/elektron/constants"
+	elekLogDef "github.com/spdf/elektron/logging/def"
+	"github.com/spdf/elektron/pcp"
+	"github.com/spdf/elektron/rapl"
+	"github.com/spdf/elektron/utilities"
 )
 
 func round(num float64) int {

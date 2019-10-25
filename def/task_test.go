@@ -21,8 +21,8 @@ package def
 import (
 	"fmt"
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
+	"github.com/spdf/elektron/constants"
 	"github.com/stretchr/testify/assert"
-	"gitlab.com/spdf/elektron/constants"
 	"reflect"
 	"testing"
 )

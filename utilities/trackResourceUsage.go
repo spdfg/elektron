@@ -23,8 +23,8 @@ import (
 	"sync"
 
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
-	"gitlab.com/spdf/elektron/def"
-	"gitlab.com/spdf/elektron/utilities/offerUtils"
+	"github.com/spdf/elektron/def"
+	"github.com/spdf/elektron/utilities/offerUtils"
 )
 
 type TrackResourceUsage struct {

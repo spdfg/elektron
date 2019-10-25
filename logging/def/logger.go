@@ -30,13 +30,13 @@ type LoggerDriver struct {
 func newLogger() *LoggerDriver {
 	logger := &LoggerDriver{
 		allowedMessageTypes: map[LogMessageType]bool{
-			ERROR:       true,
-			GENERAL:     true,
-			WARNING:     true,
-			SCHED_TRACE: true,
-			SUCCESS:     true,
-			PCP:         true,
-			SPS:         true,
+			ERROR:                   true,
+			GENERAL:                 true,
+			WARNING:                 true,
+			SCHED_TRACE:             true,
+			SUCCESS:                 true,
+			PCP:                     true,
+			SPS:                     true,
 			CLSFN_TASKDIST_OVERHEAD: true,
 			SCHED_WINDOW:            true,
 		},

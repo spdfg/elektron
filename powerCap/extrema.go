@@ -30,9 +30,9 @@ import (
 	"syscall"
 	"time"
 
-	elekLogDef "gitlab.com/spdf/elektron/logging/def"
-	"gitlab.com/spdf/elektron/pcp"
-	"gitlab.com/spdf/elektron/rapl"
+	elekLogDef "github.com/spdf/elektron/logging/def"
+	"github.com/spdf/elektron/pcp"
+	"github.com/spdf/elektron/rapl"
 )
 
 func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, hiThreshold, loThreshold float64,
