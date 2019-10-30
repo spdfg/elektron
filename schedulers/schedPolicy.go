@@ -1,4 +1,4 @@
-// Copyright (C) 2018 spdf
+// Copyright (C) 2018 spdfg
 // 
 // This file is part of Elektron.
 // 
@@ -25,8 +25,8 @@ import (
 
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 	sched "github.com/mesos/mesos-go/api/v0/scheduler"
-	"github.com/spdf/elektron/def"
-	elekLogDef "github.com/spdf/elektron/logging/def"
+	"github.com/spdfg/elektron/def"
+	elekLogDef "github.com/spdfg/elektron/logging/def"
 )
 
 type SchedPolicyContext interface {

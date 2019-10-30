@@ -1,4 +1,4 @@
-// Copyright (C) 2018 spdf
+// Copyright (C) 2018 spdfg
 // 
 // This file is part of Elektron.
 // 
@@ -31,11 +31,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/spdf/elektron/constants"
-	elekLogDef "github.com/spdf/elektron/logging/def"
-	"github.com/spdf/elektron/pcp"
-	"github.com/spdf/elektron/rapl"
-	"github.com/spdf/elektron/utilities"
+	"github.com/spdfg/elektron/constants"
+	elekLogDef "github.com/spdfg/elektron/logging/def"
+	"github.com/spdfg/elektron/pcp"
+	"github.com/spdfg/elektron/rapl"
+	"github.com/spdfg/elektron/utilities"
 )
 
 func round(num float64) int {

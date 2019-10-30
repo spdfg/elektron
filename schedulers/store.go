@@ -1,4 +1,4 @@
-// Copyright (C) 2018 spdf
+// Copyright (C) 2018 spdfg
 // 
 // This file is part of Elektron.
 // 
@@ -25,7 +25,7 @@ import (
 
 	sched "github.com/mesos/mesos-go/api/v0/scheduler"
 	"github.com/pkg/errors"
-	"github.com/spdf/elektron/utilities"
+	"github.com/spdfg/elektron/utilities"
 )
 
 // Names of different scheduling policies.

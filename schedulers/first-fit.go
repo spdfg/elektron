@@ -1,4 +1,4 @@
-// Copyright (C) 2018 spdf
+// Copyright (C) 2018 spdfg
 // 
 // This file is part of Elektron.
 // 
@@ -21,9 +21,9 @@ package schedulers
 import (
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 	sched "github.com/mesos/mesos-go/api/v0/scheduler"
-	"github.com/spdf/elektron/def"
-	"github.com/spdf/elektron/utilities/mesosUtils"
-	"github.com/spdf/elektron/utilities/offerUtils"
+	"github.com/spdfg/elektron/def"
+	"github.com/spdfg/elektron/utilities/mesosUtils"
+	"github.com/spdfg/elektron/utilities/offerUtils"
 )
 
 // Decides if to take an offer or not

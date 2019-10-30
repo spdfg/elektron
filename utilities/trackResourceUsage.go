@@ -1,4 +1,4 @@
-// Copyright (C) 2018 spdf
+// Copyright (C) 2018 spdfg
 // 
 // This file is part of Elektron.
 // 
@@ -23,8 +23,8 @@ import (
 	"sync"
 
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
-	"github.com/spdf/elektron/def"
-	"github.com/spdf/elektron/utilities/offerUtils"
+	"github.com/spdfg/elektron/def"
+	"github.com/spdfg/elektron/utilities/offerUtils"
 )
 
 type TrackResourceUsage struct {

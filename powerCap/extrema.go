@@ -1,4 +1,4 @@
-// Copyright (C) 2018 spdf
+// Copyright (C) 2018 spdfg
 // 
 // This file is part of Elektron.
 // 
@@ -30,9 +30,9 @@ import (
 	"syscall"
 	"time"
 
-	elekLogDef "github.com/spdf/elektron/logging/def"
-	"github.com/spdf/elektron/pcp"
-	"github.com/spdf/elektron/rapl"
+	elekLogDef "github.com/spdfg/elektron/logging/def"
+	"github.com/spdfg/elektron/pcp"
+	"github.com/spdfg/elektron/rapl"
 )
 
 func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, hiThreshold, loThreshold float64,

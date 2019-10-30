@@ -1,4 +1,4 @@
-// Copyright (C) 2018 spdf
+// Copyright (C) 2018 spdfg
 // 
 // This file is part of Elektron.
 // 
@@ -21,8 +21,8 @@ package schedUtils
 import (
 	"log"
 
-	"github.com/spdf/elektron/def"
-	"github.com/spdf/elektron/utilities"
+	"github.com/spdfg/elektron/def"
+	"github.com/spdfg/elektron/utilities"
 )
 
 // Criteria for resizing the scheduling window.

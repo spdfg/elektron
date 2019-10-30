@@ -1,4 +1,4 @@
-// Copyright (C) 2018 spdf
+// Copyright (C) 2018 spdfg
 // 
 // This file is part of Elektron.
 // 
@@ -24,8 +24,8 @@ import (
 
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 	"github.com/pkg/errors"
-	"github.com/spdf/elektron/constants"
-	"github.com/spdf/elektron/utilities/offerUtils"
+	"github.com/spdfg/elektron/constants"
+	"github.com/spdfg/elektron/utilities/offerUtils"
 )
 
 type Task struct {
