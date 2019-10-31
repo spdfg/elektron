@@ -1,4 +1,4 @@
-// Copyright (C) 2018 spdf
+// Copyright (C) 2018 spdfg
 // 
 // This file is part of Elektron.
 // 
@@ -22,7 +22,7 @@ import (
 	"strings"
 	"time"
 
-	logUtils "gitlab.com/spdf/elektron/logging/utils"
+	logUtils "github.com/spdfg/elektron/logging/utils"
 )
 
 // Names of different loggers

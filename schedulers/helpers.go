@@ -1,4 +1,4 @@
-// Copyright (C) 2018 spdf
+// Copyright (C) 2018 spdfg
 //
 // This file is part of Elektron.
 //
@@ -23,11 +23,11 @@ import (
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 	sched "github.com/mesos/mesos-go/api/v0/scheduler"
 	"github.com/pkg/errors"
-	"gitlab.com/spdf/elektron/constants"
-	"gitlab.com/spdf/elektron/def"
-	elekLogDef "gitlab.com/spdf/elektron/logging/def"
-	"gitlab.com/spdf/elektron/utilities"
-	"gitlab.com/spdf/elektron/utilities/mesosUtils"
+	"github.com/spdfg/elektron/constants"
+	"github.com/spdfg/elektron/def"
+	elekLogDef "github.com/spdfg/elektron/logging/def"
+	"github.com/spdfg/elektron/utilities"
+	"github.com/spdfg/elektron/utilities/mesosUtils"
 	"log"
 )
 

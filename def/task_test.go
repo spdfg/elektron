@@ -1,4 +1,4 @@
-// Copyright (C) 2018 spdf
+// Copyright (C) 2018 spdfg
 //
 // This file is part of Elektron.
 //
@@ -21,8 +21,8 @@ package def
 import (
 	"fmt"
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
+	"github.com/spdfg/elektron/constants"
 	"github.com/stretchr/testify/assert"
-	"gitlab.com/spdf/elektron/constants"
 	"reflect"
 	"testing"
 )

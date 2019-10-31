@@ -1,4 +1,4 @@
-// Copyright (C) 2018 spdf
+// Copyright (C) 2018 spdfg
 // 
 // This file is part of Elektron.
 // 
@@ -25,7 +25,7 @@ import (
 	"syscall"
 	"time"
 
-	elekLogDef "gitlab.com/spdf/elektron/logging/def"
+	elekLogDef "github.com/spdfg/elektron/logging/def"
 )
 
 func Start(quit chan struct{}, logging *bool, logMType chan elekLogDef.LogMessageType,

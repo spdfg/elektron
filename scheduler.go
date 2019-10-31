@@ -1,4 +1,4 @@
-// Copyright (C) 2018 spdf
+// Copyright (C) 2018 spdfg
 //
 // This file is part of Elektron.
 //
@@ -16,7 +16,7 @@
 // along with Elektron.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-package main // import gitlab.com/spdf/elektron
+package main // import github.com/spdfg/elektron
 
 import (
 	"flag"
@@ -30,11 +30,11 @@ import (
 	"github.com/golang/protobuf/proto"
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 	sched "github.com/mesos/mesos-go/api/v0/scheduler"
-	"gitlab.com/spdf/elektron/def"
-	elekLogDef "gitlab.com/spdf/elektron/logging/def"
-	"gitlab.com/spdf/elektron/pcp"
-	"gitlab.com/spdf/elektron/powerCap"
-	"gitlab.com/spdf/elektron/schedulers"
+	"github.com/spdfg/elektron/def"
+	elekLogDef "github.com/spdfg/elektron/logging/def"
+	"github.com/spdfg/elektron/pcp"
+	"github.com/spdfg/elektron/powerCap"
+	"github.com/spdfg/elektron/schedulers"
 )
 
 var master = flag.String("master", "", "Location of leading Mesos master -- <mesos-master>:<port>")

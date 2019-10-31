@@ -16,9 +16,9 @@ _Elektron_ is comprised of three main components: _Task Queue_, _Scheduler_ and 
 * **Power Capper** - The Power Capper monitors the power consumption of the nodes in the cluster through the use of [Performance Co-Pilot](http://pcp.io/). A power capping policy uses this information and decides to power cap or power uncap one or more nodes in the cluster using [RAPL](https://01.org/blogs/2014/running-average-power-limit--rapl).
 
 ## Published Research using Elektron
-* Pradyumna Kaushik, Akash Kothawale, Renan DelValle, Abhishek Jain, Madhusudhan Govindaraju, “Analysis of Dynamically Switching Energy-Aware Scheduling Policies for Varying Workloads”, in the 11th IEEE International Conference on Cloud Computing (IEEE Cloud), 2018. [[pdf](http://cloud.cs.binghamton.edu/wordpress/wp-content/uploads/2018/05/analysis-of-energy-aware-scheduling-policy-switching-for-varying-workloads.pdf)]
-* Renan Delvalle, Pradyumna Kaushik, Abhishek Jain, Jessica Hartog, Madhusudhan Govindaraju, “Exploiting Efficiency Opportunities Based on Workloads with Electron on Heterogeneous Clusters”, in the The 10th IEEE/ACM International Conference on Utility and Cloud Computing (UCC 2017), 2017. [[pdf](http://cloud.cs.binghamton.edu/wordpress/wp-content/uploads/2017/10/ExploitingEfficiencyOpportunitiesBasedonWorkloadswithElectrononHeterogeneousClusters.pdf)]
-* Renan DelValle, Abhishek Jain, Pradyumna Kaushik, Jessica Hartog, Madhusudhan Govindaraju, “Electron: Towards Efficient Resource Management on Heterogeneous Clusters with Apache Mesos”, in the IEEE International Conference on Cloud Computing (CLOUD), Applications Track, 2017. [[pdf](http://cloud.cs.binghamton.edu/wordpress/wp-content/uploads/2017/07/electron-1.pdf)]
+* Pradyumna Kaushik, Akash Kothawale, Renan DelValle, Abhishek Jain, Madhusudhan Govindaraju, “Analysis of Dynamically Switching Energy-Aware Scheduling Policies for Varying Workloads”, in the 11th IEEE International Conference on Cloud Computing (IEEE Cloud), 2018. \[[pdf](http://cloud.cs.binghamton.edu/wordpress/wp-content/uploads/2018/05/analysis-of-energy-aware-scheduling-policy-switching-for-varying-workloads.pdf)\]
+* Renan Delvalle, Pradyumna Kaushik, Abhishek Jain, Jessica Hartog, Madhusudhan Govindaraju, “Exploiting Efficiency Opportunities Based on Workloads with Electron on Heterogeneous Clusters”, in the The 10th IEEE/ACM International Conference on Utility and Cloud Computing (UCC 2017), 2017. \[[pdf](http://cloud.cs.binghamton.edu/wordpress/wp-content/uploads/2017/10/ExploitingEfficiencyOpportunitiesBasedonWorkloadswithElectrononHeterogeneousClusters.pdf)\]
+* Renan DelValle, Abhishek Jain, Pradyumna Kaushik, Jessica Hartog, Madhusudhan Govindaraju, “Electron: Towards Efficient Resource Management on Heterogeneous Clusters with Apache Mesos”, in the IEEE International Conference on Cloud Computing (CLOUD), Applications Track, 2017. \[[pdf](http://cloud.cs.binghamton.edu/wordpress/wp-content/uploads/2017/07/electron-1.pdf)\]
 
 Note: Elektron was previously known as Electron. We decided to change the name of the framework to avoid confusion with other projects named Electron.
 
@@ -48,6 +48,13 @@ To download the dependencies, run the below command.
 go mod download
 ```
 _Note that you would require Go version 1.11+ to be able to use go modules._
+
+If vendoring dependencies, then use the below commands after cloning _elektron_.
+1. `git submodule init`
+2. `git submodule update`
+
+An alternative is to clone _elektron_ using the command `git clone --recurse-submodules git@github.com:spdfg/elektron.git`.
+
 
 ## Build and Run
 Compile the source code using the `go build` tool as shown below.

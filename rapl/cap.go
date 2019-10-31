@@ -1,4 +1,4 @@
-// Copyright (C) 2018 spdf
+// Copyright (C) 2018 spdfg
 // 
 // This file is part of Elektron.
 // 
@@ -23,7 +23,7 @@ import (
 	"strconv"
 
 	"github.com/pkg/errors"
-	elekEnv "gitlab.com/spdf/elektron/environment"
+	elekEnv "github.com/spdfg/elektron/environment"
 	"golang.org/x/crypto/ssh"
 	"strings"
 )

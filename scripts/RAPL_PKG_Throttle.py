@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-# Copyright (C) 2018 spdf
+# Copyright (C) 2018 spdfg
 # 
 # This file is part of Elektron.
 # 
