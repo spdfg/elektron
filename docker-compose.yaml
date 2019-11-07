@@ -68,7 +68,7 @@ services:
       ELEKTRON_EXECUTABLE_NAME: elektron
       ELEKTRON_WORKLOAD: workload_sample.json
       ELEKTRON_MESOS_MASTER_LOCATION: 19.16.4.4:5050
-      ELEKTRON_LOGDIR_PREFIX: elektron-test-run
+      ELEKTRON_LOGDIR_PREFIX: Elektron-Test-Run
       HOST_IP: ${HOST_IP}
     networks:
       elektron-cluster:
