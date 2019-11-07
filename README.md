@@ -55,13 +55,63 @@ If vendoring dependencies, then use the below commands after cloning _elektron_.
 
 An alternative is to clone _elektron_ using the command `git clone --recurse-submodules git@github.com:spdfg/elektron.git`.
 
-
-## Build and Run
+## Build
 Compile the source code using the `go build` tool as shown below.
 ```commandline
 go build -o elektron
 ```
 Use the `-h` option to get information about other command-line options.
+
+## Run
+Elektron can be run on bare-metal or using a docker-compose environment.
+### Bare-Metal
+Follow instructions [here](http://mesos.apache.org/documentation/latest/building/) to setup a Mesos cluster.
+In addition, the following software should be installed.
+
+| Software 				| Target Machines 			|
+|-----------------------|---------------------------|
+| [Performance Co-Pilot](http://pcp.io/) | Mesos master nodes + agent nodes |
+| [Docker](https://docs.docker.com/install/linux/docker-ce/ubuntu/) | Mesos agent nodes |
+
+If power consumption needs to be monitored, install the perfevent PMDA by following the instructions [here](https://pcp.io/man/man1/pmdaperfevent.1.html).
+_Note: You might need to update the exposed event names for RAPL depending on the architecture_.
+For example, update _perfevent.conf_ with the following events if measuring both CPU and DRAM power.
+```
+rapl::RAPL_ENERGY_PKG node
+rapl::RAPL_ENERGY_DRAM node
+```
+
+**_Detail document on the bare-metal setup coming up soon!_**
+
+### Docker-Compose
+For local testing purposes, the docker-compose setup can be used. Follow instructions [here](https://docs.docker.com/compose/install/) to install docker-compose.
+
+The [entrypoint](./entrypoint.sh) script requires the IP address of the host machine to generate the [PCP config](./config).
+On a linux machine, the below command can be used to set it.
+```commandline
+export HOST_IP=$(curl ifconfig.me)
+```
+
+#### Environment Variables
+The following are the environment variables required to run _elektron_.
+
+| Environment Variable           | Description                   | Commandline Option (if any) |
+|--------------------------------|-------------------------------|-----------------------------|
+| ELEKTRON_EXECUTABLE_NAME       | Name of the elektron executable. Default = elektron |
+| ELEKTRON_MESOS_MASTER_LOCATION | HOST:PORT of the mesos master. Default = localhost:5050 | `-master` |
+| ELEKTRON_WORKLOAD              | Filename of workload json to be scheduled. Default = workload_sample.json | `-workload` |
+| ELEKLTRON_LOGDIR_PREFIX        | Prefix of the log directory generated. Default = Elektron-Test-Run | `-logPrefix` |
+
+Use the below command to run elektron using the docker-compose setup.
+```commandline
+	docker-compose run elektron
+```
+The Mesos master UI can be viewed from the host machine using _http://localhost:5050_.
+
+If any other commandline options need to be specified, for example using the [bin-packing](./schedulers/bin-packing.go) scheduling policy, use the below command.
+```commandline
+docker-compose run elektron -schedPolicy bin-packing
+```
 
 ### Workload
 Use the `-workload` option to specify the location of the workload json file. Below is an example workload.

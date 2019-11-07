@@ -2,3 +2,5 @@
 .idea/
 # name of executable when built using command 'go build'
 elektron
+# test log directory name.
+elektron-test-run*
