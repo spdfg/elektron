@@ -53,7 +53,7 @@ services:
     - zk
 
   mesos-agent:
-    image: pkaushi1/mesos-agent-elektron:1.5.1
+    image: spdf/mesos-agent-elektron:1.5.1
     pid: host
     restart: on-failure
     ports:
@@ -79,7 +79,7 @@ services:
     - mesos-master
 
   elektron:
-    image: pkaushi1/elektron:v1
+    image: spdf/elektron:v1
     restart: on-failure
     environment:
       ELEKTRON_EXECUTABLE_NAME: elektron
