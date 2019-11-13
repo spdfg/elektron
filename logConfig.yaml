@@ -1,0 +1,38 @@
+schedTrace:
+  enabled: true
+  filenameExtension: _schedTrace.log
+  enablecolumnheaders: true
+  allowOnConsole: true
+sps:
+  enabled: false
+  filenameExtension: _schedPolicySwitch.log
+  enableColumnHeaders: true
+  allowOnConsole: true
+console:
+  enabled: true
+  filenameExtension: _console.log
+  minLogLevel: debug
+  enableColumnHeaders: true
+pcp:
+    enabled: true
+    filenameExtension: .pcplog
+    enableColumnHeaders: true
+    allowOnConsole: false
+schedWindow:
+    enabled: true
+    filenameExtension: _schedWindow.log
+    enableColumnHeaders: true
+    allowOnConsole: true
+clsfnTaskDistOverhead:
+    enabled: true
+    filenameExtension: _classificationOverhead.log
+    enableColumnHeaders: true
+    allowOnConsole: true
+    
+
+# format.
+format:
+  - level
+  - timestamp
+  - message
+  - fields
