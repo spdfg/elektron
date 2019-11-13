@@ -92,7 +92,7 @@ func switchTaskDistBased(baseSchedRef *BaseScheduler) string {
 	baseSchedRef.LogClsfnAndTaskDistOverhead(time.Now().Sub(startTime))
 	elektronLogging.ElektronLog.Log(elekLogT.GENERAL,
 		log.InfoLevel,
-		log.Fields {"Task Distribution" : fmt.Sprintf("%s",taskDist)}, "Switching... ")
+		log.Fields {"Task Distribution" : fmt.Sprintf("%f",taskDist)}, "Switching... ")
 	if err != nil {
 		// All the tasks in the window were only classified into 1 cluster.
 		// Max-Min and Max-GreedyMins would work the same way as Bin-Packing for this situation.
