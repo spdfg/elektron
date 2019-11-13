@@ -19,10 +19,12 @@
 package schedUtils
 
 import (
-	"log"
-
+    "fmt"
 	"github.com/spdfg/elektron/def"
 	"github.com/spdfg/elektron/utilities"
+    "github.com/spdfg/elektron/elektronLogging"
+	elekLogT "github.com/spdfg/elektron/elektronLogging/types"
+    log "github.com/sirupsen/logrus"
 )
 
 // Criteria for resizing the scheduling window.
@@ -77,8 +79,9 @@ func (s *fillNextOfferCycle) apply(taskQueue []def.Task) (int, int) {
 	for _, task := range taskQueue {
 		numberOfTasksTraversed++
 		for i := *task.Instances; i > 0; i-- {
-			log.Printf("Checking if Instance #%d of Task[%s] can be scheduled "+
-				"during the next offer cycle...", i, task.Name)
+            elektronLogging.ElektronLog.Log(elekLogT.GENERAL, log.InfoLevel, 
+            log.Fields {}, fmt.Sprintf("Checking if Instance #%d of Task[%s] can be scheduled "+
+				"during the next offer cycle...", i, task.Name))
 			if canSchedule(task) {
 				filledCPU += task.CPU
 				filledRAM += task.RAM

@@ -19,11 +19,13 @@
 package offerUtils
 
 import (
-	"log"
 	"strings"
-
+    "fmt"
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 	"github.com/spdfg/elektron/constants"
+    "github.com/spdfg/elektron/elektronLogging"
+	elekLogT "github.com/spdfg/elektron/elektronLogging/types"
+    log "github.com/sirupsen/logrus"
 )
 
 func OfferAgg(offer *mesos.Offer) (float64, float64, float64) {
@@ -88,12 +90,14 @@ func UpdateEnvironment(offer *mesos.Offer) {
 	var host = offer.GetHostname()
 	// If this host is not present in the set of hosts.
 	if _, ok := constants.Hosts[host]; !ok {
-		log.Printf("New host detected. Adding host [%s]", host)
+        elektronLogging.ElektronLog.Log(elekLogT.GENERAL, log.InfoLevel, 
+            log.Fields {"Adding host" : fmt.Sprintf("%s",host)}, "New host detected")
 		// Add this host.
 		constants.Hosts[host] = struct{}{}
 		// Get the power class of this host.
 		class := PowerClass(offer)
-		log.Printf("Registering the power class... Host [%s] --> PowerClass [%s]", host, class)
+        elektronLogging.ElektronLog.Log(elekLogT.GENERAL, log.InfoLevel, 
+            log.Fields {"host" : fmt.Sprintf("%s",host), "PowerClass" : fmt.Sprintf("%s", class)}, "Registering the power class...")
 		// If new power class, register the power class.
 		if _, ok := constants.PowerClasses[class]; !ok {
 			constants.PowerClasses[class] = make(map[string]struct{})
