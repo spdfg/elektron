@@ -3,7 +3,7 @@ import (
     "gopkg.in/yaml.v2"
     "io/ioutil"
     log "github.com/sirupsen/logrus"
-    elekEnv "gitlab.com/spdf/elektron/environment"
+    elekEnv "github.com/spdfg/elektron/environment"
 )
 
 type LoggerConfig struct {

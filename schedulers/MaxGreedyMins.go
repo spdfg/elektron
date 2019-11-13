@@ -19,7 +19,7 @@
 package schedulers
 
 import (
-	"log"
+	log "github.com/sirupsen/logrus"
 
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 	sched "github.com/mesos/mesos-go/api/v0/scheduler"

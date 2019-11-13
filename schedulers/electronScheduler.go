@@ -24,7 +24,6 @@ import (
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 	sched "github.com/mesos/mesos-go/api/v0/scheduler"
 	"github.com/spdfg/elektron/def"
-	elekLogDef "github.com/spdfg/elektron/logging/def"
 )
 
 // Implements mesos scheduler.
@@ -38,8 +37,6 @@ type ElectronScheduler interface {
 	// Each of these functions are supposed to call the Log(...) that sends the
 	//   log message type, and the log message to the corresponding channels.
 
-	// Pass the logMessageType and the logMessage to the loggers for logging.
-	Log(logMType elekLogDef.LogMessageType, logMsg string)
 	// To be called when about to launch a task.
 	// Log message indicating that a task is about to start executing.
 	//   Also, log the host on which the task is going to be launched.

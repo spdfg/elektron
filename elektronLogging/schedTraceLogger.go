@@ -1,10 +1,8 @@
 package elektronLogging
 
 import (
-	//"fmt"
 	"os"
 	log "github.com/sirupsen/logrus"
-	//data "github.com/spdfg/elektron/elektronLogging/data"
 )
 
 type SchedTraceLogger struct {
@@ -21,17 +19,15 @@ func NewSchedTraceLogger(logType int, prefix string) *SchedTraceLogger {
 func (sLog *SchedTraceLogger) Log(logType int, level log.Level, logData log.Fields, message string) {
 	if sLog.Type == logType {
 
-		//logFields := cloneFields(logData)
-		
-		log.SetLevel(level)
+		logger.SetLevel(level)
         
         if sLog.AllowOnConsole {
-            log.SetOutput(os.Stdout)
-		    log.WithFields(logData).Println(message)
+            logger.SetOutput(os.Stdout)
+		    logger.WithFields(logData).Println(message)
         }
 		
-		log.SetOutput(sLog.LogFileName)
-		log.WithFields(logData).Println(message)
+		logger.SetOutput(sLog.LogFileName)
+		logger.WithFields(logData).Println(message)
 	}
 	if sLog.next != nil {
 		sLog.next.Log(logType, level, logData, message)

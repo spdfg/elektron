@@ -1,6 +1,5 @@
 package elektronLogging
 
-import "github.com/fatih/color"
 
 const (
         ERROR = iota

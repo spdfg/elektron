@@ -20,13 +20,14 @@ package schedulers
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 	sched "github.com/mesos/mesos-go/api/v0/scheduler"
 	"github.com/spdfg/elektron/def"
-	elekLogDef "github.com/spdfg/elektron/logging/def"
+	"github.com/spdfg/elektron/elektronLogging"
+	elekLogT "github.com/spdfg/elektron/elektronLogging/types"
+    log "github.com/sirupsen/logrus"
 )
 
 type SchedPolicyContext interface {
@@ -89,7 +90,9 @@ func switchTaskDistBased(baseSchedRef *BaseScheduler) string {
 	// Determine the distribution of tasks in the new scheduling window.
 	taskDist, err := def.GetTaskDistributionInWindow(baseSchedRef.schedWindowSize, baseSchedRef.tasks)
 	baseSchedRef.LogClsfnAndTaskDistOverhead(time.Now().Sub(startTime))
-	baseSchedRef.Log(elekLogDef.GENERAL, fmt.Sprintf("Switching... TaskDistribution[%f]", taskDist))
+	elektronLogging.ElektronLog.Log(elekLogT.GENERAL,
+		log.InfoLevel,
+		log.Fields {"Task Distribution" : fmt.Sprintf("%s",taskDist)}, "Switching... ")
 	if err != nil {
 		// All the tasks in the window were only classified into 1 cluster.
 		// Max-Min and Max-GreedyMins would work the same way as Bin-Packing for this situation.

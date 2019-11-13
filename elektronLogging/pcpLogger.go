@@ -3,7 +3,6 @@ package elektronLogging
 import (
 	"os"
 	log "github.com/sirupsen/logrus"
-	//data "github.com/spdfg/elektron/elektronLogging/data"
 )
 
 type PcpLogger struct {
@@ -20,17 +19,15 @@ func NewPcpLogger(logType int, prefix string) *PcpLogger {
 func (pLog *PcpLogger) Log(logType int, level log.Level, logData log.Fields, message string) {
 	if pLog.Type == logType {
 
-		//logFields := cloneFields(logData)
-		
-		log.SetLevel(level)
+		logger.SetLevel(level)
 		
         if pLog.AllowOnConsole {
-            log.SetOutput(os.Stdout)
-		    log.WithFields(logData).Println(message)
+            logger.SetOutput(os.Stdout)
+		    logger.WithFields(logData).Println(message)
         }
 
-		log.SetOutput(pLog.LogFileName)
-		log.WithFields(logData).Println(message)
+		logger.SetOutput(pLog.LogFileName)
+		logger.WithFields(logData).Println(message)
 	}
 	if pLog.next != nil {
 		pLog.next.Log(logType, level, logData, message)

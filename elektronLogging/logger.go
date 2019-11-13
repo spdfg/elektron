@@ -11,21 +11,25 @@ import (
 var config LoggerConfig
 var logger *log.Logger
 var formatter ElektronFormatter
-//var logDir string
 
 func BuildLogger() *LoggerImpl {
 
+    // read configuration from yaml
 	config.GetConfig()
+    
+    // create the log directory
 	startTime := time.Now()
 	formatter.TimestampFormat = "2006-01-02 15:04:05"
 	GetLogDir(startTime, "_")
 
-    prefix := fmt.Sprintf("_%s%s%s%s%s",startTime.Month().String(),strconv.Itoa(startTime.Day()),
+    prefix := fmt.Sprintf("_%d%d%s%s%s%s",startTime.Year(), startTime.Month(),strconv.Itoa(startTime.Day()),
                 strconv.Itoa(startTime.Hour()),strconv.Itoa(startTime.Minute()),strconv.Itoa(startTime.Second()))
 	
+    //create a single logrus instance and set its formatter to ElektronFormatter
 	logger = log.New()
 	logger.SetFormatter(&formatter)
-	
+
+    // create a chain of loggers
 	head := new(LoggerImpl)
 	cLog := NewConsoleLogger(CONSOLE,prefix)
 	pLog := NewPcpLogger(PCP,prefix)
@@ -38,7 +42,6 @@ func BuildLogger() *LoggerImpl {
 	cLog.SetNext(pLog)
 	pLog.SetNext(schedTraceLog)
 	schedTraceLog.SetNext(spsLog)
-	
 	spsLog.SetNext(schedWindowLog)
 	schedWindowLog.SetNext(tskDistLog)
 

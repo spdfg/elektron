@@ -20,16 +20,16 @@ package pcp
 
 import (
 	"bufio"
-	"log"
 	"os/exec"
 	"syscall"
 	"time"
 
-	elekLogDef "github.com/spdfg/elektron/logging/def"
+    "github.com/spdfg/elektron/elektronLogging"
+	elekLogT "github.com/spdfg/elektron/elektronLogging/types"
+    log "github.com/sirupsen/logrus"
 )
 
-func Start(quit chan struct{}, logging *bool, logMType chan elekLogDef.LogMessageType,
-	logMsg chan string, pcpConfigFile string) {
+func Start(quit chan struct{}, logging *bool,pcpConfigFile string) {
 	var pcpCommand string = "pmdumptext -m -l -f '' -t 1.0 -d , -c " + pcpConfigFile
 	cmd := exec.Command("sh", "-c", pcpCommand)
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
@@ -47,8 +47,9 @@ func Start(quit chan struct{}, logging *bool, logMType chan elekLogDef.LogMessag
 		scanner.Scan()
 
 		// Write to logfile
-		logMType <- elekLogDef.PCP
-		logMsg <- scanner.Text()
+        elektronLogging.ElektronLog.Log(elekLogT.PCP,
+		log.InfoLevel,
+		log.Fields {}, scanner.Text())
 
 		// Throw away first set of results
 		scanner.Scan()
@@ -59,16 +60,18 @@ func Start(quit chan struct{}, logging *bool, logMType chan elekLogDef.LogMessag
 			text := scanner.Text()
 
 			if *logging {
-				logMType <- elekLogDef.PCP
-				logMsg <- text
+                elektronLogging.ElektronLog.Log(elekLogT.PCP,
+		            log.InfoLevel,
+		            log.Fields {}, text)
 			}
 
 			seconds++
 		}
 	}(logging)
 
-	logMType <- elekLogDef.GENERAL
-	logMsg <- "PCP logging started"
+    elektronLogging.ElektronLog.Log(elekLogT.GENERAL,
+		log.InfoLevel,
+		log.Fields {}, "PCP logging started")
 
 	if err := cmd.Start(); err != nil {
 		log.Fatal(err)
@@ -78,8 +81,9 @@ func Start(quit chan struct{}, logging *bool, logMType chan elekLogDef.LogMessag
 
 	select {
 	case <-quit:
-		logMType <- elekLogDef.GENERAL
-		logMsg <- "Stopping PCP logging in 5 seconds"
+        elektronLogging.ElektronLog.Log(elekLogT.GENERAL,
+		log.InfoLevel,
+		log.Fields {}, "Stopping PCP logging in 5 seconds")
 		time.Sleep(5 * time.Second)
 
 		// http://stackoverflow.com/questions/22470193/why-wont-go-kill-a-child-process-correctly

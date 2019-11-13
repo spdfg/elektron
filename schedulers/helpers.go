@@ -25,19 +25,24 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spdfg/elektron/constants"
 	"github.com/spdfg/elektron/def"
-	elekLogDef "github.com/spdfg/elektron/logging/def"
 	"github.com/spdfg/elektron/utilities"
 	"github.com/spdfg/elektron/utilities/mesosUtils"
-	"log"
+	log "github.com/sirupsen/logrus"
+    "github.com/spdfg/elektron/elektronLogging"
+    elekLogT "github.com/spdfg/elektron/elektronLogging/types"
 )
 
 func coLocated(tasks map[string]bool, s BaseScheduler) {
 
 	for task := range tasks {
-		s.Log(elekLogDef.GENERAL, task)
+		elektronLogging.ElektronLog.Log(elekLogT.GENERAL,
+		log.InfoLevel,
+		log.Fields {"Task" : task}, "")
 	}
 
-	s.Log(elekLogDef.GENERAL, "---------------------")
+	elektronLogging.ElektronLog.Log(elekLogT.GENERAL,
+		log.InfoLevel,
+		log.Fields {}, "---------------------")
 }
 
 // Get the powerClass of the given hostname.
@@ -129,13 +134,13 @@ func WithPCPLog(pcpLog chan struct{}) SchedulerOptions {
 	}
 }
 
-func WithLoggingChannels(lmt chan elekLogDef.LogMessageType, msg chan string) SchedulerOptions {
+/*func WithLoggingChannels(lmt chan elekLogDef.LogMessageType, msg chan string) SchedulerOptions {
 	return func(s ElectronScheduler) error {
 		s.(*BaseScheduler).logMsgType = lmt
 		s.(*BaseScheduler).logMsg = msg
 		return nil
 	}
-}
+}*/
 
 func WithSchedPolSwitchEnabled(enableSchedPolicySwitch bool, switchingCriteria string) SchedulerOptions {
 	return func(s ElectronScheduler) error {

@@ -21,20 +21,20 @@ package main // import github.com/spdfg/elektron
 import (
 	"flag"
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
-	"strings"
 	"time"
 
 	"github.com/golang/protobuf/proto"
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 	sched "github.com/mesos/mesos-go/api/v0/scheduler"
 	"github.com/spdfg/elektron/def"
-	elekLogDef "github.com/spdfg/elektron/logging/def"
 	"github.com/spdfg/elektron/pcp"
 	"github.com/spdfg/elektron/powerCap"
 	"github.com/spdfg/elektron/schedulers"
+    "github.com/spdfg/elektron/elektronLogging"
+	elekLogT "github.com/spdfg/elektron/elektronLogging/types"
+    log "github.com/sirupsen/logrus"
 )
 
 var master = flag.String("master", "", "Location of leading Mesos master -- <mesos-master>:<port>")
@@ -95,10 +95,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Logging channels.
-	logMType := make(chan elekLogDef.LogMessageType)
-	logMsg := make(chan string)
-
 	// First we need to build the scheduler using scheduler options.
 	var schedOptions []schedulers.SchedulerOptions = make([]schedulers.SchedulerOptions, 0, 10)
 
@@ -123,7 +119,7 @@ func main() {
 	// Logging channels.
 	// These channels are used by the framework to log messages.
 	// The channels are used to send the type of log message and the message string.
-	schedOptions = append(schedOptions, schedulers.WithLoggingChannels(logMType, logMsg))
+	//schedOptions = append(schedOptions, schedulers.WithLoggingChannels(logMType, logMsg))
 
 	// Shutdown indicator channels.
 	// These channels are used to notify,
@@ -228,28 +224,20 @@ func main() {
 		log.Fatal(fmt.Sprintf("Unable to create scheduler driver: %s", err))
 	}
 
-	// If here, then all command-line arguments validate.
-	// Creating logger and attaching different logging platforms.
-	startTime := time.Now()
-	formattedStartTime := startTime.Format("20060102150405")
 	// Checking if prefix contains any special characters.
-	if strings.Contains(*pcplogPrefix, "/") {
+	/*if strings.Contains(*pcplogPrefix, "/") {
 		log.Fatal("log file prefix should not contain '/'.")
-	}
-	logPrefix := *pcplogPrefix + "_" + formattedStartTime
-	logger := elekLogDef.BuildLogger(startTime, logPrefix)
-	// Starting the logging go-routine.
-	go logger.Listen(logMType, logMsg)
+	}*/
 
 	// Starting PCP logging.
 	if noPowercap {
-		go pcp.Start(pcpLog, &recordPCP, logMType, logMsg, *pcpConfigFile)
+		go pcp.Start(pcpLog, &recordPCP, *pcpConfigFile)
 	} else if extrema {
 		go powerCap.StartPCPLogAndExtremaDynamicCap(pcpLog, &recordPCP, *hiThreshold,
-			*loThreshold, logMType, logMsg, *pcpConfigFile)
+			*loThreshold, *pcpConfigFile)
 	} else if progExtrema {
 		go powerCap.StartPCPLogAndProgressiveExtremaCap(pcpLog, &recordPCP, *hiThreshold,
-			*loThreshold, logMType, logMsg, *pcpConfigFile)
+			*loThreshold, *pcpConfigFile)
 	}
 
 	// Take a second between starting PCP log and continuing.
@@ -284,8 +272,6 @@ func main() {
 			close(pcpLog)
 			time.Sleep(5 * time.Second) //Wait for PCP to log a few more seconds
 			// Closing logging channels.
-			close(logMType)
-			close(logMsg)
 			//case <-time.After(shutdownTimeout):
 		}
 
@@ -296,7 +282,11 @@ func main() {
 
 	// Starting the scheduler driver.
 	if status, err := driver.Run(); err != nil {
-		log.Printf("Framework stopped with status %s and error: %s\n", status.String(), err.Error())
+		elektronLogging.ElektronLog.Log(elekLogT.ERROR,
+		log.ErrorLevel,
+		log.Fields {"status" : status.String(), "error" : err.Error()}, "Framework stopped ")
 	}
-	log.Println("Exiting...")
+	elektronLogging.ElektronLog.Log(elekLogT.GENERAL,
+		log.InfoLevel,
+		log.Fields {}, "Exiting...")
 }

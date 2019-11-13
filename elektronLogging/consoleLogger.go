@@ -3,7 +3,6 @@ package elektronLogging
 import (
 	"os"
 	log "github.com/sirupsen/logrus"
-	//data "github.com/spdfg/elektron/elektronLogging/data"
 )
 
 type ConsoleLogger struct {
@@ -20,13 +19,13 @@ func (cLog *ConsoleLogger) Log(logType int, level log.Level, logData log.Fields,
 	if logType <= cLog.Type {
 
 		//logFields := cloneFields(logData)
-		log.SetLevel(level)
+		logger.SetLevel(level)
 		
-		log.SetOutput(os.Stdout)
-		log.WithFields(logData).Println(message)
+		logger.SetOutput(os.Stdout)
+		logger.WithFields(logData).Println(message)
 		
-		log.SetOutput(cLog.LogFileName)
-		log.WithFields(logData).Println(message)
+		logger.SetOutput(cLog.LogFileName)
+		logger.WithFields(logData).Println(message)
 	}
 	if cLog.next != nil {
 		cLog.next.Log(logType, level, logData, message)

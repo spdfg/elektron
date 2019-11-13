@@ -1,10 +1,8 @@
 package elektronLogging
 
 import (
-	//"fmt"
 	"os"
-	logrus "github.com/sirupsen/logrus"
-	data "gitlab.com/spdf/elektron/elektronLogging/data"
+	log "github.com/sirupsen/logrus"
 )
 
 type ClsfnTaskDistOverheadLogger struct {
@@ -18,20 +16,18 @@ func NewClsfnTaskDistOverheadLogger(logType int, prefix string) *ClsfnTaskDistOv
 	return cLog
 }
 
-func (cLog *ClsfnTaskDistOverheadLogger) Log(logType int, level logrus.Level, logData data.LogData,message string) {
+func (cLog *ClsfnTaskDistOverheadLogger) Log(logType int, level log.Level, logData log.Fields,message string) {
 	if cLog.Type == logType {
 
-		logFields := cloneFields(logData)
-		
-		log.SetLevel(level)
+		logger.SetLevel(level)
         
         if cLog.AllowOnConsole {
-            log.SetOutput(os.Stdout)
-		    log.WithFields(logFields).Println(message)
+            logger.SetOutput(os.Stdout)
+		    logger.WithFields(logData).Println(message)
         }
 		
-		log.SetOutput(cLog.LogFileName)
-		log.WithFields(logFields).Println(message)
+		logger.SetOutput(cLog.LogFileName)
+		logger.WithFields(logData).Println(message)
 	}
 	if cLog.next != nil {
 		cLog.next.Log(logType, level, logData, message)
@@ -45,7 +41,7 @@ func (cLog *ClsfnTaskDistOverheadLogger) SetLogFile(prefix string) {
 		tskDistLogPrefix = logDir + "/" + tskDistLogPrefix
 	}
 	if logFile, err := os.Create(tskDistLogPrefix); err != nil {
-		logrus.Fatal("Unable to create logFile: ", err)
+		log.Fatal("Unable to create logFile: ", err)
 	} else {
 		cLog.LogFileName = logFile
         cLog.AllowOnConsole = config.TaskDistConfig.AllowOnConsole
