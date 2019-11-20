@@ -1,9 +1,8 @@
 package elektronLogging
 
 import (
-	"os"
-	//data "github.com/spdfg/elektron/elektronLogging/data"
 	log "github.com/sirupsen/logrus"
+	"os"
 )
 
 type Logger interface {
@@ -27,11 +26,3 @@ func (l *LoggerImpl) Log(logType int, level log.Level, logData log.Fields, messa
 		l.next.Log(logType, level, logData, message)
 	}
 }
-
-/*func cloneFields(logData data.LogData) log.Fields {
-	var newMap  = make(log.Fields)
-	for k,v := range logData {
-		newMap[k] = v
-	}
-	return newMap
-}*/

@@ -2,7 +2,6 @@ package elektronLogging
 
 import (
 	"bytes"
-	"fmt"
 	"github.com/fatih/color"
 	log "github.com/sirupsen/logrus"
 	"strings"
@@ -37,14 +36,12 @@ func (f ElektronFormatter) Format(entry *log.Entry) ([]byte, error) {
 
 	levelColor := f.getColor(entry)
 	level := levelColor.Sprintf("[%s]:", strings.ToUpper(entry.Level.String()))
-	message := fmt.Sprintf("%s %s ", level, entry.Time.Format(f.TimestampFormat))
-	if entry.Message != "" {
-		message = fmt.Sprintf("%s %s %s ", level, entry.Time.Format(f.TimestampFormat), entry.Message)
-	}
+	message := strings.Join([]string{level, entry.Time.Format(f.TimestampFormat), entry.Message, " "}, " ")
+
 	var formattedFields []string
 	for key, value := range entry.Data {
 		formattedFields = append(formattedFields,
-			strings.Join([]string{key, fmt.Sprintf("%s", value)}, "="))
+			strings.Join([]string{key, value.(string)}, "="))
 	}
 
 	b.WriteString(message)

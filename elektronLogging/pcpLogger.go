@@ -3,6 +3,7 @@ package elektronLogging
 import (
 	log "github.com/sirupsen/logrus"
 	"os"
+	"strings"
 )
 
 type PcpLogger struct {
@@ -10,7 +11,7 @@ type PcpLogger struct {
 }
 
 func NewPcpLogger(logType int, prefix string) *PcpLogger {
-	pLog := new(PcpLogger)
+	pLog := &PcpLogger{}
 	pLog.Type = logType
 	pLog.SetLogFile(prefix)
 	return pLog
@@ -36,9 +37,9 @@ func (pLog *PcpLogger) Log(logType int, level log.Level, logData log.Fields, mes
 
 func (plog *PcpLogger) SetLogFile(prefix string) {
 
-	pcpLogPrefix := prefix + config.PCPConfig.FilenameExtension
+	pcpLogPrefix := strings.Join([]string{prefix, config.PCPConfig.FilenameExtension}, "")
 	if logDir != "" {
-		pcpLogPrefix = logDir + "/" + pcpLogPrefix
+		pcpLogPrefix = strings.Join([]string{logDir, pcpLogPrefix}, "/")
 	}
 	if logFile, err := os.Create(pcpLogPrefix); err != nil {
 		log.Fatal("Unable to create logFile: ", err)

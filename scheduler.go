@@ -21,10 +21,6 @@ package main // import github.com/spdfg/elektron
 import (
 	"flag"
 	"fmt"
-	"os"
-	"os/signal"
-	"time"
-
 	"github.com/golang/protobuf/proto"
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 	sched "github.com/mesos/mesos-go/api/v0/scheduler"
@@ -35,6 +31,10 @@ import (
 	"github.com/spdfg/elektron/pcp"
 	"github.com/spdfg/elektron/powerCap"
 	"github.com/spdfg/elektron/schedulers"
+	"os"
+	"os/signal"
+	"strings"
+	"time"
 )
 
 var master = flag.String("master", "", "Location of leading Mesos master -- <mesos-master>:<port>")
@@ -115,11 +115,6 @@ func main() {
 	done := make(chan struct{})
 	pcpLog := make(chan struct{})
 	recordPCP := false
-
-	// Logging channels.
-	// These channels are used by the framework to log messages.
-	// The channels are used to send the type of log message and the message string.
-	//schedOptions = append(schedOptions, schedulers.WithLoggingChannels(logMType, logMsg))
 
 	// Shutdown indicator channels.
 	// These channels are used to notify,
@@ -225,9 +220,10 @@ func main() {
 	}
 
 	// Checking if prefix contains any special characters.
-	/*if strings.Contains(*pcplogPrefix, "/") {
+	if strings.Contains(*pcplogPrefix, "/") {
 		log.Fatal("log file prefix should not contain '/'.")
-	}*/
+	}
+	elektronLogging.BuildLogger(*pcplogPrefix)
 
 	// Starting PCP logging.
 	if noPowercap {

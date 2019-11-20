@@ -4,6 +4,7 @@ import (
 	logrus "github.com/sirupsen/logrus"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -16,18 +17,13 @@ func GetLogDir(startTime time.Time, prefix string) {
 }
 
 func createLogDir(prefix string, startTime time.Time) string {
+
 	// Creating directory to store all logs for this run
-	logDirName := "./" + prefix + strconv.Itoa(startTime.Year())
-	logDirName += "-"
-	logDirName += startTime.Month().String()
-	logDirName += "-"
-	logDirName += strconv.Itoa(startTime.Day())
-	logDirName += "_"
-	logDirName += strconv.Itoa(startTime.Hour())
-	logDirName += "-"
-	logDirName += strconv.Itoa(startTime.Minute())
-	logDirName += "-"
-	logDirName += strconv.Itoa(startTime.Second())
+	logDirName := strings.Join([]string{"./", prefix, strconv.Itoa(startTime.Year())}, "")
+	logDirName = strings.Join([]string{logDirName, startTime.Month().String(), strconv.Itoa(startTime.Day())}, "-")
+	logDirName = strings.Join([]string{logDirName, strconv.Itoa(startTime.Hour())}, "_")
+	logDirName = strings.Join([]string{logDirName, strconv.Itoa(startTime.Minute()), strconv.Itoa(startTime.Second())}, "-")
+
 	if _, err := os.Stat(logDirName); os.IsNotExist(err) {
 		os.Mkdir(logDirName, 0755)
 	} else {

@@ -3,6 +3,7 @@ package elektronLogging
 import (
 	log "github.com/sirupsen/logrus"
 	"os"
+	"strings"
 )
 
 type SchedWindowLogger struct {
@@ -10,7 +11,7 @@ type SchedWindowLogger struct {
 }
 
 func NewSchedWindowLogger(logType int, prefix string) *SchedWindowLogger {
-	sLog := new(SchedWindowLogger)
+	sLog := &SchedWindowLogger{}
 	sLog.Type = logType
 	sLog.SetLogFile(prefix)
 	return sLog
@@ -20,6 +21,7 @@ func (sLog *SchedWindowLogger) Log(logType int, level log.Level, logData log.Fie
 	if sLog.Type == logType {
 
 		logger.SetLevel(level)
+
 		if sLog.AllowOnConsole {
 			logger.SetOutput(os.Stdout)
 			logger.WithFields(logData).Println(message)
@@ -35,9 +37,9 @@ func (sLog *SchedWindowLogger) Log(logType int, level log.Level, logData log.Fie
 
 func (sLog *SchedWindowLogger) SetLogFile(prefix string) {
 
-	schedWindowLogPrefix := prefix + config.SchedWindowConfig.FilenameExtension
+	schedWindowLogPrefix := strings.Join([]string{prefix, config.SchedWindowConfig.FilenameExtension}, "")
 	if logDir != "" {
-		schedWindowLogPrefix = logDir + "/" + schedWindowLogPrefix
+		schedWindowLogPrefix = strings.Join([]string{logDir, schedWindowLogPrefix}, "/")
 	}
 	if logFile, err := os.Create(schedWindowLogPrefix); err != nil {
 		log.Fatal("Unable to create logFile: ", err)

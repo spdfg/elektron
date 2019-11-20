@@ -3,6 +3,7 @@ package elektronLogging
 import (
 	log "github.com/sirupsen/logrus"
 	"os"
+	"strings"
 )
 
 type ConsoleLogger struct {
@@ -10,7 +11,7 @@ type ConsoleLogger struct {
 }
 
 func NewConsoleLogger(logType int, prefix string) *ConsoleLogger {
-	cLog := new(ConsoleLogger)
+	cLog := &ConsoleLogger{}
 	cLog.Type = logType
 	cLog.SetLogFile(prefix)
 	return cLog
@@ -18,7 +19,6 @@ func NewConsoleLogger(logType int, prefix string) *ConsoleLogger {
 func (cLog *ConsoleLogger) Log(logType int, level log.Level, logData log.Fields, message string) {
 	if logType <= cLog.Type {
 
-		//logFields := cloneFields(logData)
 		logger.SetLevel(level)
 
 		logger.SetOutput(os.Stdout)
@@ -34,9 +34,9 @@ func (cLog *ConsoleLogger) Log(logType int, level log.Level, logData log.Fields,
 
 func (cLog *ConsoleLogger) SetLogFile(prefix string) {
 
-	consoleLogPrefix := prefix + config.ConsoleConfig.FilenameExtension
+	consoleLogPrefix := strings.Join([]string{prefix, config.ConsoleConfig.FilenameExtension}, "")
 	if logDir != "" {
-		consoleLogPrefix = logDir + "/" + consoleLogPrefix
+		consoleLogPrefix = strings.Join([]string{logDir, consoleLogPrefix}, "/")
 	}
 	if logFile, err := os.Create(consoleLogPrefix); err != nil {
 		log.Fatal("Unable to create logFile: ", err)

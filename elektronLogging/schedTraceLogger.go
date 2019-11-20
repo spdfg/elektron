@@ -3,6 +3,7 @@ package elektronLogging
 import (
 	log "github.com/sirupsen/logrus"
 	"os"
+	"strings"
 )
 
 type SchedTraceLogger struct {
@@ -10,7 +11,7 @@ type SchedTraceLogger struct {
 }
 
 func NewSchedTraceLogger(logType int, prefix string) *SchedTraceLogger {
-	sLog := new(SchedTraceLogger)
+	sLog := &SchedTraceLogger{}
 	sLog.Type = logType
 	sLog.SetLogFile(prefix)
 	return sLog
@@ -36,9 +37,9 @@ func (sLog *SchedTraceLogger) Log(logType int, level log.Level, logData log.Fiel
 
 func (sLog *SchedTraceLogger) SetLogFile(prefix string) {
 
-	schedTraceLogPrefix := prefix + config.SchedTraceConfig.FilenameExtension
+	schedTraceLogPrefix := strings.Join([]string{prefix, config.SchedTraceConfig.FilenameExtension}, "")
 	if logDir != "" {
-		schedTraceLogPrefix = logDir + "/" + schedTraceLogPrefix
+		schedTraceLogPrefix = strings.Join([]string{logDir, schedTraceLogPrefix}, "/")
 	}
 	if logFile, err := os.Create(schedTraceLogPrefix); err != nil {
 		log.Fatal("Unable to create logFile: ", err)

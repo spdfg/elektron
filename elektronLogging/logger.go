@@ -1,18 +1,18 @@
 package elektronLogging
 
 import (
-	"fmt"
 	log "github.com/sirupsen/logrus"
 	. "github.com/spdfg/elektron/elektronLogging/types"
-	"strconv"
+	"strings"
 	"time"
 )
 
 var config LoggerConfig
 var logger *log.Logger
 var formatter ElektronFormatter
+var ElektronLog *LoggerImpl
 
-func BuildLogger() *LoggerImpl {
+func BuildLogger(prefix string) {
 
 	// read configuration from yaml
 	config.GetConfig()
@@ -20,17 +20,17 @@ func BuildLogger() *LoggerImpl {
 	// create the log directory
 	startTime := time.Now()
 	formatter.TimestampFormat = "2006-01-02 15:04:05"
+	formattedStartTime := startTime.Format("20060102150405")
 	GetLogDir(startTime, "_")
 
-	prefix := fmt.Sprintf("_%d%d%s%s%s%s", startTime.Year(), startTime.Month(), strconv.Itoa(startTime.Day()),
-		strconv.Itoa(startTime.Hour()), strconv.Itoa(startTime.Minute()), strconv.Itoa(startTime.Second()))
+	prefix = strings.Join([]string{prefix, formattedStartTime}, "_")
 
 	//create a single logrus instance and set its formatter to ElektronFormatter
 	logger = log.New()
 	logger.SetFormatter(&formatter)
 
 	// create a chain of loggers
-	head := new(LoggerImpl)
+	head := &LoggerImpl{}
 	cLog := NewConsoleLogger(CONSOLE, prefix)
 	pLog := NewPcpLogger(PCP, prefix)
 	schedTraceLog := NewSchedTraceLogger(SCHED_TRACE, prefix)
@@ -45,7 +45,5 @@ func BuildLogger() *LoggerImpl {
 	spsLog.SetNext(schedWindowLog)
 	schedWindowLog.SetNext(tskDistLog)
 
-	return head
+	ElektronLog = head
 }
-
-var ElektronLog = BuildLogger()

@@ -3,6 +3,7 @@ package elektronLogging
 import (
 	log "github.com/sirupsen/logrus"
 	"os"
+	"strings"
 )
 
 type ClsfnTaskDistOverheadLogger struct {
@@ -10,7 +11,7 @@ type ClsfnTaskDistOverheadLogger struct {
 }
 
 func NewClsfnTaskDistOverheadLogger(logType int, prefix string) *ClsfnTaskDistOverheadLogger {
-	cLog := new(ClsfnTaskDistOverheadLogger)
+	cLog := &ClsfnTaskDistOverheadLogger{}
 	cLog.Type = logType
 	cLog.SetLogFile(prefix)
 	return cLog
@@ -36,9 +37,9 @@ func (cLog *ClsfnTaskDistOverheadLogger) Log(logType int, level log.Level, logDa
 
 func (cLog *ClsfnTaskDistOverheadLogger) SetLogFile(prefix string) {
 
-	tskDistLogPrefix := prefix + config.TaskDistConfig.FilenameExtension
+	tskDistLogPrefix := strings.Join([]string{prefix, config.TaskDistConfig.FilenameExtension}, "")
 	if logDir != "" {
-		tskDistLogPrefix = logDir + "/" + tskDistLogPrefix
+		tskDistLogPrefix = strings.Join([]string{logDir, tskDistLogPrefix}, "/")
 	}
 	if logFile, err := os.Create(tskDistLogPrefix); err != nil {
 		log.Fatal("Unable to create logFile: ", err)

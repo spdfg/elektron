@@ -3,6 +3,7 @@ package elektronLogging
 import (
 	log "github.com/sirupsen/logrus"
 	"os"
+	"strings"
 )
 
 type SchedPolicySwitchLogger struct {
@@ -10,7 +11,7 @@ type SchedPolicySwitchLogger struct {
 }
 
 func NewSchedPolicySwitchLogger(logType int, prefix string) *SchedPolicySwitchLogger {
-	sLog := new(SchedPolicySwitchLogger)
+	sLog := &SchedPolicySwitchLogger{}
 	sLog.Type = logType
 	sLog.SetLogFile(prefix)
 	return sLog
@@ -36,9 +37,9 @@ func (sLog *SchedPolicySwitchLogger) Log(logType int, level log.Level, logData l
 
 func (sLog *SchedPolicySwitchLogger) SetLogFile(prefix string) {
 
-	spsLogPrefix := prefix + config.SPSConfig.FilenameExtension
+	spsLogPrefix := strings.Join([]string{prefix, config.SPSConfig.FilenameExtension}, "")
 	if logDir != "" {
-		spsLogPrefix = logDir + "/" + spsLogPrefix
+		spsLogPrefix = strings.Join([]string{logDir, spsLogPrefix}, "/")
 	}
 	if logFile, err := os.Create(spsLogPrefix); err != nil {
 		log.Fatal("Unable to create logFile: ", err)
