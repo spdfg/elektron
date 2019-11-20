@@ -28,13 +28,13 @@ import (
 	"github.com/golang/protobuf/proto"
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 	sched "github.com/mesos/mesos-go/api/v0/scheduler"
+	log "github.com/sirupsen/logrus"
 	"github.com/spdfg/elektron/def"
+	"github.com/spdfg/elektron/elektronLogging"
+	elekLogT "github.com/spdfg/elektron/elektronLogging/types"
 	"github.com/spdfg/elektron/pcp"
 	"github.com/spdfg/elektron/powerCap"
 	"github.com/spdfg/elektron/schedulers"
-    "github.com/spdfg/elektron/elektronLogging"
-	elekLogT "github.com/spdfg/elektron/elektronLogging/types"
-    log "github.com/sirupsen/logrus"
 )
 
 var master = flag.String("master", "", "Location of leading Mesos master -- <mesos-master>:<port>")
@@ -283,10 +283,10 @@ func main() {
 	// Starting the scheduler driver.
 	if status, err := driver.Run(); err != nil {
 		elektronLogging.ElektronLog.Log(elekLogT.ERROR,
-		log.ErrorLevel,
-		log.Fields {"status" : status.String(), "error" : err.Error()}, "Framework stopped ")
+			log.ErrorLevel,
+			log.Fields{"status": status.String(), "error": err.Error()}, "Framework stopped ")
 	}
 	elektronLogging.ElektronLog.Log(elekLogT.GENERAL,
 		log.InfoLevel,
-		log.Fields {}, "Exiting...")
+		log.Fields{}, "Exiting...")
 }

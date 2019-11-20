@@ -1,20 +1,20 @@
 // Copyright (C) 2018 spdfg
-// 
+//
 // This file is part of Elektron.
-// 
+//
 // Elektron is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // Elektron is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with Elektron.  If not, see <http://www.gnu.org/licenses/>.
-// 
+//
 
 package schedulers
 
@@ -24,10 +24,10 @@ import (
 
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 	sched "github.com/mesos/mesos-go/api/v0/scheduler"
+	log "github.com/sirupsen/logrus"
 	"github.com/spdfg/elektron/def"
 	"github.com/spdfg/elektron/elektronLogging"
 	elekLogT "github.com/spdfg/elektron/elektronLogging/types"
-    log "github.com/sirupsen/logrus"
 )
 
 type SchedPolicyContext interface {
@@ -92,7 +92,7 @@ func switchTaskDistBased(baseSchedRef *BaseScheduler) string {
 	baseSchedRef.LogClsfnAndTaskDistOverhead(time.Now().Sub(startTime))
 	elektronLogging.ElektronLog.Log(elekLogT.GENERAL,
 		log.InfoLevel,
-		log.Fields {"Task Distribution" : fmt.Sprintf("%f",taskDist)}, "Switching... ")
+		log.Fields{"Task Distribution": fmt.Sprintf("%f", taskDist)}, "Switching... ")
 	if err != nil {
 		// All the tasks in the window were only classified into 1 cluster.
 		// Max-Min and Max-GreedyMins would work the same way as Bin-Packing for this situation.

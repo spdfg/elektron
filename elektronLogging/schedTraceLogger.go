@@ -1,8 +1,8 @@
 package elektronLogging
 
 import (
-	"os"
 	log "github.com/sirupsen/logrus"
+	"os"
 )
 
 type SchedTraceLogger struct {
@@ -20,12 +20,12 @@ func (sLog *SchedTraceLogger) Log(logType int, level log.Level, logData log.Fiel
 	if sLog.Type == logType {
 
 		logger.SetLevel(level)
-        
-        if sLog.AllowOnConsole {
-            logger.SetOutput(os.Stdout)
-		    logger.WithFields(logData).Println(message)
-        }
-		
+
+		if sLog.AllowOnConsole {
+			logger.SetOutput(os.Stdout)
+			logger.WithFields(logData).Println(message)
+		}
+
 		logger.SetOutput(sLog.LogFileName)
 		logger.WithFields(logData).Println(message)
 	}
@@ -44,6 +44,6 @@ func (sLog *SchedTraceLogger) SetLogFile(prefix string) {
 		log.Fatal("Unable to create logFile: ", err)
 	} else {
 		sLog.LogFileName = logFile
-        sLog.AllowOnConsole = config.SchedTraceConfig.AllowOnConsole
+		sLog.AllowOnConsole = config.SchedTraceConfig.AllowOnConsole
 	}
 }

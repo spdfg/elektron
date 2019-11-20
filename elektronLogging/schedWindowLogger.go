@@ -1,8 +1,8 @@
 package elektronLogging
 
 import (
-	"os"
 	log "github.com/sirupsen/logrus"
+	"os"
 )
 
 type SchedWindowLogger struct {
@@ -21,10 +21,10 @@ func (sLog *SchedWindowLogger) Log(logType int, level log.Level, logData log.Fie
 
 		logger.SetLevel(level)
 		if sLog.AllowOnConsole {
-            logger.SetOutput(os.Stdout)
-		    logger.WithFields(logData).Println(message)
-        }
-    
+			logger.SetOutput(os.Stdout)
+			logger.WithFields(logData).Println(message)
+		}
+
 		logger.SetOutput(sLog.LogFileName)
 		logger.WithFields(logData).Println(message)
 	}
@@ -43,6 +43,6 @@ func (sLog *SchedWindowLogger) SetLogFile(prefix string) {
 		log.Fatal("Unable to create logFile: ", err)
 	} else {
 		sLog.LogFileName = logFile
-        sLog.AllowOnConsole = config.SchedWindowConfig.AllowOnConsole
+		sLog.AllowOnConsole = config.SchedWindowConfig.AllowOnConsole
 	}
 }

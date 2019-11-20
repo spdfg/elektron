@@ -23,26 +23,26 @@ import (
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 	sched "github.com/mesos/mesos-go/api/v0/scheduler"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 	"github.com/spdfg/elektron/constants"
 	"github.com/spdfg/elektron/def"
+	"github.com/spdfg/elektron/elektronLogging"
+	elekLogT "github.com/spdfg/elektron/elektronLogging/types"
 	"github.com/spdfg/elektron/utilities"
 	"github.com/spdfg/elektron/utilities/mesosUtils"
-	log "github.com/sirupsen/logrus"
-    "github.com/spdfg/elektron/elektronLogging"
-    elekLogT "github.com/spdfg/elektron/elektronLogging/types"
 )
 
 func coLocated(tasks map[string]bool, s BaseScheduler) {
 
 	for task := range tasks {
 		elektronLogging.ElektronLog.Log(elekLogT.GENERAL,
-		log.InfoLevel,
-		log.Fields {"Task" : task}, "")
+			log.InfoLevel,
+			log.Fields{"Task": task}, "")
 	}
 
 	elektronLogging.ElektronLog.Log(elekLogT.GENERAL,
 		log.InfoLevel,
-		log.Fields {}, "---------------------")
+		log.Fields{}, "---------------------")
 }
 
 // Get the powerClass of the given hostname.

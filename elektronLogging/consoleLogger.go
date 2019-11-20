@@ -1,8 +1,8 @@
 package elektronLogging
 
 import (
-	"os"
 	log "github.com/sirupsen/logrus"
+	"os"
 )
 
 type ConsoleLogger struct {
@@ -20,10 +20,10 @@ func (cLog *ConsoleLogger) Log(logType int, level log.Level, logData log.Fields,
 
 		//logFields := cloneFields(logData)
 		logger.SetLevel(level)
-		
+
 		logger.SetOutput(os.Stdout)
 		logger.WithFields(logData).Println(message)
-		
+
 		logger.SetOutput(cLog.LogFileName)
 		logger.WithFields(logData).Println(message)
 	}
@@ -42,6 +42,6 @@ func (cLog *ConsoleLogger) SetLogFile(prefix string) {
 		log.Fatal("Unable to create logFile: ", err)
 	} else {
 		cLog.LogFileName = logFile
-        cLog.AllowOnConsole = true
+		cLog.AllowOnConsole = true
 	}
 }

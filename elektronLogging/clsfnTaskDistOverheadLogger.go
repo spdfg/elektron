@@ -1,8 +1,8 @@
 package elektronLogging
 
 import (
-	"os"
 	log "github.com/sirupsen/logrus"
+	"os"
 )
 
 type ClsfnTaskDistOverheadLogger struct {
@@ -16,16 +16,16 @@ func NewClsfnTaskDistOverheadLogger(logType int, prefix string) *ClsfnTaskDistOv
 	return cLog
 }
 
-func (cLog *ClsfnTaskDistOverheadLogger) Log(logType int, level log.Level, logData log.Fields,message string) {
+func (cLog *ClsfnTaskDistOverheadLogger) Log(logType int, level log.Level, logData log.Fields, message string) {
 	if cLog.Type == logType {
 
 		logger.SetLevel(level)
-        
-        if cLog.AllowOnConsole {
-            logger.SetOutput(os.Stdout)
-		    logger.WithFields(logData).Println(message)
-        }
-		
+
+		if cLog.AllowOnConsole {
+			logger.SetOutput(os.Stdout)
+			logger.WithFields(logData).Println(message)
+		}
+
 		logger.SetOutput(cLog.LogFileName)
 		logger.WithFields(logData).Println(message)
 	}
@@ -44,6 +44,6 @@ func (cLog *ClsfnTaskDistOverheadLogger) SetLogFile(prefix string) {
 		log.Fatal("Unable to create logFile: ", err)
 	} else {
 		cLog.LogFileName = logFile
-        cLog.AllowOnConsole = config.TaskDistConfig.AllowOnConsole
+		cLog.AllowOnConsole = config.TaskDistConfig.AllowOnConsole
 	}
 }

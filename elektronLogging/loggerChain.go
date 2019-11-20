@@ -12,10 +12,10 @@ type Logger interface {
 	SetLogFile(prefix string)
 }
 type LoggerImpl struct {
-	Type        int
-    AllowOnConsole bool
-	LogFileName *os.File
-	next        Logger
+	Type           int
+	AllowOnConsole bool
+	LogFileName    *os.File
+	next           Logger
 }
 
 func (l *LoggerImpl) SetNext(logType Logger) {

@@ -1,31 +1,31 @@
 // Copyright (C) 2018 spdfg
-// 
+//
 // This file is part of Elektron.
-// 
+//
 // Elektron is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // Elektron is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with Elektron.  If not, see <http://www.gnu.org/licenses/>.
-// 
+//
 
 package offerUtils
 
 import (
-	"strings"
-    "fmt"
+	"fmt"
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
+	log "github.com/sirupsen/logrus"
 	"github.com/spdfg/elektron/constants"
-    "github.com/spdfg/elektron/elektronLogging"
+	"github.com/spdfg/elektron/elektronLogging"
 	elekLogT "github.com/spdfg/elektron/elektronLogging/types"
-    log "github.com/sirupsen/logrus"
+	"strings"
 )
 
 func OfferAgg(offer *mesos.Offer) (float64, float64, float64) {
@@ -90,14 +90,14 @@ func UpdateEnvironment(offer *mesos.Offer) {
 	var host = offer.GetHostname()
 	// If this host is not present in the set of hosts.
 	if _, ok := constants.Hosts[host]; !ok {
-        elektronLogging.ElektronLog.Log(elekLogT.GENERAL, log.InfoLevel, 
-            log.Fields {"Adding host" : fmt.Sprintf("%s",host)}, "New host detected")
+		elektronLogging.ElektronLog.Log(elekLogT.GENERAL, log.InfoLevel,
+			log.Fields{"Adding host": fmt.Sprintf("%s", host)}, "New host detected")
 		// Add this host.
 		constants.Hosts[host] = struct{}{}
 		// Get the power class of this host.
 		class := PowerClass(offer)
-        elektronLogging.ElektronLog.Log(elekLogT.GENERAL, log.InfoLevel, 
-            log.Fields {"host" : fmt.Sprintf("%s",host), "PowerClass" : fmt.Sprintf("%s", class)}, "Registering the power class...")
+		elektronLogging.ElektronLog.Log(elekLogT.GENERAL, log.InfoLevel,
+			log.Fields{"host": fmt.Sprintf("%s", host), "PowerClass": fmt.Sprintf("%s", class)}, "Registering the power class...")
 		// If new power class, register the power class.
 		if _, ok := constants.PowerClasses[class]; !ok {
 			constants.PowerClasses[class] = make(map[string]struct{})

@@ -1,8 +1,8 @@
 package elektronLogging
 
 import (
-	"os"
 	log "github.com/sirupsen/logrus"
+	"os"
 )
 
 type PcpLogger struct {
@@ -20,11 +20,11 @@ func (pLog *PcpLogger) Log(logType int, level log.Level, logData log.Fields, mes
 	if pLog.Type == logType {
 
 		logger.SetLevel(level)
-		
-        if pLog.AllowOnConsole {
-            logger.SetOutput(os.Stdout)
-		    logger.WithFields(logData).Println(message)
-        }
+
+		if pLog.AllowOnConsole {
+			logger.SetOutput(os.Stdout)
+			logger.WithFields(logData).Println(message)
+		}
 
 		logger.SetOutput(pLog.LogFileName)
 		logger.WithFields(logData).Println(message)
@@ -44,6 +44,6 @@ func (plog *PcpLogger) SetLogFile(prefix string) {
 		log.Fatal("Unable to create logFile: ", err)
 	} else {
 		plog.LogFileName = logFile
-        plog.AllowOnConsole = config.PCPConfig.AllowOnConsole
+		plog.AllowOnConsole = config.PCPConfig.AllowOnConsole
 	}
 }

@@ -1,10 +1,10 @@
 package elektronLogging
 
 import (
+	logrus "github.com/sirupsen/logrus"
 	"os"
 	"strconv"
 	"time"
-	logrus "github.com/sirupsen/logrus"
 )
 
 var logDir string
