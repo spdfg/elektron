@@ -38,8 +38,9 @@ func (sLog *SchedWindowLogger) Log(logType int, level log.Level, logData log.Fie
 func (sLog *SchedWindowLogger) SetLogFile(prefix string) {
 
 	schedWindowLogPrefix := strings.Join([]string{prefix, config.SchedWindowConfig.FilenameExtension}, "")
-	if logDir != "" {
-		schedWindowLogPrefix = strings.Join([]string{logDir, schedWindowLogPrefix}, "/")
+    dirName := logDir.getDirName()
+	if dirName != "" {
+		schedWindowLogPrefix = strings.Join([]string{dirName, schedWindowLogPrefix}, "/")
 	}
 	if logFile, err := os.Create(schedWindowLogPrefix); err != nil {
 		log.Fatal("Unable to create logFile: ", err)

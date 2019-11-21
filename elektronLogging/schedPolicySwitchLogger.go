@@ -38,8 +38,9 @@ func (sLog *SchedPolicySwitchLogger) Log(logType int, level log.Level, logData l
 func (sLog *SchedPolicySwitchLogger) SetLogFile(prefix string) {
 
 	spsLogPrefix := strings.Join([]string{prefix, config.SPSConfig.FilenameExtension}, "")
-	if logDir != "" {
-		spsLogPrefix = strings.Join([]string{logDir, spsLogPrefix}, "/")
+    dirName := logDir.getDirName()
+	if dirName != "" {
+		spsLogPrefix = strings.Join([]string{dirName, spsLogPrefix}, "/")
 	}
 	if logFile, err := os.Create(spsLogPrefix); err != nil {
 		log.Fatal("Unable to create logFile: ", err)

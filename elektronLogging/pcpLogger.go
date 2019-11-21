@@ -38,8 +38,9 @@ func (pLog *PcpLogger) Log(logType int, level log.Level, logData log.Fields, mes
 func (plog *PcpLogger) SetLogFile(prefix string) {
 
 	pcpLogPrefix := strings.Join([]string{prefix, config.PCPConfig.FilenameExtension}, "")
-	if logDir != "" {
-		pcpLogPrefix = strings.Join([]string{logDir, pcpLogPrefix}, "/")
+    dirName := logDir.getDirName()
+	if dirName != "" {
+		pcpLogPrefix = strings.Join([]string{dirName, pcpLogPrefix}, "/")
 	}
 	if logFile, err := os.Create(pcpLogPrefix); err != nil {
 		log.Fatal("Unable to create logFile: ", err)

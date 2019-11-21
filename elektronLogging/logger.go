@@ -12,6 +12,7 @@ var config LoggerConfig
 var logger *log.Logger
 var formatter ElektronFormatter
 var ElektronLog *LoggerImpl
+var logDir logDirectory
 
 func BuildLogger(prefix string) {
 
@@ -22,10 +23,9 @@ func BuildLogger(prefix string) {
 	startTime := time.Now()
 	formatter.TimestampFormat = "2006-01-02 15:04:05"
 	formattedStartTime := startTime.Format("20060102150405")
-	GetLogDir(startTime, "_")
-
-	prefix = strings.Join([]string{prefix, formattedStartTime}, "_")
-
+   
+	logDir.createLogDir(prefix, startTime)
+     prefix = strings.Join([]string{prefix, formattedStartTime}, "_")
 	logger = &log.Logger{
 		Out:       os.Stderr,
 		Level:     log.DebugLevel,

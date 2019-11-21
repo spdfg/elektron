@@ -35,8 +35,9 @@ func (cLog *ConsoleLogger) Log(logType int, level log.Level, logData log.Fields,
 func (cLog *ConsoleLogger) SetLogFile(prefix string) {
 
 	consoleLogPrefix := strings.Join([]string{prefix, config.ConsoleConfig.FilenameExtension}, "")
-	if logDir != "" {
-		consoleLogPrefix = strings.Join([]string{logDir, consoleLogPrefix}, "/")
+    dirName := logDir.getDirName()
+	if dirName != "" {
+		consoleLogPrefix = strings.Join([]string{dirName, consoleLogPrefix}, "/")
 	}
 	if logFile, err := os.Create(consoleLogPrefix); err != nil {
 		log.Fatal("Unable to create logFile: ", err)

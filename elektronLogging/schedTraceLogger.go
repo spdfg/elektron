@@ -38,8 +38,9 @@ func (sLog *SchedTraceLogger) Log(logType int, level log.Level, logData log.Fiel
 func (sLog *SchedTraceLogger) SetLogFile(prefix string) {
 
 	schedTraceLogPrefix := strings.Join([]string{prefix, config.SchedTraceConfig.FilenameExtension}, "")
-	if logDir != "" {
-		schedTraceLogPrefix = strings.Join([]string{logDir, schedTraceLogPrefix}, "/")
+    dirName := logDir.getDirName()
+	if dirName != "" {
+		schedTraceLogPrefix = strings.Join([]string{dirName, schedTraceLogPrefix}, "/")
 	}
 	if logFile, err := os.Create(schedTraceLogPrefix); err != nil {
 		log.Fatal("Unable to create logFile: ", err)
