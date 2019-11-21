@@ -23,7 +23,7 @@ import (
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 	log "github.com/sirupsen/logrus"
 	"github.com/spdfg/elektron/constants"
-	"github.com/spdfg/elektron/elektronLogging"
+	elekLog "github.com/spdfg/elektron/elektronLogging"
 	elekLogTypes "github.com/spdfg/elektron/elektronLogging/types"
 	"strings"
 )
@@ -90,13 +90,13 @@ func UpdateEnvironment(offer *mesos.Offer) {
 	var host = offer.GetHostname()
 	// If this host is not present in the set of hosts.
 	if _, ok := constants.Hosts[host]; !ok {
-		elektronLogging.ElektronLog.Log(elekLogTypes.GENERAL, log.InfoLevel,
+		elekLog.ElektronLog.Log(elekLogTypes.GENERAL, log.InfoLevel,
 			log.Fields{"Adding host": fmt.Sprintf("%s", host)}, "New host detected")
 		// Add this host.
 		constants.Hosts[host] = struct{}{}
 		// Get the power class of this host.
 		class := PowerClass(offer)
-		elektronLogging.ElektronLog.Log(elekLogTypes.GENERAL, log.InfoLevel,
+		elekLog.ElektronLog.Log(elekLogTypes.GENERAL, log.InfoLevel,
 			log.Fields{"host": fmt.Sprintf("%s", host), "PowerClass": fmt.Sprintf("%s", class)}, "Registering the power class...")
 		// If new power class, register the power class.
 		if _, ok := constants.PowerClasses[class]; !ok {

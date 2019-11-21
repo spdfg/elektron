@@ -26,7 +26,7 @@ import (
 	sched "github.com/mesos/mesos-go/api/v0/scheduler"
 	log "github.com/sirupsen/logrus"
 	"github.com/spdfg/elektron/def"
-	"github.com/spdfg/elektron/elektronLogging"
+	elekLog "github.com/spdfg/elektron/elektronLogging"
 	elekLogTypes "github.com/spdfg/elektron/elektronLogging/types"
 	"github.com/spdfg/elektron/pcp"
 	"github.com/spdfg/elektron/powerCap"
@@ -223,7 +223,7 @@ func main() {
 	if strings.Contains(*pcplogPrefix, "/") {
 		log.Fatal("log file prefix should not contain '/'.")
 	}
-	elektronLogging.BuildLogger(*pcplogPrefix)
+	elekLog.BuildLogger(*pcplogPrefix)
 
 	// Starting PCP logging.
 	if noPowercap {
@@ -278,11 +278,11 @@ func main() {
 
 	// Starting the scheduler driver.
 	if status, err := driver.Run(); err != nil {
-		elektronLogging.ElektronLog.Log(elekLogTypes.ERROR,
+		elekLog.ElektronLog.Log(elekLogTypes.ERROR,
 			log.ErrorLevel,
 			log.Fields{"status": status.String(), "error": err.Error()}, "Framework stopped ")
 	}
-	elektronLogging.ElektronLog.Log(elekLogTypes.GENERAL,
+	elekLog.ElektronLog.Log(elekLogTypes.GENERAL,
 		log.InfoLevel,
 		log.Fields{}, "Exiting...")
 }

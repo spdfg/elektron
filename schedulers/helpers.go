@@ -26,7 +26,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spdfg/elektron/constants"
 	"github.com/spdfg/elektron/def"
-	"github.com/spdfg/elektron/elektronLogging"
+	elekLog "github.com/spdfg/elektron/elektronLogging"
 	elekLogTypes "github.com/spdfg/elektron/elektronLogging/types"
 	"github.com/spdfg/elektron/utilities"
 	"github.com/spdfg/elektron/utilities/mesosUtils"
@@ -35,12 +35,12 @@ import (
 func coLocated(tasks map[string]bool, s BaseScheduler) {
 
 	for task := range tasks {
-		elektronLogging.ElektronLog.Log(elekLogTypes.GENERAL,
+		elekLog.ElektronLog.Log(elekLogTypes.GENERAL,
 			log.InfoLevel,
 			log.Fields{"Task": task}, "")
 	}
 
-	elektronLogging.ElektronLog.Log(elekLogTypes.GENERAL,
+	elekLog.ElektronLog.Log(elekLogTypes.GENERAL,
 		log.InfoLevel,
 		log.Fields{}, "---------------------")
 }
