@@ -109,7 +109,7 @@ func clusterSizeAvgMMMPU(tasks []Task, taskObservation func(task Task) []float64
 				// skip this value
 				// there is an error in the task config.
 				elekLog.ElektronLog.Log(elekLogTypes.CONSOLE, log.ErrorLevel,
-					log.Fields{}, fmt.Sprintf("%s", err))
+					log.Fields{}, err.Error())
 			}
 		} else {
 			// There is only one observation for the task.

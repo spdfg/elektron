@@ -3,6 +3,7 @@ package elektronLogging
 import (
 	log "github.com/sirupsen/logrus"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -40,7 +41,7 @@ func (sLog *SchedWindowLogger) SetLogFile(prefix string) {
 	schedWindowLogPrefix := strings.Join([]string{prefix, config.SchedWindowConfig.FilenameExtension}, "")
 	dirName := logDir.getDirName()
 	if dirName != "" {
-		schedWindowLogPrefix = strings.Join([]string{dirName, schedWindowLogPrefix}, "/")
+		schedWindowLogPrefix = filepath.Join(dirName, schedWindowLogPrefix)
 	}
 	if logFile, err := os.Create(schedWindowLogPrefix); err != nil {
 		log.Fatal("Unable to create logFile: ", err)

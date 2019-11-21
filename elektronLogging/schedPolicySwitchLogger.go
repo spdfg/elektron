@@ -3,6 +3,7 @@ package elektronLogging
 import (
 	log "github.com/sirupsen/logrus"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -40,7 +41,7 @@ func (sLog *SchedPolicySwitchLogger) SetLogFile(prefix string) {
 	spsLogPrefix := strings.Join([]string{prefix, config.SPSConfig.FilenameExtension}, "")
 	dirName := logDir.getDirName()
 	if dirName != "" {
-		spsLogPrefix = strings.Join([]string{dirName, spsLogPrefix}, "/")
+		spsLogPrefix = filepath.Join(dirName, spsLogPrefix)
 	}
 	if logFile, err := os.Create(spsLogPrefix); err != nil {
 		log.Fatal("Unable to create logFile: ", err)

@@ -3,6 +3,7 @@ package elektronLogging
 import (
 	log "github.com/sirupsen/logrus"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -37,7 +38,7 @@ func (cLog *ConsoleLogger) SetLogFile(prefix string) {
 	consoleLogPrefix := strings.Join([]string{prefix, config.ConsoleConfig.FilenameExtension}, "")
 	dirName := logDir.getDirName()
 	if dirName != "" {
-		consoleLogPrefix = strings.Join([]string{dirName, consoleLogPrefix}, "/")
+		consoleLogPrefix = filepath.Join(dirName, consoleLogPrefix)
 	}
 	if logFile, err := os.Create(consoleLogPrefix); err != nil {
 		log.Fatal("Unable to create logFile: ", err)

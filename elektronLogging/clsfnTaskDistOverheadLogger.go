@@ -3,21 +3,22 @@ package elektronLogging
 import (
 	log "github.com/sirupsen/logrus"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
-type ClsfnTaskDistOverheadLogger struct {
+type ClsfnTaskDistrOverheadLogger struct {
 	LoggerImpl
 }
 
-func NewClsfnTaskDistOverheadLogger(logType int, prefix string) *ClsfnTaskDistOverheadLogger {
-	cLog := &ClsfnTaskDistOverheadLogger{}
+func NewClsfnTaskDistrOverheadLogger(logType int, prefix string) *ClsfnTaskDistrOverheadLogger {
+	cLog := &ClsfnTaskDistrOverheadLogger{}
 	cLog.Type = logType
 	cLog.SetLogFile(prefix)
 	return cLog
 }
 
-func (cLog *ClsfnTaskDistOverheadLogger) Log(logType int, level log.Level, logData log.Fields, message string) {
+func (cLog *ClsfnTaskDistrOverheadLogger) Log(logType int, level log.Level, logData log.Fields, message string) {
 	if cLog.Type == logType {
 
 		logger.SetLevel(level)
@@ -35,12 +36,12 @@ func (cLog *ClsfnTaskDistOverheadLogger) Log(logType int, level log.Level, logDa
 	}
 }
 
-func (cLog *ClsfnTaskDistOverheadLogger) SetLogFile(prefix string) {
+func (cLog *ClsfnTaskDistrOverheadLogger) SetLogFile(prefix string) {
 
 	tskDistLogPrefix := strings.Join([]string{prefix, config.TaskDistConfig.FilenameExtension}, "")
 	dirName := logDir.getDirName()
 	if dirName != "" {
-		tskDistLogPrefix = strings.Join([]string{dirName, tskDistLogPrefix}, "/")
+		tskDistLogPrefix = filepath.Join(dirName, tskDistLogPrefix)
 	}
 	if logFile, err := os.Create(tskDistLogPrefix); err != nil {
 		log.Fatal("Unable to create logFile: ", err)

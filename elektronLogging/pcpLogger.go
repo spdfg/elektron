@@ -3,6 +3,7 @@ package elektronLogging
 import (
 	log "github.com/sirupsen/logrus"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -40,7 +41,7 @@ func (plog *PcpLogger) SetLogFile(prefix string) {
 	pcpLogPrefix := strings.Join([]string{prefix, config.PCPConfig.FilenameExtension}, "")
 	dirName := logDir.getDirName()
 	if dirName != "" {
-		pcpLogPrefix = strings.Join([]string{dirName, pcpLogPrefix}, "/")
+		pcpLogPrefix = filepath.Join(dirName, pcpLogPrefix)
 	}
 	if logFile, err := os.Create(pcpLogPrefix); err != nil {
 		log.Fatal("Unable to create logFile: ", err)
