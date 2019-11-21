@@ -90,7 +90,7 @@ func switchTaskDistBased(baseSchedRef *BaseScheduler) string {
 	// Determine the distribution of tasks in the new scheduling window.
 	taskDist, err := def.GetTaskDistributionInWindow(baseSchedRef.schedWindowSize, baseSchedRef.tasks)
 	baseSchedRef.LogClsfnAndTaskDistOverhead(time.Now().Sub(startTime))
-	elekLog.ElektronLog.Log(elekLogTypes.GENERAL,
+	elekLog.ElektronLog.Log(elekLogTypes.CONSOLE,
 		log.InfoLevel,
 		log.Fields{"Task Distribution": fmt.Sprintf("%f", taskDist)}, "Switching... ")
 	if err != nil {

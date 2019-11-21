@@ -35,12 +35,12 @@ import (
 func coLocated(tasks map[string]bool, s BaseScheduler) {
 
 	for task := range tasks {
-		elekLog.ElektronLog.Log(elekLogTypes.GENERAL,
+		elekLog.ElektronLog.Log(elekLogTypes.CONSOLE,
 			log.InfoLevel,
 			log.Fields{"Task": task}, "")
 	}
 
-	elekLog.ElektronLog.Log(elekLogTypes.GENERAL,
+	elekLog.ElektronLog.Log(elekLogTypes.CONSOLE,
 		log.InfoLevel,
 		log.Fields{}, "---------------------")
 }

@@ -1,11 +1,7 @@
 package elektronLogging
 
 const (
-	ERROR = iota
-	WARNING
-	GENERAL
-	SUCCESS
-	CONSOLE
+	CONSOLE = iota
 	PCP
 	SCHED_TRACE
 	SPS

@@ -26,7 +26,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	elekLog "github.com/spdfg/elektron/elektronLogging"
-	elekLogT "github.com/spdfg/elektron/elektronLogging/types"
+	elekLogTypes "github.com/spdfg/elektron/elektronLogging/types"
 )
 
 func Start(quit chan struct{}, logging *bool, pcpConfigFile string) {
@@ -47,7 +47,7 @@ func Start(quit chan struct{}, logging *bool, pcpConfigFile string) {
 		scanner.Scan()
 
 		// Write to logfile
-		elekLog.ElektronLog.Log(elekLogT.PCP,
+		elekLog.ElektronLog.Log(elekLogTypes.PCP,
 			log.InfoLevel,
 			log.Fields{}, scanner.Text())
 
@@ -60,7 +60,7 @@ func Start(quit chan struct{}, logging *bool, pcpConfigFile string) {
 			text := scanner.Text()
 
 			if *logging {
-				elekLog.ElektronLog.Log(elekLogT.PCP,
+				elekLog.ElektronLog.Log(elekLogTypes.PCP,
 					log.InfoLevel,
 					log.Fields{}, text)
 			}
@@ -69,7 +69,7 @@ func Start(quit chan struct{}, logging *bool, pcpConfigFile string) {
 		}
 	}(logging)
 
-	elekLog.ElektronLog.Log(elekLogT.GENERAL,
+	elekLog.ElektronLog.Log(elekLogTypes.CONSOLE,
 		log.InfoLevel,
 		log.Fields{}, "PCP logging started")
 
@@ -81,7 +81,7 @@ func Start(quit chan struct{}, logging *bool, pcpConfigFile string) {
 
 	select {
 	case <-quit:
-		elekLog.ElektronLog.Log(elekLogT.GENERAL,
+		elekLog.ElektronLog.Log(elekLogTypes.CONSOLE,
 			log.InfoLevel,
 			log.Fields{}, "Stopping PCP logging in 5 seconds")
 		time.Sleep(5 * time.Second)

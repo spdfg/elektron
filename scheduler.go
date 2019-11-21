@@ -278,11 +278,11 @@ func main() {
 
 	// Starting the scheduler driver.
 	if status, err := driver.Run(); err != nil {
-		elekLog.ElektronLog.Log(elekLogTypes.ERROR,
+		elekLog.ElektronLog.Log(elekLogTypes.CONSOLE,
 			log.ErrorLevel,
 			log.Fields{"status": status.String(), "error": err.Error()}, "Framework stopped ")
 	}
-	elekLog.ElektronLog.Log(elekLogTypes.GENERAL,
+	elekLog.ElektronLog.Log(elekLogTypes.CONSOLE,
 		log.InfoLevel,
 		log.Fields{}, "Exiting...")
 }
