@@ -24,7 +24,7 @@ import (
 
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 	sched "github.com/mesos/mesos-go/api/v0/scheduler"
-	elekLog "github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"github.com/spdfg/elektron/def"
 	"github.com/spdfg/elektron/elektronLogging"
 	elekLogTypes "github.com/spdfg/elektron/elektronLogging/types"
@@ -91,8 +91,8 @@ func switchTaskDistBased(baseSchedRef *BaseScheduler) string {
 	taskDist, err := def.GetTaskDistributionInWindow(baseSchedRef.schedWindowSize, baseSchedRef.tasks)
 	baseSchedRef.LogClsfnAndTaskDistOverhead(time.Now().Sub(startTime))
 	elektronLogging.ElektronLog.Log(elekLogTypes.GENERAL,
-		elekLog.InfoLevel,
-		elekLog.Fields{"Task Distribution": fmt.Sprintf("%f", taskDist)}, "Switching... ")
+		log.InfoLevel,
+		log.Fields{"Task Distribution": fmt.Sprintf("%f", taskDist)}, "Switching... ")
 	if err != nil {
 		// All the tasks in the window were only classified into 1 cluster.
 		// Max-Min and Max-GreedyMins would work the same way as Bin-Packing for this situation.
@@ -220,8 +220,8 @@ func (bsps *baseSchedPolicyState) SwitchIfNecessary(spc SchedPolicyContext) {
 					switchToPolicyName = switchBasedOn[baseSchedRef.schedPolSwitchCriteria](baseSchedRef)
 				} else {
 					// We continue working with the currently deployed scheduling policy.
-					elekLog.Println("Continuing with the current scheduling policy...")
-					elekLog.Printf("TasksScheduled[%d], SchedWindowSize[%d]", bsps.numTasksScheduled,
+					log.Println("Continuing with the current scheduling policy...")
+					log.Printf("TasksScheduled[%d], SchedWindowSize[%d]", bsps.numTasksScheduled,
 						baseSchedRef.schedWindowSize)
 					return
 				}
@@ -234,8 +234,8 @@ func (bsps *baseSchedPolicyState) SwitchIfNecessary(spc SchedPolicyContext) {
 			bsps.numTasksScheduled = 0
 		} else {
 			// We continue working with the currently deployed scheduling policy.
-			elekLog.Println("Continuing with the current scheduling policy...")
-			elekLog.Printf("TasksScheduled[%d], SchedWindowSize[%d]", bsps.numTasksScheduled,
+			log.Println("Continuing with the current scheduling policy...")
+			log.Printf("TasksScheduled[%d], SchedWindowSize[%d]", bsps.numTasksScheduled,
 				baseSchedRef.schedWindowSize)
 			return
 		}

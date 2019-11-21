@@ -1,7 +1,7 @@
 package elektronLogging
 
 import (
-	elekLog "github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"os"
 	"strings"
 )
@@ -17,7 +17,7 @@ func NewSchedTraceLogger(logType int, prefix string) *SchedTraceLogger {
 	return sLog
 }
 
-func (sLog *SchedTraceLogger) Log(logType int, level elekLog.Level, logData elekLog.Fields, message string) {
+func (sLog *SchedTraceLogger) Log(logType int, level log.Level, logData log.Fields, message string) {
 	if sLog.Type == logType {
 
 		logger.SetLevel(level)
@@ -43,7 +43,7 @@ func (sLog *SchedTraceLogger) SetLogFile(prefix string) {
 		schedTraceLogPrefix = strings.Join([]string{dirName, schedTraceLogPrefix}, "/")
 	}
 	if logFile, err := os.Create(schedTraceLogPrefix); err != nil {
-		elekLog.Fatal("Unable to create logFile: ", err)
+		log.Fatal("Unable to create logFile: ", err)
 	} else {
 		sLog.LogFileName = logFile
 		sLog.AllowOnConsole = config.SchedTraceConfig.AllowOnConsole

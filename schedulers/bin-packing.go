@@ -19,7 +19,7 @@
 package schedulers
 
 import (
-	elekLog "github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 	sched "github.com/mesos/mesos-go/api/v0/scheduler"
@@ -39,7 +39,7 @@ func (s *BinPackSortedWatts) takeOffer(spc SchedPolicyContext, offer *mesos.Offe
 	wattsConsideration, err := def.WattsToConsider(task, baseSchedRef.classMapWatts, offer)
 	if err != nil {
 		// Error in determining wattsConsideration.
-		elekLog.Fatal(err)
+		log.Fatal(err)
 	}
 	if (cpus >= (totalCPU + task.CPU)) && (mem >= (totalRAM + task.RAM)) &&
 		(!baseSchedRef.wattsAsAResource || (watts >= (totalWatts + wattsConsideration))) {
@@ -83,7 +83,7 @@ func (s *BinPackSortedWatts) ConsumeOffers(spc SchedPolicyContext, driver sched.
 			wattsConsideration, err := def.WattsToConsider(task, baseSchedRef.classMapWatts, offer)
 			if err != nil {
 				// Error in determining wattsConsideration.
-				elekLog.Fatal(err)
+				log.Fatal(err)
 			}
 
 			// Don't take offer if it doesn't match our task's host requirement.

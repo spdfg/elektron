@@ -1,7 +1,7 @@
 package elektronLogging
 
 import (
-	elekLog "github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"os"
 	"strings"
 )
@@ -17,7 +17,7 @@ func NewPcpLogger(logType int, prefix string) *PcpLogger {
 	return pLog
 }
 
-func (pLog *PcpLogger) Log(logType int, level elekLog.Level, logData elekLog.Fields, message string) {
+func (pLog *PcpLogger) Log(logType int, level log.Level, logData log.Fields, message string) {
 	if pLog.Type == logType {
 
 		logger.SetLevel(level)
@@ -43,7 +43,7 @@ func (plog *PcpLogger) SetLogFile(prefix string) {
 		pcpLogPrefix = strings.Join([]string{dirName, pcpLogPrefix}, "/")
 	}
 	if logFile, err := os.Create(pcpLogPrefix); err != nil {
-		elekLog.Fatal("Unable to create logFile: ", err)
+		log.Fatal("Unable to create logFile: ", err)
 	} else {
 		plog.LogFileName = logFile
 		plog.AllowOnConsole = config.PCPConfig.AllowOnConsole

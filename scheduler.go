@@ -24,7 +24,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 	sched "github.com/mesos/mesos-go/api/v0/scheduler"
-	elekLog "github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"github.com/spdfg/elektron/def"
 	"github.com/spdfg/elektron/elektronLogging"
 	elekLogTypes "github.com/spdfg/elektron/elektronLogging/types"
@@ -104,7 +104,7 @@ func main() {
 	if *schedPolicyName != "first-fit" {
 		if _, ok := schedulers.SchedPolicies[*schedPolicyName]; !ok {
 			// invalid scheduling policy
-			elekLog.Println("Invalid scheduling policy given. The possible scheduling policies are:")
+			log.Println("Invalid scheduling policy given. The possible scheduling policies are:")
 			listAllSchedulingPolicies()
 			os.Exit(1)
 		}
@@ -130,7 +130,7 @@ func main() {
 	if *enableSchedPolicySwitch {
 		// Scheduling policy config file required.
 		if spcf := *schedPolConfigFile; spcf == "" {
-			elekLog.Fatal("Scheduling policy characteristics file not provided.")
+			log.Fatal("Scheduling policy characteristics file not provided.")
 		} else {
 			// Initializing the characteristics of the scheduling policies.
 			schedulers.InitSchedPolicyCharacteristics(spcf)
@@ -148,7 +148,7 @@ func main() {
 	// If CMW is disabled, then the Median of Medians Max Peak Power Usage value is used
 	//	as the watts value for each task.
 	if *wattsAsAResource {
-		elekLog.Println("WaaR enabled...")
+		log.Println("WaaR enabled...")
 		schedOptions = append(schedOptions, schedulers.WithWattsAsAResource(*wattsAsAResource))
 		schedOptions = append(schedOptions, schedulers.WithClassMapWatts(*classMapWatts))
 	}
@@ -165,7 +165,7 @@ func main() {
 		"prog-extrema": {},
 	}
 	if _, ok := powercapValues[*powerCapPolicy]; !ok {
-		elekLog.Fatal("Incorrect power-capping algorithm specified.")
+		log.Fatal("Incorrect power-capping algorithm specified.")
 	} else {
 		// Indicating which power capping algorithm to use, if any.
 		// The pcp-logging with/without power capping will be run after the
@@ -185,7 +185,7 @@ func main() {
 				// These values are not used to configure the scheduler.
 				// hiThreshold and loThreshold are passed to the powercappers.
 				if *hiThreshold < *loThreshold {
-					elekLog.Fatal("High threshold is of a lower value than low " +
+					log.Fatal("High threshold is of a lower value than low " +
 						"threshold.")
 				}
 			}
@@ -195,11 +195,11 @@ func main() {
 	// Tasks
 	// If httpServer is disabled, then path of file containing workload needs to be provided.
 	if *tasksFile == "" {
-		elekLog.Fatal("Tasks specifications file not provided.")
+		log.Fatal("Tasks specifications file not provided.")
 	}
 	tasks, err := def.TasksFromJSON(*tasksFile)
 	if err != nil || len(tasks) == 0 {
-		elekLog.Fatal("Invalid tasks specification file provided.")
+		log.Fatal("Invalid tasks specification file provided.")
 	}
 	schedOptions = append(schedOptions, schedulers.WithTasks(tasks))
 
@@ -216,12 +216,12 @@ func main() {
 		Scheduler: scheduler,
 	})
 	if err != nil {
-		elekLog.Fatal(fmt.Sprintf("Unable to create scheduler driver: %s", err))
+		log.Fatal(fmt.Sprintf("Unable to create scheduler driver: %s", err))
 	}
 
 	// Checking if prefix contains any special characters.
 	if strings.Contains(*pcplogPrefix, "/") {
-		elekLog.Fatal("elekLog file prefix should not contain '/'.")
+		log.Fatal("log file prefix should not contain '/'.")
 	}
 	elektronLogging.BuildLogger(*pcplogPrefix)
 
@@ -236,7 +236,7 @@ func main() {
 			*loThreshold, *pcpConfigFile)
 	}
 
-	// Take a second between starting PCP elekLog and continuing.
+	// Take a second between starting PCP log and continuing.
 	time.Sleep(1 * time.Second)
 
 	// Attempt to handle SIGINT to not leave pmdumptext running.
@@ -250,7 +250,7 @@ func main() {
 			return
 		}
 
-		elekLog.Println("Received SIGINT... stopping")
+		log.Println("Received SIGINT... stopping")
 		close(done)
 	}()
 
@@ -266,7 +266,7 @@ func main() {
 		select {
 		case <-done:
 			close(pcpLog)
-			time.Sleep(5 * time.Second) //Wait for PCP to elekLog a few more seconds
+			time.Sleep(5 * time.Second) //Wait for PCP to log a few more seconds
 			// Closing logging channels.
 			//case <-time.After(shutdownTimeout):
 		}
@@ -279,10 +279,10 @@ func main() {
 	// Starting the scheduler driver.
 	if status, err := driver.Run(); err != nil {
 		elektronLogging.ElektronLog.Log(elekLogTypes.ERROR,
-			elekLog.ErrorLevel,
-			elekLog.Fields{"status": status.String(), "error": err.Error()}, "Framework stopped ")
+			log.ErrorLevel,
+			log.Fields{"status": status.String(), "error": err.Error()}, "Framework stopped ")
 	}
 	elektronLogging.ElektronLog.Log(elekLogTypes.GENERAL,
-		elekLog.InfoLevel,
-		elekLog.Fields{}, "Exiting...")
+		log.InfoLevel,
+		log.Fields{}, "Exiting...")
 }

@@ -1,7 +1,7 @@
 package elektronLogging
 
 import (
-	elekLog "github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"os"
 	"strconv"
 	"strings"
@@ -28,7 +28,7 @@ func (logD *logDirectory) createLogDir(prefix string, startTime time.Time) {
 		if _, err := os.Stat(logDirName); os.IsNotExist(err) {
 			os.Mkdir(logDirName, 0755)
 		} else {
-			elekLog.Println("Unable to create elekLog directory: ", err)
+			log.Println("Unable to create log directory: ", err)
 			logDirName = ""
 		}
 

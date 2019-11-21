@@ -3,7 +3,7 @@ package elektronLogging
 import (
 	"bytes"
 	"github.com/fatih/color"
-	elekLog "github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"strings"
 )
 
@@ -11,21 +11,21 @@ type ElektronFormatter struct {
 	TimestampFormat string
 }
 
-func (f ElektronFormatter) getColor(entry *elekLog.Entry) *color.Color {
+func (f ElektronFormatter) getColor(entry *log.Entry) *color.Color {
 	switch entry.Level {
-	case elekLog.InfoLevel:
+	case log.InfoLevel:
 		return color.New(color.FgGreen, color.Bold)
-	case elekLog.WarnLevel:
+	case log.WarnLevel:
 		return color.New(color.FgYellow, color.Bold)
-	case elekLog.ErrorLevel:
+	case log.ErrorLevel:
 		return color.New(color.FgRed, color.Bold)
-	case elekLog.FatalLevel:
+	case log.FatalLevel:
 		return color.New(color.FgRed, color.Bold)
 	default:
 		return color.New(color.FgWhite, color.Bold)
 	}
 }
-func (f ElektronFormatter) Format(entry *elekLog.Entry) ([]byte, error) {
+func (f ElektronFormatter) Format(entry *log.Entry) ([]byte, error) {
 	var b *bytes.Buffer
 
 	if entry.Buffer != nil {

@@ -1,7 +1,7 @@
 package elektronLogging
 
 import (
-	elekLog "github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"os"
 	"strings"
 )
@@ -16,7 +16,7 @@ func NewConsoleLogger(logType int, prefix string) *ConsoleLogger {
 	cLog.SetLogFile(prefix)
 	return cLog
 }
-func (cLog *ConsoleLogger) Log(logType int, level elekLog.Level, logData elekLog.Fields, message string) {
+func (cLog *ConsoleLogger) Log(logType int, level log.Level, logData log.Fields, message string) {
 	if logType <= cLog.Type {
 
 		logger.SetLevel(level)
@@ -40,7 +40,7 @@ func (cLog *ConsoleLogger) SetLogFile(prefix string) {
 		consoleLogPrefix = strings.Join([]string{dirName, consoleLogPrefix}, "/")
 	}
 	if logFile, err := os.Create(consoleLogPrefix); err != nil {
-		elekLog.Fatal("Unable to create logFile: ", err)
+		log.Fatal("Unable to create logFile: ", err)
 	} else {
 		cLog.LogFileName = logFile
 		cLog.AllowOnConsole = true

@@ -1,7 +1,7 @@
 package elektronLogging
 
 import (
-	elekLog "github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"os"
 	"strings"
 )
@@ -17,7 +17,7 @@ func NewSchedPolicySwitchLogger(logType int, prefix string) *SchedPolicySwitchLo
 	return sLog
 }
 
-func (sLog *SchedPolicySwitchLogger) Log(logType int, level elekLog.Level, logData elekLog.Fields, message string) {
+func (sLog *SchedPolicySwitchLogger) Log(logType int, level log.Level, logData log.Fields, message string) {
 	if sLog.Type == logType {
 
 		logger.SetLevel(level)
@@ -43,7 +43,7 @@ func (sLog *SchedPolicySwitchLogger) SetLogFile(prefix string) {
 		spsLogPrefix = strings.Join([]string{dirName, spsLogPrefix}, "/")
 	}
 	if logFile, err := os.Create(spsLogPrefix); err != nil {
-		elekLog.Fatal("Unable to create logFile: ", err)
+		log.Fatal("Unable to create logFile: ", err)
 	} else {
 		sLog.LogFileName = logFile
 		sLog.AllowOnConsole = config.SPSConfig.AllowOnConsole

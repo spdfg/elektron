@@ -1,7 +1,7 @@
 package elektronLogging
 
 import (
-	elekLog "github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	elekEnv "github.com/spdfg/elektron/environment"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
@@ -57,11 +57,11 @@ func (c *LoggerConfig) GetConfig() *LoggerConfig {
 
 	yamlFile, err := ioutil.ReadFile(elekEnv.LogConfigYaml)
 	if err != nil {
-		elekLog.Printf("yamlFile.Get err   #%v ", err)
+		log.Printf("yamlFile.Get err   #%v ", err)
 	}
 	err = yaml.Unmarshal(yamlFile, c)
 	if err != nil {
-		elekLog.Fatalf("Unmarshal: %v", err)
+		log.Fatalf("Unmarshal: %v", err)
 	}
 
 	return c

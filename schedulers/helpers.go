@@ -23,7 +23,7 @@ import (
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 	sched "github.com/mesos/mesos-go/api/v0/scheduler"
 	"github.com/pkg/errors"
-	elekLog "github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"github.com/spdfg/elektron/constants"
 	"github.com/spdfg/elektron/def"
 	"github.com/spdfg/elektron/elektronLogging"
@@ -36,13 +36,13 @@ func coLocated(tasks map[string]bool, s BaseScheduler) {
 
 	for task := range tasks {
 		elektronLogging.ElektronLog.Log(elekLogTypes.GENERAL,
-			elekLog.InfoLevel,
-			elekLog.Fields{"Task": task}, "")
+			log.InfoLevel,
+			log.Fields{"Task": task}, "")
 	}
 
 	elektronLogging.ElektronLog.Log(elekLogTypes.GENERAL,
-		elekLog.InfoLevel,
-		elekLog.Fields{}, "---------------------")
+		log.InfoLevel,
+		log.Fields{}, "---------------------")
 }
 
 // Get the powerClass of the given hostname.
@@ -157,7 +157,7 @@ func WithSchedPolSwitchEnabled(enableSchedPolicySwitch bool, switchingCriteria s
 func WithNameOfFirstSchedPolToFix(nameOfFirstSchedPol string) SchedulerOptions {
 	return func(s ElectronScheduler) error {
 		if nameOfFirstSchedPol == "" {
-			elekLog.Println("First scheduling policy to deploy not mentioned. This is now" +
+			log.Println("First scheduling policy to deploy not mentioned. This is now" +
 				" going to be determined at runtime.")
 			return nil
 		}
@@ -175,7 +175,7 @@ func WithFixedSchedulingWindow(toFixSchedWindow bool, fixedSchedWindowSize int) 
 			if fixedSchedWindowSize <= 0 {
 				return errors.New("Invalid value of scheduling window size. Please provide a value > 0.")
 			}
-			elekLog.Println(fmt.Sprintf("Fixing the size of the scheduling window to %d.."+
+			log.Println(fmt.Sprintf("Fixing the size of the scheduling window to %d.."+
 				".", fixedSchedWindowSize))
 			s.(*BaseScheduler).toFixSchedWindow = toFixSchedWindow
 			s.(*BaseScheduler).schedWindowSize = fixedSchedWindowSize

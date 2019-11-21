@@ -1,7 +1,7 @@
 package elektronLogging
 
 import (
-	elekLog "github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"os"
 	"strings"
 )
@@ -17,7 +17,7 @@ func NewClsfnTaskDistOverheadLogger(logType int, prefix string) *ClsfnTaskDistOv
 	return cLog
 }
 
-func (cLog *ClsfnTaskDistOverheadLogger) Log(logType int, level elekLog.Level, logData elekLog.Fields, message string) {
+func (cLog *ClsfnTaskDistOverheadLogger) Log(logType int, level log.Level, logData log.Fields, message string) {
 	if cLog.Type == logType {
 
 		logger.SetLevel(level)
@@ -43,7 +43,7 @@ func (cLog *ClsfnTaskDistOverheadLogger) SetLogFile(prefix string) {
 		tskDistLogPrefix = strings.Join([]string{dirName, tskDistLogPrefix}, "/")
 	}
 	if logFile, err := os.Create(tskDistLogPrefix); err != nil {
-		elekLog.Fatal("Unable to create logFile: ", err)
+		log.Fatal("Unable to create logFile: ", err)
 	} else {
 		cLog.LogFileName = logFile
 		cLog.AllowOnConsole = config.TaskDistConfig.AllowOnConsole
