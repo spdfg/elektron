@@ -27,7 +27,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spdfg/elektron/def"
 	"github.com/spdfg/elektron/elektronLogging"
-	elekLogT "github.com/spdfg/elektron/elektronLogging/types"
+	elekLogTypes "github.com/spdfg/elektron/elektronLogging/types"
 	"github.com/spdfg/elektron/pcp"
 	"github.com/spdfg/elektron/powerCap"
 	"github.com/spdfg/elektron/schedulers"
@@ -278,11 +278,11 @@ func main() {
 
 	// Starting the scheduler driver.
 	if status, err := driver.Run(); err != nil {
-		elektronLogging.ElektronLog.Log(elekLogT.ERROR,
+		elektronLogging.ElektronLog.Log(elekLogTypes.ERROR,
 			log.ErrorLevel,
 			log.Fields{"status": status.String(), "error": err.Error()}, "Framework stopped ")
 	}
-	elektronLogging.ElektronLog.Log(elekLogT.GENERAL,
+	elektronLogging.ElektronLog.Log(elekLogTypes.GENERAL,
 		log.InfoLevel,
 		log.Fields{}, "Exiting...")
 }

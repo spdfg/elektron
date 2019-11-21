@@ -3,6 +3,7 @@ package elektronLogging
 import (
 	log "github.com/sirupsen/logrus"
 	. "github.com/spdfg/elektron/elektronLogging/types"
+	"os"
 	"strings"
 	"time"
 )
@@ -25,9 +26,11 @@ func BuildLogger(prefix string) {
 
 	prefix = strings.Join([]string{prefix, formattedStartTime}, "_")
 
-	//create a single logrus instance and set its formatter to ElektronFormatter
-	logger = log.New()
-	logger.SetFormatter(&formatter)
+	logger = &log.Logger{
+		Out:       os.Stderr,
+		Level:     log.DebugLevel,
+		Formatter: &formatter,
+	}
 
 	// create a chain of loggers
 	head := &LoggerImpl{}
