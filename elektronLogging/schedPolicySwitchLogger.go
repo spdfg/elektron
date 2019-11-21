@@ -18,7 +18,7 @@ func NewSchedPolicySwitchLogger(logType int, prefix string) *SchedPolicySwitchLo
 	return sLog
 }
 
-func (sLog *SchedPolicySwitchLogger) Log(logType int, level log.Level, logData log.Fields, message string) {
+func (sLog SchedPolicySwitchLogger) Log(logType int, level log.Level, logData log.Fields, message string) {
 	if sLog.Type == logType {
 
 		logger.SetLevel(level)
@@ -38,15 +38,14 @@ func (sLog *SchedPolicySwitchLogger) Log(logType int, level log.Level, logData l
 
 func (sLog *SchedPolicySwitchLogger) SetLogFile(prefix string) {
 
-	spsLogPrefix := strings.Join([]string{prefix, config.SPSConfig.FilenameExtension}, "")
+	filename := strings.Join([]string{prefix, config.SPSConfig.FilenameExtension}, "")
 	dirName := logDir.getDirName()
 	if dirName != "" {
-		spsLogPrefix = filepath.Join(dirName, spsLogPrefix)
-	}
-	if logFile, err := os.Create(spsLogPrefix); err != nil {
-		log.Fatal("Unable to create logFile: ", err)
-	} else {
-		sLog.LogFileName = logFile
-		sLog.AllowOnConsole = config.SPSConfig.AllowOnConsole
+		if logFile, err := os.Create(filepath.Join(dirName, filename)); err != nil {
+			log.Fatal("Unable to create logFile: ", err)
+		} else {
+			sLog.LogFileName = logFile
+			sLog.AllowOnConsole = config.SPSConfig.AllowOnConsole
+		}
 	}
 }

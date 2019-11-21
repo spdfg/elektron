@@ -18,7 +18,7 @@ func NewPcpLogger(logType int, prefix string) *PcpLogger {
 	return pLog
 }
 
-func (pLog *PcpLogger) Log(logType int, level log.Level, logData log.Fields, message string) {
+func (pLog PcpLogger) Log(logType int, level log.Level, logData log.Fields, message string) {
 	if pLog.Type == logType {
 
 		logger.SetLevel(level)
@@ -36,17 +36,16 @@ func (pLog *PcpLogger) Log(logType int, level log.Level, logData log.Fields, mes
 	}
 }
 
-func (plog *PcpLogger) SetLogFile(prefix string) {
+func (pLog *PcpLogger) SetLogFile(prefix string) {
 
-	pcpLogPrefix := strings.Join([]string{prefix, config.PCPConfig.FilenameExtension}, "")
+	filename := strings.Join([]string{prefix, config.PCPConfig.FilenameExtension}, "")
 	dirName := logDir.getDirName()
 	if dirName != "" {
-		pcpLogPrefix = filepath.Join(dirName, pcpLogPrefix)
-	}
-	if logFile, err := os.Create(pcpLogPrefix); err != nil {
-		log.Fatal("Unable to create logFile: ", err)
-	} else {
-		plog.LogFileName = logFile
-		plog.AllowOnConsole = config.PCPConfig.AllowOnConsole
+		if logFile, err := os.Create(filepath.Join(dirName, filename)); err != nil {
+			log.Fatal("Unable to create logFile: ", err)
+		} else {
+			pLog.LogFileName = logFile
+			pLog.AllowOnConsole = config.PCPConfig.AllowOnConsole
+		}
 	}
 }

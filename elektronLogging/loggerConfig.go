@@ -9,45 +9,40 @@ import (
 
 type LoggerConfig struct {
 	SchedTraceConfig struct {
-		Enabled             bool   `yaml:"enabled"`
-		FilenameExtension   string `yaml:"filenameExtension"`
-		EnableColumnHeaders bool   `yaml:"enableColumnHeaders"`
-		AllowOnConsole      bool   `yaml:"allowOnConsole"`
+		Enabled           bool   `yaml:"enabled"`
+		FilenameExtension string `yaml:"filenameExtension"`
+		AllowOnConsole    bool   `yaml:"allowOnConsole"`
 	} `yaml:"schedTrace"`
 
 	PCPConfig struct {
-		Enabled             bool   `yaml:"enabled"`
-		FilenameExtension   string `yaml:"filenameExtension"`
-		EnableColumnHeaders bool   `yaml:"enableColumnHeaders"`
-		AllowOnConsole      bool   `yaml:"allowOnConsole"`
+		Enabled           bool   `yaml:"enabled"`
+		FilenameExtension string `yaml:"filenameExtension"`
+		AllowOnConsole    bool   `yaml:"allowOnConsole"`
 	} `yaml:"pcp"`
 
 	ConsoleConfig struct {
-		Enabled             bool   `yaml:"enabled"`
-		FilenameExtension   string `yaml:"filenameExtension"`
-		EnableColumnHeaders bool   `yaml:"enableColumnHeaders"`
-		MinLogLevel         string `yaml:"minLogLevel"`
+		Enabled           bool   `yaml:"enabled"`
+		FilenameExtension string `yaml:"filenameExtension"`
+		MinLogLevel       string `yaml:"minLogLevel"`
+		AllowOnConsole    bool   `yaml:"allowOnConsole"`
 	} `yaml:"console"`
 
 	SPSConfig struct {
-		Enabled             bool   `yaml:"enabled"`
-		FilenameExtension   string `yaml:"filenameExtension"`
-		EnableColumnHeaders bool   `yaml:"enableColumnHeaders"`
-		AllowOnConsole      bool   `yaml:"allowOnConsole"`
+		Enabled           bool   `yaml:"enabled"`
+		FilenameExtension string `yaml:"filenameExtension"`
+		AllowOnConsole    bool   `yaml:"allowOnConsole"`
 	} `yaml:"sps"`
 
-	TaskDistConfig struct {
-		Enabled             bool   `yaml:"enabled"`
-		FilenameExtension   string `yaml:"filenameExtension"`
-		EnableColumnHeaders bool   `yaml:"enableColumnHeaders"`
-		AllowOnConsole      bool   `yaml:"allowOnConsole"`
-	} `yaml:"clsfnTaskDistOverhead"`
+	TaskDistrConfig struct {
+		Enabled           bool   `yaml:"enabled"`
+		FilenameExtension string `yaml:"filenameExtension"`
+		AllowOnConsole    bool   `yaml:"allowOnConsole"`
+	} `yaml:"clsfnTaskDistrOverhead"`
 
 	SchedWindowConfig struct {
-		Enabled             bool   `yaml:"enabled"`
-		FilenameExtension   string `yaml:"filenameExtension"`
-		EnableColumnHeaders bool   `yaml:"enableColumnHeaders"`
-		AllowOnConsole      bool   `yaml:"allowOnConsole"`
+		Enabled           bool   `yaml:"enabled"`
+		FilenameExtension string `yaml:"filenameExtension"`
+		AllowOnConsole    bool   `yaml:"allowOnConsole"`
 	} `yaml:"schedWindow"`
 
 	Format []string `yaml:"format"`
@@ -57,11 +52,11 @@ func (c *LoggerConfig) GetConfig() *LoggerConfig {
 
 	yamlFile, err := ioutil.ReadFile(elekEnv.LogConfigYaml)
 	if err != nil {
-		log.Printf("yamlFile.Get err   #%v ", err)
+		log.Printf("Error in reading yaml file   #%v ", err)
 	}
 	err = yaml.Unmarshal(yamlFile, c)
 	if err != nil {
-		log.Fatalf("Unmarshal: %v", err)
+		log.Fatalf("Error in yaml unmarshal: %v", err)
 	}
 
 	return c

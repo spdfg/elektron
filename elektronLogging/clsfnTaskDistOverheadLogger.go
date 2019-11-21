@@ -18,7 +18,7 @@ func NewClsfnTaskDistrOverheadLogger(logType int, prefix string) *ClsfnTaskDistr
 	return cLog
 }
 
-func (cLog *ClsfnTaskDistrOverheadLogger) Log(logType int, level log.Level, logData log.Fields, message string) {
+func (cLog ClsfnTaskDistrOverheadLogger) Log(logType int, level log.Level, logData log.Fields, message string) {
 	if cLog.Type == logType {
 
 		logger.SetLevel(level)
@@ -38,15 +38,14 @@ func (cLog *ClsfnTaskDistrOverheadLogger) Log(logType int, level log.Level, logD
 
 func (cLog *ClsfnTaskDistrOverheadLogger) SetLogFile(prefix string) {
 
-	tskDistLogPrefix := strings.Join([]string{prefix, config.TaskDistConfig.FilenameExtension}, "")
+	filename := strings.Join([]string{prefix, config.TaskDistrConfig.FilenameExtension}, "")
 	dirName := logDir.getDirName()
 	if dirName != "" {
-		tskDistLogPrefix = filepath.Join(dirName, tskDistLogPrefix)
-	}
-	if logFile, err := os.Create(tskDistLogPrefix); err != nil {
-		log.Fatal("Unable to create logFile: ", err)
-	} else {
-		cLog.LogFileName = logFile
-		cLog.AllowOnConsole = config.TaskDistConfig.AllowOnConsole
+		if logFile, err := os.Create(filepath.Join(dirName, filename)); err != nil {
+			log.Fatal("Unable to create logFile: ", err)
+		} else {
+			cLog.LogFileName = logFile
+			cLog.AllowOnConsole = config.TaskDistrConfig.AllowOnConsole
+		}
 	}
 }

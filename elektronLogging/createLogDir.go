@@ -20,6 +20,7 @@ func (logD *logDirectory) createLogDir(prefix string, startTime time.Time) {
 
 	if logD.name == "" {
 		// Creating directory to store all logs for this run
+		// directory name format - 2019-November-21_14-33-0
 		logDirName := strings.Join([]string{"./", prefix, strconv.Itoa(startTime.Year())}, "")
 		logDirName = strings.Join([]string{logDirName, startTime.Month().String(), strconv.Itoa(startTime.Day())}, "-")
 		logDirName = strings.Join([]string{logDirName, strconv.Itoa(startTime.Hour())}, "_")

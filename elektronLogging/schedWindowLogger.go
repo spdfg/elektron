@@ -18,7 +18,7 @@ func NewSchedWindowLogger(logType int, prefix string) *SchedWindowLogger {
 	return sLog
 }
 
-func (sLog *SchedWindowLogger) Log(logType int, level log.Level, logData log.Fields, message string) {
+func (sLog SchedWindowLogger) Log(logType int, level log.Level, logData log.Fields, message string) {
 	if sLog.Type == logType {
 
 		logger.SetLevel(level)
@@ -38,15 +38,14 @@ func (sLog *SchedWindowLogger) Log(logType int, level log.Level, logData log.Fie
 
 func (sLog *SchedWindowLogger) SetLogFile(prefix string) {
 
-	schedWindowLogPrefix := strings.Join([]string{prefix, config.SchedWindowConfig.FilenameExtension}, "")
+	filename := strings.Join([]string{prefix, config.SchedWindowConfig.FilenameExtension}, "")
 	dirName := logDir.getDirName()
 	if dirName != "" {
-		schedWindowLogPrefix = filepath.Join(dirName, schedWindowLogPrefix)
-	}
-	if logFile, err := os.Create(schedWindowLogPrefix); err != nil {
-		log.Fatal("Unable to create logFile: ", err)
-	} else {
-		sLog.LogFileName = logFile
-		sLog.AllowOnConsole = config.SchedWindowConfig.AllowOnConsole
+		if logFile, err := os.Create(filepath.Join(dirName, filename)); err != nil {
+			log.Fatal("Unable to create logFile: ", err)
+		} else {
+			sLog.LogFileName = logFile
+			sLog.AllowOnConsole = config.SchedWindowConfig.AllowOnConsole
+		}
 	}
 }
