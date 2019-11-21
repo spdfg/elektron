@@ -24,7 +24,7 @@ import (
 	"syscall"
 	"time"
 
-	log "github.com/sirupsen/logrus"
+	elekLog "github.com/sirupsen/logrus"
 	"github.com/spdfg/elektron/elektronLogging"
 	elekLogT "github.com/spdfg/elektron/elektronLogging/types"
 )
@@ -36,7 +36,7 @@ func Start(quit chan struct{}, logging *bool, pcpConfigFile string) {
 
 	pipe, err := cmd.StdoutPipe()
 	if err != nil {
-		log.Fatal(err)
+		elekLog.Fatal(err)
 	}
 	//cmd.Stdout = stdout
 
@@ -48,8 +48,8 @@ func Start(quit chan struct{}, logging *bool, pcpConfigFile string) {
 
 		// Write to logfile
 		elektronLogging.ElektronLog.Log(elekLogT.PCP,
-			log.InfoLevel,
-			log.Fields{}, scanner.Text())
+			elekLog.InfoLevel,
+			elekLog.Fields{}, scanner.Text())
 
 		// Throw away first set of results
 		scanner.Scan()
@@ -61,8 +61,8 @@ func Start(quit chan struct{}, logging *bool, pcpConfigFile string) {
 
 			if *logging {
 				elektronLogging.ElektronLog.Log(elekLogT.PCP,
-					log.InfoLevel,
-					log.Fields{}, text)
+					elekLog.InfoLevel,
+					elekLog.Fields{}, text)
 			}
 
 			seconds++
@@ -70,11 +70,11 @@ func Start(quit chan struct{}, logging *bool, pcpConfigFile string) {
 	}(logging)
 
 	elektronLogging.ElektronLog.Log(elekLogT.GENERAL,
-		log.InfoLevel,
-		log.Fields{}, "PCP logging started")
+		elekLog.InfoLevel,
+		elekLog.Fields{}, "PCP logging started")
 
 	if err := cmd.Start(); err != nil {
-		log.Fatal(err)
+		elekLog.Fatal(err)
 	}
 
 	pgid, err := syscall.Getpgid(cmd.Process.Pid)
@@ -82,8 +82,8 @@ func Start(quit chan struct{}, logging *bool, pcpConfigFile string) {
 	select {
 	case <-quit:
 		elektronLogging.ElektronLog.Log(elekLogT.GENERAL,
-			log.InfoLevel,
-			log.Fields{}, "Stopping PCP logging in 5 seconds")
+			elekLog.InfoLevel,
+			elekLog.Fields{}, "Stopping PCP logging in 5 seconds")
 		time.Sleep(5 * time.Second)
 
 		// http://stackoverflow.com/questions/22470193/why-wont-go-kill-a-child-process-correctly

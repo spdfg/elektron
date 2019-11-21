@@ -30,7 +30,7 @@ import (
 	"syscall"
 	"time"
 
-	log "github.com/sirupsen/logrus"
+	elekLog "github.com/sirupsen/logrus"
 	"github.com/spdfg/elektron/constants"
 	"github.com/spdfg/elektron/elektronLogging"
 	elekLogTypes "github.com/spdfg/elektron/elektronLogging/types"
@@ -57,13 +57,13 @@ func StartPCPLogAndProgressiveExtremaCap(quit chan struct{}, logging *bool, hiTh
 
 	if hiThreshold < loThreshold {
 		elektronLogging.ElektronLog.Log(elekLogTypes.GENERAL,
-			log.InfoLevel,
-			log.Fields{}, "High threshold is lower than low threshold!")
+			elekLog.InfoLevel,
+			elekLog.Fields{}, "High threshold is lower than low threshold!")
 	}
 
 	pipe, err := cmd.StdoutPipe()
 	if err != nil {
-		log.Fatal(err)
+		elekLog.Fatal(err)
 	}
 	//cmd.Stdout = stdout
 
@@ -75,8 +75,8 @@ func StartPCPLogAndProgressiveExtremaCap(quit chan struct{}, logging *bool, hiTh
 
 		// Write to logfile
 		elektronLogging.ElektronLog.Log(elekLogTypes.PCP,
-			log.InfoLevel,
-			log.Fields{}, scanner.Text())
+			elekLog.InfoLevel,
+			elekLog.Fields{}, scanner.Text())
 
 		headers := strings.Split(scanner.Text(), ",")
 
@@ -116,14 +116,14 @@ func StartPCPLogAndProgressiveExtremaCap(quit chan struct{}, logging *bool, hiTh
 		for scanner.Scan() {
 			if *logging {
 				elektronLogging.ElektronLog.Log(elekLogTypes.GENERAL,
-					log.InfoLevel,
-					log.Fields{}, "Logging PCP...")
+					elekLog.InfoLevel,
+					elekLog.Fields{}, "Logging PCP...")
 				split := strings.Split(scanner.Text(), ",")
 
 				text := scanner.Text()
 				elektronLogging.ElektronLog.Log(elekLogTypes.PCP,
-					log.InfoLevel,
-					log.Fields{}, text)
+					elekLog.InfoLevel,
+					elekLog.Fields{}, text)
 
 				totalPower := 0.0
 				for _, powerIndex := range powerIndexes {
@@ -135,8 +135,8 @@ func StartPCPLogAndProgressiveExtremaCap(quit chan struct{}, logging *bool, hiTh
 					powerHistories[host] = powerHistories[host].Next()
 
 					elektronLogging.ElektronLog.Log(elekLogTypes.GENERAL,
-						log.InfoLevel,
-						log.Fields{"Host": fmt.Sprintf("%s", indexToHost[powerIndex]), "Power": fmt.Sprintf("%f", (power * pcp.RAPLUnits))},
+						elekLog.InfoLevel,
+						elekLog.Fields{"Host": fmt.Sprintf("%s", indexToHost[powerIndex]), "Power": fmt.Sprintf("%f", (power * pcp.RAPLUnits))},
 						"")
 					totalPower += power
 				}
@@ -148,23 +148,23 @@ func StartPCPLogAndProgressiveExtremaCap(quit chan struct{}, logging *bool, hiTh
 				clusterMean := pcp.AverageClusterPowerHistory(clusterPowerHist)
 
 				elektronLogging.ElektronLog.Log(elekLogTypes.GENERAL,
-					log.InfoLevel,
-					log.Fields{"Total power": fmt.Sprintf("%f %d", clusterPower, clusterPowerHist.Len()),
+					elekLog.InfoLevel,
+					elekLog.Fields{"Total power": fmt.Sprintf("%f %d", clusterPower, clusterPowerHist.Len()),
 						"Sec Avg": fmt.Sprintf("%f", clusterMean)},
 					"")
 
 				if clusterMean >= hiThreshold {
 					elektronLogging.ElektronLog.Log(elekLogTypes.GENERAL,
-						log.InfoLevel,
-						log.Fields{}, "Need to cap a node")
+						elekLog.InfoLevel,
+						elekLog.Fields{}, "Need to cap a node")
 
 					elektronLogging.ElektronLog.Log(elekLogTypes.GENERAL,
-						log.InfoLevel,
-						log.Fields{"Cap values of capped victims": fmt.Sprintf("%v", cappedVictims)}, "")
+						elekLog.InfoLevel,
+						elekLog.Fields{"Cap values of capped victims": fmt.Sprintf("%v", cappedVictims)}, "")
 
 					elektronLogging.ElektronLog.Log(elekLogTypes.GENERAL,
-						log.InfoLevel,
-						log.Fields{"Cap values of victims to uncap": fmt.Sprintf("%v", orderCappedVictims)}, "")
+						elekLog.InfoLevel,
+						elekLog.Fields{"Cap values of victims to uncap": fmt.Sprintf("%v", orderCappedVictims)}, "")
 					// Create statics for all victims and choose one to cap
 					victims := make([]pcp.Victim, 0, 8)
 
@@ -193,13 +193,13 @@ func StartPCPLogAndProgressiveExtremaCap(quit chan struct{}, logging *bool, hiTh
 							if err := rapl.Cap(victims[i].Host, "rapl", 50.0); err != nil {
 
 								elektronLogging.ElektronLog.Log(elekLogTypes.ERROR,
-									log.ErrorLevel,
-									log.Fields{"Error capping host": fmt.Sprintf("%s", victims[i].Host)}, "")
+									elekLog.ErrorLevel,
+									elekLog.Fields{"Error capping host": fmt.Sprintf("%s", victims[i].Host)}, "")
 							} else {
 
 								elektronLogging.ElektronLog.Log(elekLogTypes.GENERAL,
-									log.InfoLevel,
-									log.Fields{}, fmt.Sprintf("Capped host[%s] at %f", victims[i].Host, 50.0))
+									elekLog.InfoLevel,
+									elekLog.Fields{}, fmt.Sprintf("Capped host[%s] at %f", victims[i].Host, 50.0))
 								// Keeping track of this victim and it's cap value
 								cappedVictims[victims[i].Host] = 50.0
 								newVictimFound = true
@@ -224,13 +224,13 @@ func StartPCPLogAndProgressiveExtremaCap(quit chan struct{}, logging *bool, hiTh
 								if err := rapl.Cap(alreadyCappedHosts[i], "rapl", newCapValue); err != nil {
 
 									elektronLogging.ElektronLog.Log(elekLogTypes.ERROR,
-										log.ErrorLevel,
-										log.Fields{"Error capping host": fmt.Sprintf("%s", alreadyCappedHosts[i])}, "")
+										elekLog.ErrorLevel,
+										elekLog.Fields{"Error capping host": fmt.Sprintf("%s", alreadyCappedHosts[i])}, "")
 								} else {
 									// Successful cap
 									elektronLogging.ElektronLog.Log(elekLogTypes.GENERAL,
-										log.InfoLevel,
-										log.Fields{}, fmt.Sprintf("Capped host[%s] at %f", alreadyCappedHosts[i], newCapValue))
+										elekLog.InfoLevel,
+										elekLog.Fields{}, fmt.Sprintf("Capped host[%s] at %f", alreadyCappedHosts[i], newCapValue))
 									// Checking whether this victim can be capped further
 									if newCapValue <= constants.LowerCapLimit {
 										// Deleting victim from cappedVictims.
@@ -254,22 +254,22 @@ func StartPCPLogAndProgressiveExtremaCap(quit chan struct{}, logging *bool, hiTh
 						}
 						if !canCapAlreadyCappedVictim {
 							elektronLogging.ElektronLog.Log(elekLogTypes.GENERAL,
-								log.InfoLevel,
-								log.Fields{}, "No Victim left to cap")
+								elekLog.InfoLevel,
+								elekLog.Fields{}, "No Victim left to cap")
 						}
 					}
 
 				} else if clusterMean < loThreshold {
 
 					elektronLogging.ElektronLog.Log(elekLogTypes.GENERAL,
-						log.InfoLevel,
-						log.Fields{}, "Need to uncap a node")
+						elekLog.InfoLevel,
+						elekLog.Fields{}, "Need to uncap a node")
 					elektronLogging.ElektronLog.Log(elekLogTypes.GENERAL,
-						log.InfoLevel,
-						log.Fields{"Cap values of capped victims": fmt.Sprintf("%v", cappedVictims)}, "")
+						elekLog.InfoLevel,
+						elekLog.Fields{"Cap values of capped victims": fmt.Sprintf("%v", cappedVictims)}, "")
 					elektronLogging.ElektronLog.Log(elekLogTypes.GENERAL,
-						log.InfoLevel,
-						log.Fields{"Cap values of victims to uncap": fmt.Sprintf("%v", orderCappedVictims)}, "")
+						elekLog.InfoLevel,
+						elekLog.Fields{"Cap values of victims to uncap": fmt.Sprintf("%v", orderCappedVictims)}, "")
 					if len(orderCapped) > 0 {
 						// We pick the host that is capped the most to uncap.
 						orderCappedToSort := utilities.GetPairList(orderCappedVictims)
@@ -281,13 +281,13 @@ func StartPCPLogAndProgressiveExtremaCap(quit chan struct{}, logging *bool, hiTh
 						if err := rapl.Cap(hostToUncap, "rapl", newUncapValue); err != nil {
 
 							elektronLogging.ElektronLog.Log(elekLogTypes.ERROR,
-								log.ErrorLevel,
-								log.Fields{"Error uncapping host": fmt.Sprintf("%s", hostToUncap)}, "")
+								elekLog.ErrorLevel,
+								elekLog.Fields{"Error uncapping host": fmt.Sprintf("%s", hostToUncap)}, "")
 						} else {
 							// Successful uncap
 							elektronLogging.ElektronLog.Log(elekLogTypes.GENERAL,
-								log.InfoLevel,
-								log.Fields{}, fmt.Sprintf("Uncapped host[%s] to %f", hostToUncap, newUncapValue))
+								elekLog.InfoLevel,
+								elekLog.Fields{}, fmt.Sprintf("Uncapped host[%s] to %f", hostToUncap, newUncapValue))
 							// Can we uncap this host further. If not, then we remove its entry from orderCapped
 							if newUncapValue >= 100.0 { // can compare using ==
 								// Deleting entry from orderCapped
@@ -309,8 +309,8 @@ func StartPCPLogAndProgressiveExtremaCap(quit chan struct{}, logging *bool, hiTh
 						}
 					} else {
 						elektronLogging.ElektronLog.Log(elekLogTypes.GENERAL,
-							log.InfoLevel,
-							log.Fields{}, "No host staged for Uncapped")
+							elekLog.InfoLevel,
+							elekLog.Fields{}, "No host staged for Uncapped")
 					}
 				}
 			}
@@ -320,10 +320,10 @@ func StartPCPLogAndProgressiveExtremaCap(quit chan struct{}, logging *bool, hiTh
 	}(logging, hiThreshold, loThreshold)
 
 	elektronLogging.ElektronLog.Log(elekLogTypes.GENERAL,
-		log.InfoLevel,
-		log.Fields{}, "PCP logging started")
+		elekLog.InfoLevel,
+		elekLog.Fields{}, "PCP logging started")
 	if err := cmd.Start(); err != nil {
-		log.Fatal(err)
+		elekLog.Fatal(err)
 	}
 
 	pgid, err := syscall.Getpgid(cmd.Process.Pid)
@@ -331,8 +331,8 @@ func StartPCPLogAndProgressiveExtremaCap(quit chan struct{}, logging *bool, hiTh
 	select {
 	case <-quit:
 		elektronLogging.ElektronLog.Log(elekLogTypes.GENERAL,
-			log.InfoLevel,
-			log.Fields{}, "Stopping PCP logging in 5 seconds")
+			elekLog.InfoLevel,
+			elekLog.Fields{}, "Stopping PCP logging in 5 seconds")
 		time.Sleep(5 * time.Second)
 
 		// http://stackoverflow.com/questions/22470193/why-wont-go-kill-a-child-process-correctly

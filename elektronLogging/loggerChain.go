@@ -1,13 +1,13 @@
 package elektronLogging
 
 import (
-	log "github.com/sirupsen/logrus"
+	elekLog "github.com/sirupsen/logrus"
 	"os"
 )
 
 type Logger interface {
 	SetNext(logType Logger)
-	Log(logType int, level log.Level, logData log.Fields, message string)
+	Log(logType int, level elekLog.Level, logData elekLog.Fields, message string)
 	SetLogFile(prefix string)
 }
 type LoggerImpl struct {
@@ -21,7 +21,7 @@ func (l *LoggerImpl) SetNext(logType Logger) {
 	l.next = logType
 }
 
-func (l *LoggerImpl) Log(logType int, level log.Level, logData log.Fields, message string) {
+func (l *LoggerImpl) Log(logType int, level elekLog.Level, logData elekLog.Fields, message string) {
 	if l.next != nil {
 		l.next.Log(logType, level, logData, message)
 	}

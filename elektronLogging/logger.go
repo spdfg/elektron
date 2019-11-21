@@ -1,7 +1,7 @@
 package elektronLogging
 
 import (
-	log "github.com/sirupsen/logrus"
+	elekLog "github.com/sirupsen/logrus"
 	. "github.com/spdfg/elektron/elektronLogging/types"
 	"os"
 	"strings"
@@ -9,7 +9,7 @@ import (
 )
 
 var config LoggerConfig
-var logger *log.Logger
+var logger *elekLog.Logger
 var formatter ElektronFormatter
 var ElektronLog *LoggerImpl
 var logDir logDirectory
@@ -19,16 +19,16 @@ func BuildLogger(prefix string) {
 	// read configuration from yaml
 	config.GetConfig()
 
-	// create the log directory
+	// create the elekLog directory
 	startTime := time.Now()
 	formatter.TimestampFormat = "2006-01-02 15:04:05"
 	formattedStartTime := startTime.Format("20060102150405")
-   
+
 	logDir.createLogDir(prefix, startTime)
-     prefix = strings.Join([]string{prefix, formattedStartTime}, "_")
-	logger = &log.Logger{
+	prefix = strings.Join([]string{prefix, formattedStartTime}, "_")
+	logger = &elekLog.Logger{
 		Out:       os.Stderr,
-		Level:     log.DebugLevel,
+		Level:     elekLog.DebugLevel,
 		Formatter: &formatter,
 	}
 

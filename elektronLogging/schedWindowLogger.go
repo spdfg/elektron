@@ -1,7 +1,7 @@
 package elektronLogging
 
 import (
-	log "github.com/sirupsen/logrus"
+	elekLog "github.com/sirupsen/logrus"
 	"os"
 	"strings"
 )
@@ -17,7 +17,7 @@ func NewSchedWindowLogger(logType int, prefix string) *SchedWindowLogger {
 	return sLog
 }
 
-func (sLog *SchedWindowLogger) Log(logType int, level log.Level, logData log.Fields, message string) {
+func (sLog *SchedWindowLogger) Log(logType int, level elekLog.Level, logData elekLog.Fields, message string) {
 	if sLog.Type == logType {
 
 		logger.SetLevel(level)
@@ -38,12 +38,12 @@ func (sLog *SchedWindowLogger) Log(logType int, level log.Level, logData log.Fie
 func (sLog *SchedWindowLogger) SetLogFile(prefix string) {
 
 	schedWindowLogPrefix := strings.Join([]string{prefix, config.SchedWindowConfig.FilenameExtension}, "")
-    dirName := logDir.getDirName()
+	dirName := logDir.getDirName()
 	if dirName != "" {
 		schedWindowLogPrefix = strings.Join([]string{dirName, schedWindowLogPrefix}, "/")
 	}
 	if logFile, err := os.Create(schedWindowLogPrefix); err != nil {
-		log.Fatal("Unable to create logFile: ", err)
+		elekLog.Fatal("Unable to create logFile: ", err)
 	} else {
 		sLog.LogFileName = logFile
 		sLog.AllowOnConsole = config.SchedWindowConfig.AllowOnConsole
