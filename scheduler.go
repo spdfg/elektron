@@ -208,7 +208,7 @@ func main() {
 	}
 	tasks, err := def.TasksFromJSON(*tasksFile)
 	if err != nil || len(tasks) == 0 {
-		log.Fatal("Invalid tasks specification file provided.")
+		log.Fatal(err)
 	}
 	schedOptions = append(schedOptions, schedulers.WithTasks(tasks))
 

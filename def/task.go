@@ -20,6 +20,7 @@ package def
 
 import (
 	"encoding/json"
+	"github.com/spdfg/elektron/utilities/validation"
 	"os"
 
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
@@ -53,6 +54,18 @@ func TasksFromJSON(uri string) ([]Task, error) {
 	err = json.NewDecoder(file).Decode(&tasks)
 	if err != nil {
 		return nil, errors.Wrap(err, "Error unmarshalling")
+	}
+
+	// Validating task definitions.
+	for _, task := range tasks {
+		err := validation.Validate("invalid task definition",
+			ValidatorForTask(task,
+				withNameValidator(),
+				withImageValidator(),
+				withResourceValidator()))
+		if err != nil {
+			return tasks, err
+		}
 	}
 
 	initTaskResourceRequirements(tasks)
