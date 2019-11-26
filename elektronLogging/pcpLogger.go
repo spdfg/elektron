@@ -20,33 +20,36 @@ func NewPCPLogger(logType int, prefix string) *PCPLogger {
 }
 
 func (pLog PCPLogger) Log(logType int, level log.Level, logData log.Fields, message string) {
-	if pLog.Type == logType {
+	if config.PCPConfig.Enabled {
+		if pLog.Type == logType {
 
-		logger.SetLevel(level)
+			logger.SetLevel(level)
 
-		if pLog.AllowOnConsole {
-			logger.SetOutput(os.Stdout)
+			if pLog.AllowOnConsole {
+				logger.SetOutput(os.Stdout)
+				logger.WithFields(logData).Println(message)
+			}
+
+			logger.SetOutput(pLog.LogFile)
 			logger.WithFields(logData).Println(message)
 		}
-
-		logger.SetOutput(pLog.LogFile)
-		logger.WithFields(logData).Println(message)
-	}
-	if pLog.next != nil {
-		pLog.next.Log(logType, level, logData, message)
+		if pLog.next != nil {
+			pLog.next.Log(logType, level, logData, message)
+		}
 	}
 }
 
 func (pLog *PCPLogger) CreateLogFile(prefix string) {
-
-	filename := strings.Join([]string{prefix, config.PCPConfig.FilenameExtension}, "")
-	dirName := logDir.getDirName()
-	if dirName != "" {
-		if logFile, err := os.Create(filepath.Join(dirName, filename)); err != nil {
-			log.Fatal("Unable to create logFile: ", err)
-		} else {
-			pLog.LogFile = logFile
-			pLog.AllowOnConsole = config.PCPConfig.AllowOnConsole
+	if config.PCPConfig.Enabled {
+		filename := strings.Join([]string{prefix, config.PCPConfig.FilenameExtension}, "")
+		dirName := logDir.getDirName()
+		if dirName != "" {
+			if logFile, err := os.Create(filepath.Join(dirName, filename)); err != nil {
+				log.Fatal("Unable to create logFile: ", err)
+			} else {
+				pLog.LogFile = logFile
+				pLog.AllowOnConsole = config.PCPConfig.AllowOnConsole
+			}
 		}
 	}
 }

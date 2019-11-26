@@ -20,33 +20,36 @@ func NewSchedPolicySwitchLogger(logType int, prefix string) *SchedPolicySwitchLo
 }
 
 func (sLog SchedPolicySwitchLogger) Log(logType int, level log.Level, logData log.Fields, message string) {
-	if sLog.Type == logType {
+	if config.SPSConfig.Enabled {
+		if sLog.Type == logType {
 
-		logger.SetLevel(level)
+			logger.SetLevel(level)
 
-		if sLog.AllowOnConsole {
-			logger.SetOutput(os.Stdout)
+			if sLog.AllowOnConsole {
+				logger.SetOutput(os.Stdout)
+				logger.WithFields(logData).Println(message)
+			}
+
+			logger.SetOutput(sLog.LogFile)
 			logger.WithFields(logData).Println(message)
 		}
-
-		logger.SetOutput(sLog.LogFile)
-		logger.WithFields(logData).Println(message)
-	}
-	if sLog.next != nil {
-		sLog.next.Log(logType, level, logData, message)
+		if sLog.next != nil {
+			sLog.next.Log(logType, level, logData, message)
+		}
 	}
 }
 
 func (sLog *SchedPolicySwitchLogger) CreateLogFile(prefix string) {
-
-	filename := strings.Join([]string{prefix, config.SPSConfig.FilenameExtension}, "")
-	dirName := logDir.getDirName()
-	if dirName != "" {
-		if logFile, err := os.Create(filepath.Join(dirName, filename)); err != nil {
-			log.Fatal("Unable to create logFile: ", err)
-		} else {
-			sLog.LogFile = logFile
-			sLog.AllowOnConsole = config.SPSConfig.AllowOnConsole
+	if config.SPSConfig.Enabled {
+		filename := strings.Join([]string{prefix, config.SPSConfig.FilenameExtension}, "")
+		dirName := logDir.getDirName()
+		if dirName != "" {
+			if logFile, err := os.Create(filepath.Join(dirName, filename)); err != nil {
+				log.Fatal("Unable to create logFile: ", err)
+			} else {
+				sLog.LogFile = logFile
+				sLog.AllowOnConsole = config.SPSConfig.AllowOnConsole
+			}
 		}
 	}
 }
