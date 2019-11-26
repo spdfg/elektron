@@ -24,17 +24,6 @@ import "github.com/pkg/errors"
 // Validator is a function that performs some sort of validation.
 // To keep things generic, this function does not accept any arguments.
 // In practice, a validator could be a closure.
-// Assume we are validating the below struct.
-// 	type A struct { value string }
-// One could then create a validator for the above struct like this:
-// 	func AValidator(a A) Validator {
-// 		return func() error {
-// 			if a.value == "" {
-// 				return errors.New("invalid value")
-//			}
-//			return nil
-// 		}
-//	}
 type Validator func() error
 
 // Validate a list of validators.
