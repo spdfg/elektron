@@ -3,8 +3,9 @@ package elektronLogging
 import (
 	"bytes"
 	"github.com/fatih/color"
-	log "github.com/sirupsen/logrus"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type ElektronFormatter struct {

@@ -52,7 +52,7 @@ func (tc TasksToClassify) taskObservationCalculator(task Task) []float64 {
 	} else if task.Watts != 0.0 {
 		return []float64{task.Watts}
 	} else {
-		elekLog.ElektronLog.Log(elekLogTypes.CONSOLE, log.FatalLevel,
+		elekLog.ElektronLogger.Log(elekLogTypes.CONSOLE, log.FatalLevel,
 			log.Fields{}, "Unable to classify tasks. Missing Watts or ClassToWatts attribute in workload")
 		return []float64{0.0} // Won't reach here.
 	}
@@ -108,7 +108,7 @@ func clusterSizeAvgMMMPU(tasks []Task, taskObservation func(task Task) []float64
 			} else {
 				// skip this value
 				// there is an error in the task config.
-				elekLog.ElektronLog.Log(elekLogTypes.CONSOLE, log.ErrorLevel,
+				elekLog.ElektronLogger.Log(elekLogTypes.CONSOLE, log.ErrorLevel,
 					log.Fields{}, err.Error())
 			}
 		} else {

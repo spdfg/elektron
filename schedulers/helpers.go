@@ -20,6 +20,7 @@ package schedulers
 
 import (
 	"fmt"
+
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 	sched "github.com/mesos/mesos-go/api/v0/scheduler"
 	"github.com/pkg/errors"
@@ -35,10 +36,10 @@ import (
 func coLocated(tasks map[string]bool, s BaseScheduler) {
 
 	for _, task := range tasks {
-		elekLog.ElektronLog.Log(elekLogTypes.CONSOLE, log.InfoLevel, log.Fields{"Task": task}, "")
+		elekLog.ElektronLogger.Log(elekLogTypes.CONSOLE, log.InfoLevel, log.Fields{"Task": task}, "")
 	}
 
-	elekLog.ElektronLog.Log(elekLogTypes.CONSOLE, log.InfoLevel, log.Fields{}, "---------------------")
+	elekLog.ElektronLogger.Log(elekLogTypes.CONSOLE, log.InfoLevel, log.Fields{}, "---------------------")
 }
 
 // Get the powerClass of the given hostname.

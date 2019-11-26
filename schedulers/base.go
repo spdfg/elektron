@@ -250,10 +250,10 @@ func (s *BaseScheduler) StatusUpdate(driver sched.SchedulerDriver, status *mesos
 
 func (s *BaseScheduler) LogTaskStarting(ts *def.Task, offer *mesos.Offer) {
 	if ts == nil {
-		elekLog.ElektronLog.Log(elekLogTypes.CONSOLE, log.InfoLevel,
+		elekLog.ElektronLogger.Log(elekLogTypes.CONSOLE, log.InfoLevel,
 			log.Fields{"host": fmt.Sprintf("%s", offer.GetHostname())}, "TASKS   STARTING...")
 	} else {
-		elekLog.ElektronLog.Log(elekLogTypes.CONSOLE,
+		elekLog.ElektronLogger.Log(elekLogTypes.CONSOLE,
 			log.InfoLevel,
 			log.Fields{"task": fmt.Sprintf("%s", ts.Name),
 				"Instance": fmt.Sprintf("%d", *ts.Instances), "host": fmt.Sprintf("%s", offer.GetHostname())},
@@ -262,25 +262,25 @@ func (s *BaseScheduler) LogTaskStarting(ts *def.Task, offer *mesos.Offer) {
 }
 
 func (s *BaseScheduler) LogTaskWattsConsideration(ts def.Task, host string, wattsToConsider float64) {
-	elekLog.ElektronLog.Log(elekLogTypes.CONSOLE,
+	elekLog.ElektronLogger.Log(elekLogTypes.CONSOLE,
 		log.InfoLevel,
 		log.Fields{"task": ts.Name, "host": host, "Watts": fmt.Sprintf("%f", wattsToConsider)}, "Watts considered for ")
 }
 
 func (s *BaseScheduler) LogOffersReceived(offers []*mesos.Offer) {
-	elekLog.ElektronLog.Log(elekLogTypes.CONSOLE,
+	elekLog.ElektronLogger.Log(elekLogTypes.CONSOLE,
 		log.InfoLevel,
 		log.Fields{"Resource offers received": fmt.Sprintf("%d", len(offers))}, "")
 }
 
 func (s *BaseScheduler) LogNoPendingTasksDeclineOffers(offer *mesos.Offer) {
-	elekLog.ElektronLog.Log(elekLogTypes.CONSOLE,
+	elekLog.ElektronLogger.Log(elekLogTypes.CONSOLE,
 		log.WarnLevel,
 		log.Fields{"DECLINING OFFER for host": fmt.Sprintf("%s", offer.GetHostname())}, "No tasks left to schedule ")
 }
 
 func (s *BaseScheduler) LogNumberOfRunningTasks() {
-	elekLog.ElektronLog.Log(elekLogTypes.CONSOLE,
+	elekLog.ElektronLogger.Log(elekLogTypes.CONSOLE,
 		log.InfoLevel,
 		log.Fields{"Number of tasks still Running": fmt.Sprintf("%d", s.tasksRunning)}, "")
 }
@@ -292,81 +292,81 @@ func (s *BaseScheduler) LogCoLocatedTasks(slaveID string) {
 		buffer.WriteString(fmt.Sprintln(taskName))
 	}
 	s.TasksRunningMutex.Unlock()
-	elekLog.ElektronLog.Log(elekLogTypes.CONSOLE,
+	elekLog.ElektronLogger.Log(elekLogTypes.CONSOLE,
 		log.InfoLevel,
 		log.Fields{"Colocated with": fmt.Sprintf("%s", buffer.String())}, "")
 }
 
 func (s *BaseScheduler) LogSchedTrace(taskToSchedule *mesos.TaskInfo, offer *mesos.Offer) {
-	elekLog.ElektronLog.Log(elekLogTypes.SCHED_TRACE,
+	elekLog.ElektronLogger.Log(elekLogTypes.SCHED_TRACE,
 		log.InfoLevel,
 		log.Fields{offer.GetHostname(): fmt.Sprintf("%s", taskToSchedule.GetTaskId().GetValue())}, "")
 }
 
 func (s *BaseScheduler) LogTerminateScheduler() {
-	elekLog.ElektronLog.Log(elekLogTypes.CONSOLE, log.InfoLevel, log.Fields{}, "Done scheduling all tasks!")
+	elekLog.ElektronLogger.Log(elekLogTypes.CONSOLE, log.InfoLevel, log.Fields{}, "Done scheduling all tasks!")
 }
 
 func (s *BaseScheduler) LogInsufficientResourcesDeclineOffer(offer *mesos.Offer,
 	offerResources ...interface{}) {
 	buffer := bytes.Buffer{}
 	buffer.WriteString(fmt.Sprintf("<CPU: %f, RAM: %f, Watts: %f>", offerResources...))
-	elekLog.ElektronLog.Log(elekLogTypes.CONSOLE,
+	elekLog.ElektronLogger.Log(elekLogTypes.CONSOLE,
 		log.WarnLevel,
 		log.Fields{"Offer Resources": fmt.Sprintf("%s", buffer.String())}, "DECLINING OFFER... Offer has insufficient resources to launch a task")
 }
 
 func (s *BaseScheduler) LogOfferRescinded(offerID *mesos.OfferID) {
-	elekLog.ElektronLog.Log(elekLogTypes.CONSOLE,
+	elekLog.ElektronLogger.Log(elekLogTypes.CONSOLE,
 		log.ErrorLevel,
 		log.Fields{"OfferID": fmt.Sprintf("%s", offerID)}, "OFFER RESCINDED")
 }
 
 func (s *BaseScheduler) LogSlaveLost(slaveID *mesos.SlaveID) {
-	elekLog.ElektronLog.Log(elekLogTypes.CONSOLE,
+	elekLog.ElektronLogger.Log(elekLogTypes.CONSOLE,
 		log.ErrorLevel,
 		log.Fields{"SlaveID": fmt.Sprintf("%s", slaveID)}, "SLAVE LOST")
 }
 
 func (s *BaseScheduler) LogExecutorLost(executorID *mesos.ExecutorID, slaveID *mesos.SlaveID) {
-	elekLog.ElektronLog.Log(elekLogTypes.CONSOLE,
+	elekLog.ElektronLogger.Log(elekLogTypes.CONSOLE,
 		log.ErrorLevel,
 		log.Fields{"ExecutorID": fmt.Sprintf("%s", executorID), "SlaveID": fmt.Sprintf("%s", slaveID)}, "EXECUTOR LOST")
 }
 
 func (s *BaseScheduler) LogFrameworkMessage(executorID *mesos.ExecutorID,
 	slaveID *mesos.SlaveID, message string) {
-	elekLog.ElektronLog.Log(elekLogTypes.CONSOLE,
+	elekLog.ElektronLogger.Log(elekLogTypes.CONSOLE,
 		log.InfoLevel,
 		log.Fields{"Received Framework message from executor": executorID}, message)
 }
 
 func (s *BaseScheduler) LogMesosError(err string) {
-	elekLog.ElektronLog.Log(elekLogTypes.CONSOLE,
+	elekLog.ElektronLogger.Log(elekLogTypes.CONSOLE,
 		log.ErrorLevel,
 		log.Fields{"MESOS CONSOLE": fmt.Sprintf("%v", err)}, "")
 }
 
 func (s *BaseScheduler) LogElectronError(err error) {
-	elekLog.ElektronLog.Log(elekLogTypes.CONSOLE,
+	elekLog.ElektronLogger.Log(elekLogTypes.CONSOLE,
 		log.ErrorLevel, log.Fields{"ELECTRON CONSOLE": fmt.Sprintf("%v", err)}, "")
 }
 
 func (s *BaseScheduler) LogFrameworkRegistered(frameworkID *mesos.FrameworkID,
 	masterInfo *mesos.MasterInfo) {
-	elekLog.ElektronLog.Log(elekLogTypes.CONSOLE,
+	elekLog.ElektronLogger.Log(elekLogTypes.CONSOLE,
 		log.InfoLevel,
 		log.Fields{"frameworkID": fmt.Sprintf("%s", frameworkID), "master": fmt.Sprintf("%v", masterInfo)}, "FRAMEWORK REGISTERED!")
 }
 
 func (s *BaseScheduler) LogFrameworkReregistered(masterInfo *mesos.MasterInfo) {
-	elekLog.ElektronLog.Log(elekLogTypes.CONSOLE,
+	elekLog.ElektronLogger.Log(elekLogTypes.CONSOLE,
 		log.InfoLevel,
 		log.Fields{"master": fmt.Sprintf("%v", masterInfo)}, "Framework re-registered")
 }
 
 func (s *BaseScheduler) LogDisconnected() {
-	elekLog.ElektronLog.Log(elekLogTypes.CONSOLE, log.WarnLevel, log.Fields{}, "Framework disconnected with master")
+	elekLog.ElektronLogger.Log(elekLogTypes.CONSOLE, log.WarnLevel, log.Fields{}, "Framework disconnected with master")
 }
 
 func (s *BaseScheduler) LogTaskStatusUpdate(status *mesos.TaskStatus) {
@@ -378,13 +378,13 @@ func (s *BaseScheduler) LogTaskStatusUpdate(status *mesos.TaskStatus) {
 	default:
 		level = log.InfoLevel
 	}
-	elekLog.ElektronLog.Log(elekLogTypes.CONSOLE,
+	elekLog.ElektronLogger.Log(elekLogTypes.CONSOLE,
 		level, log.Fields{"task": fmt.Sprintf("%s", *status.TaskId.Value), "state": NameFor(status.State)}, "Task Status received")
 }
 
 func (s *BaseScheduler) LogSchedPolicySwitch(name string, nextPolicy SchedPolicyState) {
 	logSPS := func() {
-		elekLog.ElektronLog.Log(elekLogTypes.SPS, log.InfoLevel, log.Fields{"Name": name}, "")
+		elekLog.ElektronLogger.Log(elekLogTypes.SPS, log.InfoLevel, log.Fields{"Name": name}, "")
 	}
 	if s.hasReceivedResourceOffers && (s.curSchedPolicy != nextPolicy) {
 		logSPS()
@@ -393,14 +393,14 @@ func (s *BaseScheduler) LogSchedPolicySwitch(name string, nextPolicy SchedPolicy
 	}
 	// Logging the size of the scheduling window and the scheduling policy
 	// 	that is going to schedule the tasks in the scheduling window.
-	elekLog.ElektronLog.Log(elekLogTypes.SCHED_WINDOW,
+	elekLog.ElektronLogger.Log(elekLogTypes.SCHED_WINDOW,
 		log.InfoLevel,
 		log.Fields{"Window size": fmt.Sprintf("%d", s.schedWindowSize), "Name": name}, "")
 }
 
 func (s *BaseScheduler) LogClsfnAndTaskDistOverhead(overhead time.Duration) {
 	// Logging the overhead in microseconds.
-	elekLog.ElektronLog.Log(elekLogTypes.CLSFN_TASKDIST_OVERHEAD,
+	elekLog.ElektronLogger.Log(elekLogTypes.CLSFN_TASKDIST_OVERHEAD,
 		log.InfoLevel,
 		log.Fields{"Overhead in microseconds": fmt.Sprintf("%f", float64(overhead.Nanoseconds())/1000.0)}, "")
 }

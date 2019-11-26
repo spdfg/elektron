@@ -20,11 +20,12 @@ package def
 
 import (
 	"fmt"
+	"reflect"
+	"testing"
+
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 	"github.com/spdfg/elektron/constants"
 	"github.com/stretchr/testify/assert"
-	"reflect"
-	"testing"
 )
 
 func TestTasksFromJSON(t *testing.T) {

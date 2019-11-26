@@ -21,6 +21,11 @@ package main // import github.com/spdfg/elektron
 import (
 	"flag"
 	"fmt"
+	"os"
+	"os/signal"
+	"strings"
+	"time"
+
 	"github.com/golang/protobuf/proto"
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 	sched "github.com/mesos/mesos-go/api/v0/scheduler"
@@ -31,10 +36,6 @@ import (
 	"github.com/spdfg/elektron/pcp"
 	"github.com/spdfg/elektron/powerCap"
 	"github.com/spdfg/elektron/schedulers"
-	"os"
-	"os/signal"
-	"strings"
-	"time"
 )
 
 var master = flag.String("master", "", "Location of leading Mesos master -- <mesos-master>:<port>")
@@ -225,6 +226,7 @@ func main() {
 	if strings.Contains(*pcplogPrefix, "/") {
 		log.Fatal("log file prefix should not contain '/'.")
 	}
+	// Build Logger for elektron.
 	elekLog.BuildLogger(*pcplogPrefix, *logConfigFilename)
 
 	// Starting PCP logging.
@@ -280,11 +282,11 @@ func main() {
 
 	// Starting the scheduler driver.
 	if status, err := driver.Run(); err != nil {
-		elekLog.ElektronLog.Log(elekLogTypes.CONSOLE,
+		elekLog.ElektronLogger.Log(elekLogTypes.CONSOLE,
 			log.ErrorLevel,
 			log.Fields{"status": status.String(), "error": err.Error()}, "Framework stopped ")
 	}
-	elekLog.ElektronLog.Log(elekLogTypes.CONSOLE,
+	elekLog.ElektronLogger.Log(elekLogTypes.CONSOLE,
 		log.InfoLevel,
 		log.Fields{}, "Exiting...")
 }

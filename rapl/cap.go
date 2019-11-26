@@ -21,11 +21,11 @@ package rapl
 import (
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/pkg/errors"
 	elekEnv "github.com/spdfg/elektron/environment"
 	"golang.org/x/crypto/ssh"
-	"strings"
 )
 
 func Cap(host, username string, percentage float64) error {

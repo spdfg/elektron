@@ -19,10 +19,9 @@
 package schedulers
 
 import (
-	log "github.com/sirupsen/logrus"
-
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 	sched "github.com/mesos/mesos-go/api/v0/scheduler"
+	log "github.com/sirupsen/logrus"
 	"github.com/spdfg/elektron/def"
 	"github.com/spdfg/elektron/utilities/mesosUtils"
 	"github.com/spdfg/elektron/utilities/offerUtils"
