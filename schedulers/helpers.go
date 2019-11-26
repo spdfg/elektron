@@ -34,15 +34,11 @@ import (
 
 func coLocated(tasks map[string]bool, s BaseScheduler) {
 
-	for task := range tasks {
-		elekLog.ElektronLog.Log(elekLogTypes.CONSOLE,
-			log.InfoLevel,
-			log.Fields{"Task": task}, "")
+	for _, task := range tasks {
+		elekLog.ElektronLog.Log(elekLogTypes.CONSOLE, log.InfoLevel, log.Fields{"Task": task}, "")
 	}
 
-	elekLog.ElektronLog.Log(elekLogTypes.CONSOLE,
-		log.InfoLevel,
-		log.Fields{}, "---------------------")
+	elekLog.ElektronLog.Log(elekLogTypes.CONSOLE, log.InfoLevel, log.Fields{}, "---------------------")
 }
 
 // Get the powerClass of the given hostname.
