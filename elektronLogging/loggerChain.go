@@ -13,7 +13,7 @@ type Logger interface {
 type LoggerImpl struct {
 	Type           int
 	AllowOnConsole bool
-	LogFile    *os.File
+	LogFile        *os.File
 	next           Logger
 }
 

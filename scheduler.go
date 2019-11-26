@@ -55,6 +55,7 @@ var fixFirstSchedPol = flag.String("fixFirstSchedPol", "", "Name of the scheduli
 var fixSchedWindow = flag.Bool("fixSchedWindow", false, "Fix the size of the scheduling window that every deployed scheduling policy should schedule, provided switching is enabled.")
 var schedWindowSize = flag.Int("schedWindowSize", 200, "Size of the scheduling window if fixSchedWindow is set.")
 var schedPolSwitchCriteria = flag.String("schedPolSwitchCriteria", "taskDist", "Scheduling policy switching criteria.")
+var logConfigFilename = flag.String("logConfigFilename", "logConfig.yaml", "Log Configuration file name")
 
 // Short hand args
 func init() {
@@ -76,6 +77,7 @@ func init() {
 	flag.BoolVar(fixSchedWindow, "fixSw", false, "Fix the size of the scheduling window that every deployed scheduling policy should schedule, provided switching is enabled (shorthand).")
 	flag.IntVar(schedWindowSize, "swSize", 200, "Size of the scheduling window if fixSchedWindow is set (shorthand).")
 	flag.StringVar(schedPolSwitchCriteria, "spsCriteria", "taskDist", "Scheduling policy switching criteria (shorthand).")
+	flag.StringVar(logConfigFilename, "lgConfigName", "logConfig.yaml", "Log Configuration file name (shorthand).")
 }
 
 func listAllSchedulingPolicies() {
@@ -223,7 +225,7 @@ func main() {
 	if strings.Contains(*pcplogPrefix, "/") {
 		log.Fatal("log file prefix should not contain '/'.")
 	}
-	elekLog.BuildLogger(*pcplogPrefix)
+	elekLog.BuildLogger(*pcplogPrefix, *logConfigFilename)
 
 	// Starting PCP logging.
 	if noPowercap {

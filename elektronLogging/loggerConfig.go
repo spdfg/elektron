@@ -2,7 +2,6 @@ package elektronLogging
 
 import (
 	log "github.com/sirupsen/logrus"
-	elekEnv "github.com/spdfg/elektron/environment"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 )
@@ -48,9 +47,9 @@ type LoggerConfig struct {
 	Format []string `yaml:"format"`
 }
 
-func (c *LoggerConfig) GetConfig() *LoggerConfig {
+func (c *LoggerConfig) GetConfig(logConfigFilename string) *LoggerConfig {
 
-	yamlFile, err := ioutil.ReadFile(elekEnv.LogConfigYaml)
+	yamlFile, err := ioutil.ReadFile(logConfigFilename)
 	if err != nil {
 		log.Printf("Error in reading yaml file   #%v ", err)
 	}

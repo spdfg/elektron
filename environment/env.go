@@ -26,5 +26,3 @@ var RaplPassword = "RAPL_PSSWD"
 
 // Location of the script that sets the powercap value for a host.
 var RaplThrottleScriptLocation = "RAPL_PKG_THROTTLE_SCRIPT_LOCATION"
-
-var LogConfigYaml = "logConfig.yaml"

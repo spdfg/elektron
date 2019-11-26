@@ -14,10 +14,10 @@ var formatter ElektronFormatter
 var ElektronLog *LoggerImpl
 var logDir logDirectory
 
-func BuildLogger(prefix string) {
+func BuildLogger(prefix string, logConfigFilename string) {
 
 	// read configuration from yaml
-	config.GetConfig()
+	config.GetConfig(logConfigFilename)
 
 	// create the log directory
 	startTime := time.Now()
