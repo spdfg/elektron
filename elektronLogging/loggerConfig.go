@@ -56,7 +56,7 @@ func (c *LoggerConfig) GetConfig() *LoggerConfig {
 	}
 	err = yaml.Unmarshal(yamlFile, c)
 	if err != nil {
-		log.Fatalf("Error in yaml unmarshal: %v", err)
+		log.Fatalf("Error in unmarshalling yaml: %v", err)
 	}
 
 	return c

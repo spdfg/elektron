@@ -8,12 +8,12 @@ import (
 type Logger interface {
 	SetNext(logType Logger)
 	Log(logType int, level log.Level, logData log.Fields, message string)
-	SetLogFile(prefix string)
+	CreateLogFile(prefix string)
 }
 type LoggerImpl struct {
 	Type           int
 	AllowOnConsole bool
-	LogFileName    *os.File
+	LogFile    *os.File
 	next           Logger
 }
 

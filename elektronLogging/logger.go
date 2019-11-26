@@ -35,7 +35,7 @@ func BuildLogger(prefix string) {
 	// create a chain of loggers
 	head := &LoggerImpl{}
 	cLog := NewConsoleLogger(CONSOLE, prefix)
-	pLog := NewPcpLogger(PCP, prefix)
+	pLog := NewPCPLogger(PCP, prefix)
 	schedTraceLog := NewSchedTraceLogger(SCHED_TRACE, prefix)
 	spsLog := NewSchedPolicySwitchLogger(SPS, prefix)
 	schedWindowLog := NewSchedWindowLogger(SCHED_WINDOW, prefix)

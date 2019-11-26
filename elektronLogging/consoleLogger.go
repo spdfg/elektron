@@ -14,7 +14,7 @@ type ConsoleLogger struct {
 func NewConsoleLogger(logType int, prefix string) *ConsoleLogger {
 	cLog := &ConsoleLogger{}
 	cLog.Type = logType
-	cLog.SetLogFile(prefix)
+	cLog.CreateLogFile(prefix)
 	return cLog
 }
 func (cLog ConsoleLogger) Log(logType int, level log.Level, logData log.Fields, message string) {
@@ -25,7 +25,7 @@ func (cLog ConsoleLogger) Log(logType int, level log.Level, logData log.Fields, 
 		logger.SetOutput(os.Stdout)
 		logger.WithFields(logData).Println(message)
 
-		logger.SetOutput(cLog.LogFileName)
+		logger.SetOutput(cLog.LogFile)
 		logger.WithFields(logData).Println(message)
 	}
 	if cLog.next != nil {
@@ -33,7 +33,7 @@ func (cLog ConsoleLogger) Log(logType int, level log.Level, logData log.Fields, 
 	}
 }
 
-func (cLog *ConsoleLogger) SetLogFile(prefix string) {
+func (cLog *ConsoleLogger) CreateLogFile(prefix string) {
 
 	filename := strings.Join([]string{prefix, config.ConsoleConfig.FilenameExtension}, "")
 	dirName := logDir.getDirName()
@@ -41,7 +41,7 @@ func (cLog *ConsoleLogger) SetLogFile(prefix string) {
 		if logFile, err := os.Create(filepath.Join(dirName, filename)); err != nil {
 			log.Fatal("Unable to create logFile: ", err)
 		} else {
-			cLog.LogFileName = logFile
+			cLog.LogFile = logFile
 			cLog.AllowOnConsole = config.ConsoleConfig.AllowOnConsole
 		}
 	}

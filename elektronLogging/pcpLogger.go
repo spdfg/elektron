@@ -7,18 +7,18 @@ import (
 	"strings"
 )
 
-type PcpLogger struct {
+type PCPLogger struct {
 	LoggerImpl
 }
 
-func NewPcpLogger(logType int, prefix string) *PcpLogger {
-	pLog := &PcpLogger{}
+func NewPCPLogger(logType int, prefix string) *PCPLogger {
+	pLog := &PCPLogger{}
 	pLog.Type = logType
-	pLog.SetLogFile(prefix)
+	pLog.CreateLogFile(prefix)
 	return pLog
 }
 
-func (pLog PcpLogger) Log(logType int, level log.Level, logData log.Fields, message string) {
+func (pLog PCPLogger) Log(logType int, level log.Level, logData log.Fields, message string) {
 	if pLog.Type == logType {
 
 		logger.SetLevel(level)
@@ -28,7 +28,7 @@ func (pLog PcpLogger) Log(logType int, level log.Level, logData log.Fields, mess
 			logger.WithFields(logData).Println(message)
 		}
 
-		logger.SetOutput(pLog.LogFileName)
+		logger.SetOutput(pLog.LogFile)
 		logger.WithFields(logData).Println(message)
 	}
 	if pLog.next != nil {
@@ -36,7 +36,7 @@ func (pLog PcpLogger) Log(logType int, level log.Level, logData log.Fields, mess
 	}
 }
 
-func (pLog *PcpLogger) SetLogFile(prefix string) {
+func (pLog *PCPLogger) CreateLogFile(prefix string) {
 
 	filename := strings.Join([]string{prefix, config.PCPConfig.FilenameExtension}, "")
 	dirName := logDir.getDirName()
@@ -44,7 +44,7 @@ func (pLog *PcpLogger) SetLogFile(prefix string) {
 		if logFile, err := os.Create(filepath.Join(dirName, filename)); err != nil {
 			log.Fatal("Unable to create logFile: ", err)
 		} else {
-			pLog.LogFileName = logFile
+			pLog.LogFile = logFile
 			pLog.AllowOnConsole = config.PCPConfig.AllowOnConsole
 		}
 	}

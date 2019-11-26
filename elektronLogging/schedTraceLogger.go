@@ -14,7 +14,7 @@ type SchedTraceLogger struct {
 func NewSchedTraceLogger(logType int, prefix string) *SchedTraceLogger {
 	sLog := &SchedTraceLogger{}
 	sLog.Type = logType
-	sLog.SetLogFile(prefix)
+	sLog.CreateLogFile(prefix)
 	return sLog
 }
 
@@ -28,7 +28,7 @@ func (sLog SchedTraceLogger) Log(logType int, level log.Level, logData log.Field
 			logger.WithFields(logData).Println(message)
 		}
 
-		logger.SetOutput(sLog.LogFileName)
+		logger.SetOutput(sLog.LogFile)
 		logger.WithFields(logData).Println(message)
 	}
 	if sLog.next != nil {
@@ -36,7 +36,7 @@ func (sLog SchedTraceLogger) Log(logType int, level log.Level, logData log.Field
 	}
 }
 
-func (sLog *SchedTraceLogger) SetLogFile(prefix string) {
+func (sLog *SchedTraceLogger) CreateLogFile(prefix string) {
 
 	filename := strings.Join([]string{prefix, config.SchedTraceConfig.FilenameExtension}, "")
 	dirName := logDir.getDirName()
@@ -44,7 +44,7 @@ func (sLog *SchedTraceLogger) SetLogFile(prefix string) {
 		if logFile, err := os.Create(filepath.Join(dirName, filename)); err != nil {
 			log.Fatal("Unable to create logFile: ", err)
 		} else {
-			sLog.LogFileName = logFile
+			sLog.LogFile = logFile
 			sLog.AllowOnConsole = config.SchedTraceConfig.AllowOnConsole
 		}
 	}
