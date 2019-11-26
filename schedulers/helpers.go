@@ -134,14 +134,6 @@ func WithPCPLog(pcpLog chan struct{}) SchedulerOptions {
 	}
 }
 
-/*func WithLoggingChannels(lmt chan elekLogDef.LogMessageType, msg chan string) SchedulerOptions {
-	return func(s ElectronScheduler) error {
-		s.(*BaseScheduler).logMsgType = lmt
-		s.(*BaseScheduler).logMsg = msg
-		return nil
-	}
-}*/
-
 func WithSchedPolSwitchEnabled(enableSchedPolicySwitch bool, switchingCriteria string) SchedulerOptions {
 	return func(s ElectronScheduler) error {
 		s.(*BaseScheduler).schedPolSwitchEnabled = enableSchedPolicySwitch

@@ -40,8 +40,7 @@ func (f ElektronFormatter) Format(entry *log.Entry) ([]byte, error) {
 
 	var formattedFields []string
 	for key, value := range entry.Data {
-		formattedFields = append(formattedFields,
-			strings.Join([]string{key, value.(string)}, "="))
+		formattedFields = append(formattedFields, strings.Join([]string{key, value.(string)}, "="))
 	}
 
 	b.WriteString(message)

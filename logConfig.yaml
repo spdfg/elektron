@@ -12,17 +12,17 @@ console:
   minLogLevel: debug
   allowOnConsole: true
 pcp:
-    enabled: true
-    filenameExtension: .pcplog
-    allowOnConsole: false
+  enabled: true
+  filenameExtension: .pcplog
+  allowOnConsole: false
 schedWindow:
-    enabled: true
-    filenameExtension: _schedWindow.log
-    allowOnConsole: true
+  enabled: true
+  filenameExtension: _schedWindow.log
+  allowOnConsole: true
 clsfnTaskDistrOverhead:
-    enabled: true
-    filenameExtension: _classificationOverhead.log
-    allowOnConsole: true
+  enabled: true
+  filenameExtension: _classificationOverhead.log
+  allowOnConsole: true
     
 
 format:
