@@ -12,25 +12,26 @@ type ClsfnTaskDistrOverheadLogger struct {
 	LoggerImpl
 }
 
-func NewClsfnTaskDistrOverheadLogger(b *baseLogData, logType int, prefix string) *ClsfnTaskDistrOverheadLogger {
+func NewClsfnTaskDistrOverheadLogger(b *baseLogData, logType int, prefix string, logger *log.Logger) *ClsfnTaskDistrOverheadLogger {
 	cLog := &ClsfnTaskDistrOverheadLogger{}
-	cLog.Type = logType
+	cLog.logType = logType
 	cLog.CreateLogFile(prefix)
 	cLog.next = nil
 	cLog.baseLogData = b
+	cLog.logger = logger
 	return cLog
 }
 
 func (cLog ClsfnTaskDistrOverheadLogger) Log(logType int, level log.Level, message string) {
-	if cLog.Type == logType {
+	if cLog.logType == logType {
 		if config.TaskDistrConfig.Enabled {
-			if cLog.AllowOnConsole {
-				logger.SetOutput(os.Stdout)
-				logger.WithFields(cLog.data).Log(level, message)
+			if cLog.allowOnConsole {
+				cLog.logger.SetOutput(os.Stdout)
+				cLog.logger.WithFields(cLog.data).Log(level, message)
 			}
 
-			logger.SetOutput(cLog.LogFile)
-			logger.WithFields(cLog.data).Log(level, message)
+			cLog.logger.SetOutput(cLog.logFile)
+			cLog.logger.WithFields(cLog.data).Log(level, message)
 		}
 	}
 	// Forwarding to next logger
@@ -43,15 +44,15 @@ func (cLog ClsfnTaskDistrOverheadLogger) Log(logType int, level log.Level, messa
 }
 
 func (cLog ClsfnTaskDistrOverheadLogger) Logf(logType int, level log.Level, msgFmtString string, args ...interface{}) {
-	if cLog.Type == logType {
+	if cLog.logType == logType {
 		if config.TaskDistrConfig.Enabled {
-			if cLog.AllowOnConsole {
-				logger.SetOutput(os.Stdout)
-				logger.WithFields(cLog.data).Logf(level, msgFmtString, args...)
+			if cLog.allowOnConsole {
+				cLog.logger.SetOutput(os.Stdout)
+				cLog.logger.WithFields(cLog.data).Logf(level, msgFmtString, args...)
 			}
 
-			logger.SetOutput(cLog.LogFile)
-			logger.WithFields(cLog.data).Logf(level, msgFmtString, args...)
+			cLog.logger.SetOutput(cLog.logFile)
+			cLog.logger.WithFields(cLog.data).Logf(level, msgFmtString, args...)
 		}
 	}
 	if cLog.next != nil {
@@ -71,8 +72,8 @@ func (cLog *ClsfnTaskDistrOverheadLogger) CreateLogFile(prefix string) {
 			if logFile, err := os.Create(filepath.Join(dirName, filename)); err != nil {
 				log.Fatal("Unable to create logFile: ", err)
 			} else {
-				cLog.LogFile = logFile
-				cLog.AllowOnConsole = config.TaskDistrConfig.AllowOnConsole
+				cLog.logFile = logFile
+				cLog.allowOnConsole = config.TaskDistrConfig.AllowOnConsole
 			}
 		}
 	}

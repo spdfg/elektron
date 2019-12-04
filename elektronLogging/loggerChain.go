@@ -16,10 +16,11 @@ type baseLogData struct {
 }
 type LoggerImpl struct {
 	*baseLogData
-	Type           int
-	AllowOnConsole bool
-	LogFile        *os.File
+	logType        int
+	allowOnConsole bool
+	logFile        *os.File
 	next           Logger
+	logger         *log.Logger
 }
 
 func (l *LoggerImpl) WithFields(logData log.Fields) *LoggerImpl {

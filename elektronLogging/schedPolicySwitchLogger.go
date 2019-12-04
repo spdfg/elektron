@@ -12,25 +12,26 @@ type SchedPolicySwitchLogger struct {
 	LoggerImpl
 }
 
-func NewSchedPolicySwitchLogger(b *baseLogData, logType int, prefix string) *SchedPolicySwitchLogger {
+func NewSchedPolicySwitchLogger(b *baseLogData, logType int, prefix string, logger *log.Logger) *SchedPolicySwitchLogger {
 	sLog := &SchedPolicySwitchLogger{}
-	sLog.Type = logType
+	sLog.logType = logType
 	sLog.CreateLogFile(prefix)
 	sLog.next = nil
 	sLog.baseLogData = b
+	sLog.logger = logger
 	return sLog
 }
 
 func (sLog SchedPolicySwitchLogger) Log(logType int, level log.Level, message string) {
-	if sLog.Type == logType {
+	if sLog.logType == logType {
 		if config.SPSConfig.Enabled {
-			if sLog.AllowOnConsole {
-				logger.SetOutput(os.Stdout)
-				logger.WithFields(sLog.data).Log(level, message)
+			if sLog.allowOnConsole {
+				sLog.logger.SetOutput(os.Stdout)
+				sLog.logger.WithFields(sLog.data).Log(level, message)
 			}
 
-			logger.SetOutput(sLog.LogFile)
-			logger.WithFields(sLog.data).Log(level, message)
+			sLog.logger.SetOutput(sLog.logFile)
+			sLog.logger.WithFields(sLog.data).Log(level, message)
 		}
 	}
 	if sLog.next != nil {
@@ -42,15 +43,15 @@ func (sLog SchedPolicySwitchLogger) Log(logType int, level log.Level, message st
 }
 
 func (sLog SchedPolicySwitchLogger) Logf(logType int, level log.Level, msgFmtString string, args ...interface{}) {
-	if sLog.Type == logType {
+	if sLog.logType == logType {
 		if config.SPSConfig.Enabled {
-			if sLog.AllowOnConsole {
-				logger.SetOutput(os.Stdout)
-				logger.WithFields(sLog.data).Logf(level, msgFmtString, args...)
+			if sLog.allowOnConsole {
+				sLog.logger.SetOutput(os.Stdout)
+				sLog.logger.WithFields(sLog.data).Logf(level, msgFmtString, args...)
 			}
 
-			logger.SetOutput(sLog.LogFile)
-			logger.WithFields(sLog.data).Logf(level, msgFmtString, args...)
+			sLog.logger.SetOutput(sLog.logFile)
+			sLog.logger.WithFields(sLog.data).Logf(level, msgFmtString, args...)
 		}
 	}
 	// Forwarding to next logger
@@ -70,8 +71,8 @@ func (sLog *SchedPolicySwitchLogger) CreateLogFile(prefix string) {
 			if logFile, err := os.Create(filepath.Join(dirName, filename)); err != nil {
 				log.Fatal("Unable to create logFile: ", err)
 			} else {
-				sLog.LogFile = logFile
-				sLog.AllowOnConsole = config.SPSConfig.AllowOnConsole
+				sLog.logFile = logFile
+				sLog.allowOnConsole = config.SPSConfig.AllowOnConsole
 			}
 		}
 	}

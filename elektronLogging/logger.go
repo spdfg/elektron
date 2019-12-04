@@ -10,7 +10,6 @@ import (
 )
 
 var config LoggerConfig
-var logger *log.Logger
 var formatter ElektronFormatter
 var ElektronLogger *LoggerImpl
 var logDir logDirectory
@@ -28,7 +27,7 @@ func BuildLogger(prefix string, logConfigFilename string) {
 
 	// Instantiate the logrus instance.
 	prefix = strings.Join([]string{prefix, formattedStartTime}, "_")
-	logger = &log.Logger{
+	logger := &log.Logger{
 		Out:       os.Stderr,
 		Level:     log.DebugLevel,
 		Formatter: &formatter,
@@ -37,12 +36,12 @@ func BuildLogger(prefix string, logConfigFilename string) {
 	// Create a chain of loggers.
 	b := &baseLogData{data: log.Fields{}}
 	head := &LoggerImpl{baseLogData: b}
-	cLog := NewConsoleLogger(b, CONSOLE, prefix)
-	pLog := NewPCPLogger(b, PCP, prefix)
-	schedTraceLog := NewSchedTraceLogger(b, SCHED_TRACE, prefix)
-	spsLog := NewSchedPolicySwitchLogger(b, SPS, prefix)
-	schedWindowLog := NewSchedWindowLogger(b, SCHED_WINDOW, prefix)
-	tskDistLog := NewClsfnTaskDistrOverheadLogger(b, CLSFN_TASKDISTR_OVERHEAD, prefix)
+	cLog := NewConsoleLogger(b, CONSOLE, prefix, logger)
+	pLog := NewPCPLogger(b, PCP, prefix, logger)
+	schedTraceLog := NewSchedTraceLogger(b, SCHED_TRACE, prefix, logger)
+	spsLog := NewSchedPolicySwitchLogger(b, SPS, prefix, logger)
+	schedWindowLog := NewSchedWindowLogger(b, SCHED_WINDOW, prefix, logger)
+	tskDistLog := NewClsfnTaskDistrOverheadLogger(b, CLSFN_TASKDISTR_OVERHEAD, prefix, logger)
 
 	head.SetNext(cLog)
 	cLog.SetNext(pLog)

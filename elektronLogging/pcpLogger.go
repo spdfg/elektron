@@ -12,25 +12,26 @@ type PCPLogger struct {
 	LoggerImpl
 }
 
-func NewPCPLogger(b *baseLogData, logType int, prefix string) *PCPLogger {
+func NewPCPLogger(b *baseLogData, logType int, prefix string, logger *log.Logger) *PCPLogger {
 	pLog := &PCPLogger{}
-	pLog.Type = logType
+	pLog.logType = logType
 	pLog.CreateLogFile(prefix)
 	pLog.next = nil
 	pLog.baseLogData = b
+	pLog.logger = logger
 	return pLog
 }
 
 func (pLog PCPLogger) Log(logType int, level log.Level, message string) {
-	if pLog.Type == logType {
+	if pLog.logType == logType {
 		if config.PCPConfig.Enabled {
-			if pLog.AllowOnConsole {
-				logger.SetOutput(os.Stdout)
-				logger.WithFields(pLog.data).Log(level, message)
+			if pLog.allowOnConsole {
+				pLog.logger.SetOutput(os.Stdout)
+				pLog.logger.WithFields(pLog.data).Log(level, message)
 			}
 
-			logger.SetOutput(pLog.LogFile)
-			logger.WithFields(pLog.data).Log(level, message)
+			pLog.logger.SetOutput(pLog.logFile)
+			pLog.logger.WithFields(pLog.data).Log(level, message)
 		}
 	}
 	if pLog.next != nil {
@@ -42,15 +43,15 @@ func (pLog PCPLogger) Log(logType int, level log.Level, message string) {
 }
 
 func (pLog PCPLogger) Logf(logType int, level log.Level, msgFmtString string, args ...interface{}) {
-	if pLog.Type == logType {
+	if pLog.logType == logType {
 		if config.PCPConfig.Enabled {
-			if pLog.AllowOnConsole {
-				logger.SetOutput(os.Stdout)
-				logger.WithFields(pLog.data).Logf(level, msgFmtString, args...)
+			if pLog.allowOnConsole {
+				pLog.logger.SetOutput(os.Stdout)
+				pLog.logger.WithFields(pLog.data).Logf(level, msgFmtString, args...)
 			}
 
-			logger.SetOutput(pLog.LogFile)
-			logger.WithFields(pLog.data).Logf(level, msgFmtString, args...)
+			pLog.logger.SetOutput(pLog.logFile)
+			pLog.logger.WithFields(pLog.data).Logf(level, msgFmtString, args...)
 		}
 	}
 	// Forwarding to next logger
@@ -70,8 +71,8 @@ func (pLog *PCPLogger) CreateLogFile(prefix string) {
 			if logFile, err := os.Create(filepath.Join(dirName, filename)); err != nil {
 				log.Fatal("Unable to create logFile: ", err)
 			} else {
-				pLog.LogFile = logFile
-				pLog.AllowOnConsole = config.PCPConfig.AllowOnConsole
+				pLog.logFile = logFile
+				pLog.allowOnConsole = config.PCPConfig.AllowOnConsole
 			}
 		}
 	}
