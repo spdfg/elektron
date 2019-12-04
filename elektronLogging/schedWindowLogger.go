@@ -22,9 +22,8 @@ func NewSchedWindowLogger(b *baseLogData, logType int, prefix string) *SchedWind
 }
 
 func (sLog SchedWindowLogger) Log(logType int, level log.Level, message string) {
-	if config.SchedWindowConfig.Enabled {
-		if sLog.Type == logType {
-
+	if sLog.Type == logType {
+		if config.SchedWindowConfig.Enabled {
 			if sLog.AllowOnConsole {
 				logger.SetOutput(os.Stdout)
 				logger.WithFields(sLog.data).Log(level, message)
@@ -33,19 +32,19 @@ func (sLog SchedWindowLogger) Log(logType int, level log.Level, message string) 
 			logger.SetOutput(sLog.LogFile)
 			logger.WithFields(sLog.data).Log(level, message)
 		}
-		if sLog.next != nil {
-			sLog.next.Log(logType, level, message)
-		} else {
-			// Clearing the fields.
-			sLog.resetFields()
-		}
+	}
+	// Forwarding to next logger
+	if sLog.next != nil {
+		sLog.next.Log(logType, level, message)
+	} else {
+		// Clearing the fields.
+		sLog.resetFields()
 	}
 }
 
 func (sLog SchedWindowLogger) Logf(logType int, level log.Level, msgFmtString string, args ...interface{}) {
-	if config.SchedWindowConfig.Enabled {
-		if sLog.Type == logType {
-
+	if sLog.Type == logType {
+		if config.SchedWindowConfig.Enabled {
 			if sLog.AllowOnConsole {
 				logger.SetOutput(os.Stdout)
 				logger.WithFields(sLog.data).Logf(level, msgFmtString, args...)
@@ -54,12 +53,12 @@ func (sLog SchedWindowLogger) Logf(logType int, level log.Level, msgFmtString st
 			logger.SetOutput(sLog.LogFile)
 			logger.WithFields(sLog.data).Logf(level, msgFmtString, args...)
 		}
-		if sLog.next != nil {
-			sLog.next.Logf(logType, level, msgFmtString, args...)
-		} else {
-			// Clearing the fields.
-			sLog.resetFields()
-		}
+	}
+	if sLog.next != nil {
+		sLog.next.Logf(logType, level, msgFmtString, args...)
+	} else {
+		// Clearing the fields.
+		sLog.resetFields()
 	}
 }
 

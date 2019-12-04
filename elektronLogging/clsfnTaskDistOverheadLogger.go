@@ -22,9 +22,8 @@ func NewClsfnTaskDistrOverheadLogger(b *baseLogData, logType int, prefix string)
 }
 
 func (cLog ClsfnTaskDistrOverheadLogger) Log(logType int, level log.Level, message string) {
-	if config.TaskDistrConfig.Enabled {
-		if cLog.Type == logType {
-
+	if cLog.Type == logType {
+		if config.TaskDistrConfig.Enabled {
 			if cLog.AllowOnConsole {
 				logger.SetOutput(os.Stdout)
 				logger.WithFields(cLog.data).Log(level, message)
@@ -33,19 +32,19 @@ func (cLog ClsfnTaskDistrOverheadLogger) Log(logType int, level log.Level, messa
 			logger.SetOutput(cLog.LogFile)
 			logger.WithFields(cLog.data).Log(level, message)
 		}
-		if cLog.next != nil {
-			cLog.next.Log(logType, level, message)
-		} else {
-			// Clearing the fields.
-			cLog.resetFields()
-		}
+	}
+	// Forwarding to next logger
+	if cLog.next != nil {
+		cLog.next.Log(logType, level, message)
+	} else {
+		// Clearing the fields.
+		cLog.resetFields()
 	}
 }
 
 func (cLog ClsfnTaskDistrOverheadLogger) Logf(logType int, level log.Level, msgFmtString string, args ...interface{}) {
-	if config.TaskDistrConfig.Enabled {
-		if cLog.Type == logType {
-
+	if cLog.Type == logType {
+		if config.TaskDistrConfig.Enabled {
 			if cLog.AllowOnConsole {
 				logger.SetOutput(os.Stdout)
 				logger.WithFields(cLog.data).Logf(level, msgFmtString, args...)
@@ -54,12 +53,12 @@ func (cLog ClsfnTaskDistrOverheadLogger) Logf(logType int, level log.Level, msgF
 			logger.SetOutput(cLog.LogFile)
 			logger.WithFields(cLog.data).Logf(level, msgFmtString, args...)
 		}
-		if cLog.next != nil {
-			cLog.next.Logf(logType, level, msgFmtString, args...)
-		} else {
-			// Clearing the fields.
-			cLog.resetFields()
-		}
+	}
+	if cLog.next != nil {
+		cLog.next.Logf(logType, level, msgFmtString, args...)
+	} else {
+		// Clearing the fields.
+		cLog.resetFields()
 	}
 }
 

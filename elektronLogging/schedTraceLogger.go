@@ -22,9 +22,8 @@ func NewSchedTraceLogger(b *baseLogData, logType int, prefix string) *SchedTrace
 }
 
 func (sLog SchedTraceLogger) Log(logType int, level log.Level, message string) {
-	if config.SchedTraceConfig.Enabled {
-		if sLog.Type == logType {
-
+	if sLog.Type == logType {
+		if config.SchedTraceConfig.Enabled {
 			if sLog.AllowOnConsole {
 				logger.SetOutput(os.Stdout)
 				logger.WithFields(sLog.data).Log(level, message)
@@ -33,19 +32,18 @@ func (sLog SchedTraceLogger) Log(logType int, level log.Level, message string) {
 			logger.SetOutput(sLog.LogFile)
 			logger.WithFields(sLog.data).Log(level, message)
 		}
-		if sLog.next != nil {
-			sLog.next.Log(logType, level, message)
-		} else {
-			// Clearing the fields.
-			sLog.resetFields()
-		}
+	}
+	if sLog.next != nil {
+		sLog.next.Log(logType, level, message)
+	} else {
+		// Clearing the fields.
+		sLog.resetFields()
 	}
 }
 
 func (sLog SchedTraceLogger) Logf(logType int, level log.Level, msgFmtString string, args ...interface{}) {
-	if config.SchedTraceConfig.Enabled {
-		if sLog.Type == logType {
-
+	if sLog.Type == logType {
+		if config.SchedTraceConfig.Enabled {
 			if sLog.AllowOnConsole {
 				logger.SetOutput(os.Stdout)
 				logger.WithFields(sLog.data).Logf(level, msgFmtString, args...)
@@ -54,12 +52,13 @@ func (sLog SchedTraceLogger) Logf(logType int, level log.Level, msgFmtString str
 			logger.SetOutput(sLog.LogFile)
 			logger.WithFields(sLog.data).Logf(level, msgFmtString, args...)
 		}
-		if sLog.next != nil {
-			sLog.next.Logf(logType, level, msgFmtString, args...)
-		} else {
-			// Clearing the fields.
-			sLog.resetFields()
-		}
+	}
+	// Forwarding to next logger
+	if sLog.next != nil {
+		sLog.next.Logf(logType, level, msgFmtString, args...)
+	} else {
+		// Clearing the fields.
+		sLog.resetFields()
 	}
 }
 

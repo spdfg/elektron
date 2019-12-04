@@ -375,5 +375,5 @@ func (s *BaseScheduler) LogSchedPolicySwitch(name string, nextPolicy SchedPolicy
 
 func (s *BaseScheduler) LogClsfnAndTaskDistOverhead(overhead time.Duration) {
 	// Logging the overhead in microseconds.
-	elekLog.ElektronLogger.WithFields(log.Fields{"Overhead in microseconds": fmt.Sprintf("%f", float64(overhead.Nanoseconds())/1000.0)}).Log(elekLogTypes.CLSFN_TASKDIST_OVERHEAD, log.InfoLevel, "")
+	elekLog.ElektronLogger.WithFields(log.Fields{"Overhead in microseconds": fmt.Sprintf("%f", float64(overhead.Nanoseconds())/1000.0)}).Log(elekLogTypes.CLSFN_TASKDISTR_OVERHEAD, log.InfoLevel, "")
 }

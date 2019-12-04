@@ -42,7 +42,7 @@ func BuildLogger(prefix string, logConfigFilename string) {
 	schedTraceLog := NewSchedTraceLogger(b, SCHED_TRACE, prefix)
 	spsLog := NewSchedPolicySwitchLogger(b, SPS, prefix)
 	schedWindowLog := NewSchedWindowLogger(b, SCHED_WINDOW, prefix)
-	tskDistLog := NewClsfnTaskDistrOverheadLogger(b, CLSFN_TASKDIST_OVERHEAD, prefix)
+	tskDistLog := NewClsfnTaskDistrOverheadLogger(b, CLSFN_TASKDISTR_OVERHEAD, prefix)
 
 	head.SetNext(cLog)
 	cLog.SetNext(pLog)

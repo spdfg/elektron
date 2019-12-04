@@ -22,9 +22,8 @@ func NewPCPLogger(b *baseLogData, logType int, prefix string) *PCPLogger {
 }
 
 func (pLog PCPLogger) Log(logType int, level log.Level, message string) {
-	if config.PCPConfig.Enabled {
-		if pLog.Type == logType {
-
+	if pLog.Type == logType {
+		if config.PCPConfig.Enabled {
 			if pLog.AllowOnConsole {
 				logger.SetOutput(os.Stdout)
 				logger.WithFields(pLog.data).Log(level, message)
@@ -33,19 +32,18 @@ func (pLog PCPLogger) Log(logType int, level log.Level, message string) {
 			logger.SetOutput(pLog.LogFile)
 			logger.WithFields(pLog.data).Log(level, message)
 		}
-		if pLog.next != nil {
-			pLog.next.Log(logType, level, message)
-		} else {
-			// Clearing the fields.
-			pLog.resetFields()
-		}
+	}
+	if pLog.next != nil {
+		pLog.next.Log(logType, level, message)
+	} else {
+		// Clearing the fields.
+		pLog.resetFields()
 	}
 }
 
 func (pLog PCPLogger) Logf(logType int, level log.Level, msgFmtString string, args ...interface{}) {
-	if config.PCPConfig.Enabled {
-		if pLog.Type == logType {
-
+	if pLog.Type == logType {
+		if config.PCPConfig.Enabled {
 			if pLog.AllowOnConsole {
 				logger.SetOutput(os.Stdout)
 				logger.WithFields(pLog.data).Logf(level, msgFmtString, args...)
@@ -54,12 +52,13 @@ func (pLog PCPLogger) Logf(logType int, level log.Level, msgFmtString string, ar
 			logger.SetOutput(pLog.LogFile)
 			logger.WithFields(pLog.data).Logf(level, msgFmtString, args...)
 		}
-		if pLog.next != nil {
-			pLog.next.Logf(logType, level, msgFmtString, args...)
-		} else {
-			// Clearing the fields.
-			pLog.resetFields()
-		}
+	}
+	// Forwarding to next logger
+	if pLog.next != nil {
+		pLog.next.Logf(logType, level, msgFmtString, args...)
+	} else {
+		// Clearing the fields.
+		pLog.resetFields()
 	}
 }
 
