@@ -90,14 +90,13 @@ func UpdateEnvironment(offer *mesos.Offer) {
 	var host = offer.GetHostname()
 	// If this host is not present in the set of hosts.
 	if _, ok := constants.Hosts[host]; !ok {
-		elekLog.ElektronLogger.Log(elekLogTypes.CONSOLE, log.InfoLevel,
-			log.Fields{"Adding host": host}, "New host detected")
+		elekLog.ElektronLogger.WithFields(log.Fields{"Adding host": host}).Log(elekLogTypes.CONSOLE, log.InfoLevel, "New host detected")
 		// Add this host.
 		constants.Hosts[host] = struct{}{}
 		// Get the power class of this host.
 		class := PowerClass(offer)
-		elekLog.ElektronLogger.Log(elekLogTypes.CONSOLE, log.InfoLevel,
-			log.Fields{"host": host, "PowerClass": class}, "Registering the power class...")
+		elekLog.ElektronLogger.WithFields(log.Fields{"host": host, "PowerClass": class}).Log(elekLogTypes.CONSOLE,
+			log.InfoLevel, "Registering the power class...")
 		// If new power class, register the power class.
 		if _, ok := constants.PowerClasses[class]; !ok {
 			constants.PowerClasses[class] = make(map[string]struct{})

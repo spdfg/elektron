@@ -12,29 +12,53 @@ type SchedTraceLogger struct {
 	LoggerImpl
 }
 
-func NewSchedTraceLogger(logType int, prefix string) *SchedTraceLogger {
+func NewSchedTraceLogger(b *baseLogData, logType int, prefix string) *SchedTraceLogger {
 	sLog := &SchedTraceLogger{}
 	sLog.Type = logType
 	sLog.CreateLogFile(prefix)
+	sLog.next = nil
+	sLog.baseLogData = b
 	return sLog
 }
 
-func (sLog SchedTraceLogger) Log(logType int, level log.Level, logData log.Fields, message string) {
+func (sLog SchedTraceLogger) Log(logType int, level log.Level, message string) {
 	if config.SchedTraceConfig.Enabled {
 		if sLog.Type == logType {
 
-			logger.SetLevel(level)
-
 			if sLog.AllowOnConsole {
 				logger.SetOutput(os.Stdout)
-				logger.WithFields(logData).Println(message)
+				logger.WithFields(sLog.data).Log(level, message)
 			}
 
 			logger.SetOutput(sLog.LogFile)
-			logger.WithFields(logData).Println(message)
+			logger.WithFields(sLog.data).Log(level, message)
 		}
 		if sLog.next != nil {
-			sLog.next.Log(logType, level, logData, message)
+			sLog.next.Log(logType, level, message)
+		} else {
+			// Clearing the fields.
+			sLog.resetFields()
+		}
+	}
+}
+
+func (sLog SchedTraceLogger) Logf(logType int, level log.Level, msgFmtString string, args ...interface{}) {
+	if config.SchedTraceConfig.Enabled {
+		if sLog.Type == logType {
+
+			if sLog.AllowOnConsole {
+				logger.SetOutput(os.Stdout)
+				logger.WithFields(sLog.data).Logf(level, msgFmtString, args...)
+			}
+
+			logger.SetOutput(sLog.LogFile)
+			logger.WithFields(sLog.data).Logf(level, msgFmtString, args...)
+		}
+		if sLog.next != nil {
+			sLog.next.Logf(logType, level, msgFmtString, args...)
+		} else {
+			// Clearing the fields.
+			sLog.resetFields()
 		}
 	}
 }

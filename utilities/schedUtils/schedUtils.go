@@ -19,8 +19,6 @@
 package schedUtils
 
 import (
-	"fmt"
-
 	log "github.com/sirupsen/logrus"
 	"github.com/spdfg/elektron/def"
 	elekLog "github.com/spdfg/elektron/elektronLogging"
@@ -80,9 +78,9 @@ func (s *fillNextOfferCycle) apply(taskQueue []def.Task) (int, int) {
 	for _, task := range taskQueue {
 		numberOfTasksTraversed++
 		for i := *task.Instances; i > 0; i-- {
-			elekLog.ElektronLogger.Log(elekLogTypes.CONSOLE, log.InfoLevel,
-				log.Fields{}, fmt.Sprintf("Checking if Instance #%d of Task[%s] can be scheduled "+
-					"during the next offer cycle...", i, task.Name))
+			elekLog.ElektronLogger.Logf(elekLogTypes.CONSOLE, log.InfoLevel,
+				"Checking if Instance #%d of Task[%s] can be scheduled "+
+					"during the next offer cycle...", i, task.Name)
 			if canSchedule(task) {
 				filledCPU += task.CPU
 				filledRAM += task.RAM

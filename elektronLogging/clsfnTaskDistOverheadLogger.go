@@ -12,29 +12,53 @@ type ClsfnTaskDistrOverheadLogger struct {
 	LoggerImpl
 }
 
-func NewClsfnTaskDistrOverheadLogger(logType int, prefix string) *ClsfnTaskDistrOverheadLogger {
+func NewClsfnTaskDistrOverheadLogger(b *baseLogData, logType int, prefix string) *ClsfnTaskDistrOverheadLogger {
 	cLog := &ClsfnTaskDistrOverheadLogger{}
 	cLog.Type = logType
 	cLog.CreateLogFile(prefix)
+	cLog.next = nil
+	cLog.baseLogData = b
 	return cLog
 }
 
-func (cLog ClsfnTaskDistrOverheadLogger) Log(logType int, level log.Level, logData log.Fields, message string) {
+func (cLog ClsfnTaskDistrOverheadLogger) Log(logType int, level log.Level, message string) {
 	if config.TaskDistrConfig.Enabled {
 		if cLog.Type == logType {
 
-			logger.SetLevel(level)
-
 			if cLog.AllowOnConsole {
 				logger.SetOutput(os.Stdout)
-				logger.WithFields(logData).Println(message)
+				logger.WithFields(cLog.data).Log(level, message)
 			}
 
 			logger.SetOutput(cLog.LogFile)
-			logger.WithFields(logData).Println(message)
+			logger.WithFields(cLog.data).Log(level, message)
 		}
 		if cLog.next != nil {
-			cLog.next.Log(logType, level, logData, message)
+			cLog.next.Log(logType, level, message)
+		} else {
+			// Clearing the fields.
+			cLog.resetFields()
+		}
+	}
+}
+
+func (cLog ClsfnTaskDistrOverheadLogger) Logf(logType int, level log.Level, msgFmtString string, args ...interface{}) {
+	if config.TaskDistrConfig.Enabled {
+		if cLog.Type == logType {
+
+			if cLog.AllowOnConsole {
+				logger.SetOutput(os.Stdout)
+				logger.WithFields(cLog.data).Logf(level, msgFmtString, args...)
+			}
+
+			logger.SetOutput(cLog.LogFile)
+			logger.WithFields(cLog.data).Logf(level, msgFmtString, args...)
+		}
+		if cLog.next != nil {
+			cLog.next.Logf(logType, level, msgFmtString, args...)
+		} else {
+			// Clearing the fields.
+			cLog.resetFields()
 		}
 	}
 }

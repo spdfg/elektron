@@ -12,29 +12,53 @@ type PCPLogger struct {
 	LoggerImpl
 }
 
-func NewPCPLogger(logType int, prefix string) *PCPLogger {
+func NewPCPLogger(b *baseLogData, logType int, prefix string) *PCPLogger {
 	pLog := &PCPLogger{}
 	pLog.Type = logType
 	pLog.CreateLogFile(prefix)
+	pLog.next = nil
+	pLog.baseLogData = b
 	return pLog
 }
 
-func (pLog PCPLogger) Log(logType int, level log.Level, logData log.Fields, message string) {
+func (pLog PCPLogger) Log(logType int, level log.Level, message string) {
 	if config.PCPConfig.Enabled {
 		if pLog.Type == logType {
 
-			logger.SetLevel(level)
-
 			if pLog.AllowOnConsole {
 				logger.SetOutput(os.Stdout)
-				logger.WithFields(logData).Println(message)
+				logger.WithFields(pLog.data).Log(level, message)
 			}
 
 			logger.SetOutput(pLog.LogFile)
-			logger.WithFields(logData).Println(message)
+			logger.WithFields(pLog.data).Log(level, message)
 		}
 		if pLog.next != nil {
-			pLog.next.Log(logType, level, logData, message)
+			pLog.next.Log(logType, level, message)
+		} else {
+			// Clearing the fields.
+			pLog.resetFields()
+		}
+	}
+}
+
+func (pLog PCPLogger) Logf(logType int, level log.Level, msgFmtString string, args ...interface{}) {
+	if config.PCPConfig.Enabled {
+		if pLog.Type == logType {
+
+			if pLog.AllowOnConsole {
+				logger.SetOutput(os.Stdout)
+				logger.WithFields(pLog.data).Logf(level, msgFmtString, args...)
+			}
+
+			logger.SetOutput(pLog.LogFile)
+			logger.WithFields(pLog.data).Logf(level, msgFmtString, args...)
+		}
+		if pLog.next != nil {
+			pLog.next.Logf(logType, level, msgFmtString, args...)
+		} else {
+			// Clearing the fields.
+			pLog.resetFields()
 		}
 	}
 }

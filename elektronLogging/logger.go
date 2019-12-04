@@ -12,7 +12,7 @@ import (
 var config LoggerConfig
 var logger *log.Logger
 var formatter ElektronFormatter
-var ElektronLogger *ConsoleLogger
+var ElektronLogger *LoggerImpl
 var logDir logDirectory
 
 func BuildLogger(prefix string, logConfigFilename string) {
@@ -35,18 +35,21 @@ func BuildLogger(prefix string, logConfigFilename string) {
 	}
 
 	// Create a chain of loggers.
-	cLog := NewConsoleLogger(CONSOLE, prefix)
-	pLog := NewPCPLogger(PCP, prefix)
-	schedTraceLog := NewSchedTraceLogger(SCHED_TRACE, prefix)
-	spsLog := NewSchedPolicySwitchLogger(SPS, prefix)
-	schedWindowLog := NewSchedWindowLogger(SCHED_WINDOW, prefix)
-	tskDistLog := NewClsfnTaskDistrOverheadLogger(CLSFN_TASKDIST_OVERHEAD, prefix)
+	b := &baseLogData{data: log.Fields{}}
+	head := &LoggerImpl{baseLogData: b}
+	cLog := NewConsoleLogger(b, CONSOLE, prefix)
+	pLog := NewPCPLogger(b, PCP, prefix)
+	schedTraceLog := NewSchedTraceLogger(b, SCHED_TRACE, prefix)
+	spsLog := NewSchedPolicySwitchLogger(b, SPS, prefix)
+	schedWindowLog := NewSchedWindowLogger(b, SCHED_WINDOW, prefix)
+	tskDistLog := NewClsfnTaskDistrOverheadLogger(b, CLSFN_TASKDIST_OVERHEAD, prefix)
 
+	head.SetNext(cLog)
 	cLog.SetNext(pLog)
 	pLog.SetNext(schedTraceLog)
 	schedTraceLog.SetNext(spsLog)
 	spsLog.SetNext(schedWindowLog)
 	schedWindowLog.SetNext(tskDistLog)
 
-	ElektronLogger = cLog
+	ElektronLogger = head
 }
