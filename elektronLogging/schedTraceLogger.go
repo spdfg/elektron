@@ -9,16 +9,18 @@ import (
 )
 
 type SchedTraceLogger struct {
-	LoggerImpl
+	loggerImpl
 }
 
-func NewSchedTraceLogger(b *baseLogData, logType int, prefix string, logger *log.Logger) *SchedTraceLogger {
+func NewSchedTraceLogger(b *baseLogData, logType int, prefix string,
+	logger *log.Logger, logDir *logDirectory) *SchedTraceLogger {
 	sLog := &SchedTraceLogger{}
 	sLog.logType = logType
-	sLog.CreateLogFile(prefix)
+	sLog.logDir = logDir
 	sLog.next = nil
 	sLog.baseLogData = b
 	sLog.logger = logger
+	sLog.createLogFile(prefix)
 	return sLog
 }
 
@@ -63,10 +65,10 @@ func (sLog SchedTraceLogger) Logf(logType int, level log.Level, msgFmtString str
 	}
 }
 
-func (sLog *SchedTraceLogger) CreateLogFile(prefix string) {
+func (sLog *SchedTraceLogger) createLogFile(prefix string) {
 	if config.SchedTraceConfig.Enabled {
 		filename := strings.Join([]string{prefix, config.SchedTraceConfig.FilenameExtension}, "")
-		dirName := logDir.getDirName()
+		dirName := sLog.logDir.getDirName()
 		if dirName != "" {
 			if logFile, err := os.Create(filepath.Join(dirName, filename)); err != nil {
 				log.Fatal("Unable to create logFile: ", err)

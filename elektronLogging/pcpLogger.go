@@ -9,16 +9,18 @@ import (
 )
 
 type PCPLogger struct {
-	LoggerImpl
+	loggerImpl
 }
 
-func NewPCPLogger(b *baseLogData, logType int, prefix string, logger *log.Logger) *PCPLogger {
+func NewPCPLogger(b *baseLogData, logType int, prefix string,
+	logger *log.Logger, logDir *logDirectory) *PCPLogger {
 	pLog := &PCPLogger{}
 	pLog.logType = logType
-	pLog.CreateLogFile(prefix)
+	pLog.logDir = logDir
 	pLog.next = nil
 	pLog.baseLogData = b
 	pLog.logger = logger
+	pLog.createLogFile(prefix)
 	return pLog
 }
 
@@ -63,10 +65,10 @@ func (pLog PCPLogger) Logf(logType int, level log.Level, msgFmtString string, ar
 	}
 }
 
-func (pLog *PCPLogger) CreateLogFile(prefix string) {
+func (pLog *PCPLogger) createLogFile(prefix string) {
 	if config.PCPConfig.Enabled {
 		filename := strings.Join([]string{prefix, config.PCPConfig.FilenameExtension}, "")
-		dirName := logDir.getDirName()
+		dirName := pLog.logDir.getDirName()
 		if dirName != "" {
 			if logFile, err := os.Create(filepath.Join(dirName, filename)); err != nil {
 				log.Fatal("Unable to create logFile: ", err)

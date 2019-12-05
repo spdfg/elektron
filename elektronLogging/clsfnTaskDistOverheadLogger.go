@@ -9,16 +9,18 @@ import (
 )
 
 type ClsfnTaskDistrOverheadLogger struct {
-	LoggerImpl
+	loggerImpl
 }
 
-func NewClsfnTaskDistrOverheadLogger(b *baseLogData, logType int, prefix string, logger *log.Logger) *ClsfnTaskDistrOverheadLogger {
+func NewClsfnTaskDistrOverheadLogger(b *baseLogData, logType int, prefix string,
+	logger *log.Logger, logDir *logDirectory) *ClsfnTaskDistrOverheadLogger {
 	cLog := &ClsfnTaskDistrOverheadLogger{}
 	cLog.logType = logType
-	cLog.CreateLogFile(prefix)
+	cLog.logDir = logDir
 	cLog.next = nil
 	cLog.baseLogData = b
 	cLog.logger = logger
+	cLog.createLogFile(prefix)
 	return cLog
 }
 
@@ -63,11 +65,11 @@ func (cLog ClsfnTaskDistrOverheadLogger) Logf(logType int, level log.Level, msgF
 	}
 }
 
-func (cLog *ClsfnTaskDistrOverheadLogger) CreateLogFile(prefix string) {
+func (cLog *ClsfnTaskDistrOverheadLogger) createLogFile(prefix string) {
 
 	if config.TaskDistrConfig.Enabled {
 		filename := strings.Join([]string{prefix, config.TaskDistrConfig.FilenameExtension}, "")
-		dirName := logDir.getDirName()
+		dirName := cLog.logDir.getDirName()
 		if dirName != "" {
 			if logFile, err := os.Create(filepath.Join(dirName, filename)); err != nil {
 				log.Fatal("Unable to create logFile: ", err)

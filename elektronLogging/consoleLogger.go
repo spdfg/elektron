@@ -1,24 +1,26 @@
 package elektronLogging
 
 import (
+	"fmt"
+	log "github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
 	"strings"
-
-	log "github.com/sirupsen/logrus"
 )
 
 type ConsoleLogger struct {
-	LoggerImpl
+	loggerImpl
 }
 
-func NewConsoleLogger(b *baseLogData, logType int, prefix string, logger *log.Logger) *ConsoleLogger {
+func NewConsoleLogger(b *baseLogData, logType int, prefix string,
+	logger *log.Logger, logDir *logDirectory) *ConsoleLogger {
 	cLog := &ConsoleLogger{}
 	cLog.logType = logType
-	cLog.CreateLogFile(prefix)
+	cLog.logDir = logDir
 	cLog.next = nil
 	cLog.baseLogData = b
 	cLog.logger = logger
+	cLog.createLogFile(prefix)
 	return cLog
 }
 func (cLog ConsoleLogger) Log(logType int, level log.Level, message string) {
@@ -58,11 +60,12 @@ func (cLog ConsoleLogger) Logf(logType int, level log.Level, msgFmtString string
 	}
 }
 
-func (cLog *ConsoleLogger) CreateLogFile(prefix string) {
+func (cLog *ConsoleLogger) createLogFile(prefix string) {
 	// Create log file for the type if it is enabled.
 	if config.ConsoleConfig.Enabled {
 		filename := strings.Join([]string{prefix, config.ConsoleConfig.FilenameExtension}, "")
-		dirName := logDir.getDirName()
+		dirName := cLog.logDir.getDirName()
+		fmt.Println(dirName)
 		if dirName != "" {
 			if logFile, err := os.Create(filepath.Join(dirName, filename)); err != nil {
 				log.Fatal("Unable to create logFile: ", err)

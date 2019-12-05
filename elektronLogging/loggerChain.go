@@ -5,51 +5,52 @@ import (
 	"os"
 )
 
-type Logger interface {
-	SetNext(logType Logger)
+type logInterface interface {
+	setNext(logType logInterface)
 	Log(logType int, level log.Level, message string)
 	Logf(logType int, level log.Level, msgFmtString string, args ...interface{})
-	CreateLogFile(prefix string)
+	createLogFile(prefix string)
 }
 type baseLogData struct {
 	data log.Fields
 }
-type LoggerImpl struct {
+type loggerImpl struct {
 	*baseLogData
 	logType        int
 	allowOnConsole bool
 	logFile        *os.File
-	next           Logger
+	next           logInterface
 	logger         *log.Logger
+	logDir         *logDirectory
 }
 
-func (l *LoggerImpl) WithFields(logData log.Fields) *LoggerImpl {
+func (l *loggerImpl) WithFields(logData log.Fields) *loggerImpl {
 	l.data = logData
 	return l
 }
 
-func (l *LoggerImpl) WithField(key string, value string) *LoggerImpl {
+func (l *loggerImpl) WithField(key string, value string) *loggerImpl {
 	l.data[key] = value
 	return l
 }
 
-func (l *LoggerImpl) SetNext(logType Logger) {
+func (l *loggerImpl) setNext(logType logInterface) {
 	l.next = logType
 }
 
-func (l LoggerImpl) Log(logType int, level log.Level, message string) {
+func (l loggerImpl) Log(logType int, level log.Level, message string) {
 	if l.next != nil {
 		l.next.Log(logType, level, message)
 	}
 }
 
-func (l LoggerImpl) Logf(logType int, level log.Level, msgFmtString string, args ...interface{}) {
+func (l loggerImpl) Logf(logType int, level log.Level, msgFmtString string, args ...interface{}) {
 	if l.next != nil {
 		l.next.Logf(logType, level, msgFmtString, args...)
 	}
 }
 
-func (l *LoggerImpl) resetFields() {
+func (l *loggerImpl) resetFields() {
 	l.data = nil
 	l.data = log.Fields{}
 }
