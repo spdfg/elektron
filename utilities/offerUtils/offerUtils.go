@@ -24,8 +24,8 @@ import (
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 	log "github.com/sirupsen/logrus"
 	"github.com/spdfg/elektron/constants"
-	elekLog "github.com/spdfg/elektron/elektronLogging"
-	elekLogTypes "github.com/spdfg/elektron/elektronLogging/types"
+	elekLog "github.com/spdfg/elektron/logging"
+	elekLogTypes "github.com/spdfg/elektron/logging/types"
 )
 
 func OfferAgg(offer *mesos.Offer) (float64, float64, float64) {

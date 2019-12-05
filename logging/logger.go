@@ -1,4 +1,4 @@
-package elektronLogging
+package logging
 
 import (
 	"os"
@@ -6,7 +6,7 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
-	. "github.com/spdfg/elektron/elektronLogging/types"
+	. "github.com/spdfg/elektron/logging/types"
 )
 
 var config LoggerConfig

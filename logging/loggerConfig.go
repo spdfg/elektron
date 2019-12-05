@@ -1,4 +1,4 @@
-package elektronLogging
+package logging
 
 import (
 	log "github.com/sirupsen/logrus"

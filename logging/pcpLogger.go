@@ -1,4 +1,4 @@
-package elektronLogging
+package logging
 
 import (
 	"os"

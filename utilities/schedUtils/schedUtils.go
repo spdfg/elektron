@@ -21,8 +21,8 @@ package schedUtils
 import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spdfg/elektron/def"
-	elekLog "github.com/spdfg/elektron/elektronLogging"
-	elekLogTypes "github.com/spdfg/elektron/elektronLogging/types"
+	elekLog "github.com/spdfg/elektron/logging"
+	elekLogTypes "github.com/spdfg/elektron/logging/types"
 	"github.com/spdfg/elektron/utilities"
 )
 
