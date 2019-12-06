@@ -27,7 +27,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spdfg/elektron/def"
 	elekLog "github.com/spdfg/elektron/logging"
-	elekLogTypes "github.com/spdfg/elektron/logging/types"
+	. "github.com/spdfg/elektron/logging/types"
 )
 
 type SchedPolicyContext interface {
@@ -90,7 +90,7 @@ func switchTaskDistBased(baseSchedRef *BaseScheduler) string {
 	// Determine the distribution of tasks in the new scheduling window.
 	taskDist, err := def.GetTaskDistributionInWindow(baseSchedRef.schedWindowSize, baseSchedRef.tasks)
 	baseSchedRef.LogClsfnAndTaskDistOverhead(time.Now().Sub(startTime))
-	elekLog.WithFields(log.Fields{"Task Distribution": fmt.Sprintf("%f", taskDist)}).Log(elekLogTypes.CONSOLE,
+	elekLog.WithFields(log.Fields{"Task Distribution": fmt.Sprintf("%f", taskDist)}).Log(CONSOLE,
 		log.InfoLevel, "Switching... ")
 	if err != nil {
 		// All the tasks in the window were only classified into 1 cluster.

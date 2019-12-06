@@ -31,7 +31,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	elekLog "github.com/spdfg/elektron/logging"
-	elekLogTypes "github.com/spdfg/elektron/logging/types"
+	. "github.com/spdfg/elektron/logging/types"
 	"github.com/spdfg/elektron/pcp"
 	"github.com/spdfg/elektron/rapl"
 )
@@ -43,7 +43,7 @@ func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, hiThresh
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
 	if hiThreshold < loThreshold {
-		elekLog.Log(elekLogTypes.CONSOLE, log.InfoLevel, "High threshold is lower than low threshold!")
+		elekLog.Log(CONSOLE, log.InfoLevel, "High threshold is lower than low threshold!")
 	}
 
 	pipe, err := cmd.StdoutPipe()
@@ -59,7 +59,7 @@ func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, hiThresh
 		scanner.Scan()
 
 		// Write to logfile
-		elekLog.Log(elekLogTypes.PCP, log.InfoLevel, scanner.Text())
+		elekLog.Log(PCP, log.InfoLevel, scanner.Text())
 
 		headers := strings.Split(scanner.Text(), ",")
 
@@ -95,12 +95,12 @@ func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, hiThresh
 
 			if *logging {
 
-				elekLog.Log(elekLogTypes.CONSOLE, log.InfoLevel, "Logging PCP...")
+				elekLog.Log(CONSOLE, log.InfoLevel, "Logging PCP...")
 
 				text := scanner.Text()
 				split := strings.Split(text, ",")
 
-				elekLog.Log(elekLogTypes.PCP, log.InfoLevel, text)
+				elekLog.Log(PCP, log.InfoLevel, text)
 
 				totalPower := 0.0
 				for _, powerIndex := range powerIndexes {
@@ -112,7 +112,7 @@ func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, hiThresh
 					powerHistories[host] = powerHistories[host].Next()
 
 					elekLog.WithFields(log.Fields{"Host": fmt.Sprintf("%s", indexToHost[powerIndex]),
-						"Power": fmt.Sprintf("%f", (power * pcp.RAPLUnits))}).Log(elekLogTypes.CONSOLE, log.InfoLevel, "")
+						"Power": fmt.Sprintf("%f", (power * pcp.RAPLUnits))}).Log(CONSOLE, log.InfoLevel, "")
 
 					totalPower += power
 				}
@@ -124,10 +124,10 @@ func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, hiThresh
 				clusterMean := pcp.AverageClusterPowerHistory(clusterPowerHist)
 
 				elekLog.WithFields(log.Fields{"Total power": fmt.Sprintf("%f %d", clusterPower, clusterPowerHist.Len()),
-					"Sec Avg": fmt.Sprintf("%f", clusterMean)}).Log(elekLogTypes.CONSOLE, log.InfoLevel, "")
+					"Sec Avg": fmt.Sprintf("%f", clusterMean)}).Log(CONSOLE, log.InfoLevel, "")
 
 				if clusterMean > hiThreshold {
-					elekLog.Log(elekLogTypes.CONSOLE,
+					elekLog.Log(CONSOLE,
 						log.InfoLevel, "Need to cap a node")
 					// Create statics for all victims and choose one to cap
 					victims := make([]pcp.Victim, 0, 8)
@@ -150,9 +150,9 @@ func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, hiThresh
 							cappedHosts[victim.Host] = true
 							orderCapped = append(orderCapped, victim.Host)
 							elekLog.WithFields(log.Fields{"Capping Victim": fmt.Sprintf("%s", victim.Host),
-								"Avg. Wattage": fmt.Sprintf("%f", victim.Watts*pcp.RAPLUnits)}).Log(elekLogTypes.CONSOLE, log.InfoLevel, "")
+								"Avg. Wattage": fmt.Sprintf("%f", victim.Watts*pcp.RAPLUnits)}).Log(CONSOLE, log.InfoLevel, "")
 							if err := rapl.Cap(victim.Host, "rapl", 50); err != nil {
-								elekLog.Log(elekLogTypes.CONSOLE,
+								elekLog.Log(CONSOLE,
 									log.ErrorLevel,
 									"Error capping host")
 							}
@@ -168,9 +168,9 @@ func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, hiThresh
 						cappedHosts[host] = false
 						// User RAPL package to send uncap.
 						log.Printf("Uncapping host %s", host)
-						elekLog.WithFields(log.Fields{"Uncapped host": host}).Log(elekLogTypes.CONSOLE, log.InfoLevel, "")
+						elekLog.WithFields(log.Fields{"Uncapped host": host}).Log(CONSOLE, log.InfoLevel, "")
 						if err := rapl.Cap(host, "rapl", 100); err != nil {
-							elekLog.Log(elekLogTypes.CONSOLE, log.ErrorLevel, "Error capping host")
+							elekLog.Log(CONSOLE, log.ErrorLevel, "Error capping host")
 						}
 					}
 				}
@@ -180,7 +180,7 @@ func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, hiThresh
 		}
 	}(logging, hiThreshold, loThreshold)
 
-	elekLog.Log(elekLogTypes.CONSOLE, log.InfoLevel, "PCP logging started")
+	elekLog.Log(CONSOLE, log.InfoLevel, "PCP logging started")
 
 	if err := cmd.Start(); err != nil {
 		log.Fatal(err)
@@ -190,7 +190,7 @@ func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, hiThresh
 
 	select {
 	case <-quit:
-		elekLog.Log(elekLogTypes.CONSOLE, log.InfoLevel, "Stopping PCP logging in 5 seconds")
+		elekLog.Log(CONSOLE, log.InfoLevel, "Stopping PCP logging in 5 seconds")
 		time.Sleep(5 * time.Second)
 
 		// http://stackoverflow.com/questions/22470193/why-wont-go-kill-a-child-process-correctly

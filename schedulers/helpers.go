@@ -28,7 +28,7 @@ import (
 	"github.com/spdfg/elektron/constants"
 	"github.com/spdfg/elektron/def"
 	elekLog "github.com/spdfg/elektron/logging"
-	elekLogTypes "github.com/spdfg/elektron/logging/types"
+	. "github.com/spdfg/elektron/logging/types"
 	"github.com/spdfg/elektron/utilities"
 	"github.com/spdfg/elektron/utilities/mesosUtils"
 )
@@ -36,10 +36,10 @@ import (
 func coLocated(tasks map[string]bool, s BaseScheduler) {
 
 	for _, task := range tasks {
-		elekLog.WithFields(log.Fields{"Task": task}).Log(elekLogTypes.CONSOLE, log.InfoLevel, "")
+		elekLog.WithFields(log.Fields{"Task": task}).Log(CONSOLE, log.InfoLevel, "")
 	}
 
-	elekLog.Log(elekLogTypes.CONSOLE, log.InfoLevel, "---------------------")
+	elekLog.Log(CONSOLE, log.InfoLevel, "---------------------")
 }
 
 // Get the powerClass of the given hostname.

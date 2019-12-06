@@ -22,7 +22,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spdfg/elektron/def"
 	elekLog "github.com/spdfg/elektron/logging"
-	elekLogTypes "github.com/spdfg/elektron/logging/types"
+	. "github.com/spdfg/elektron/logging/types"
 	"github.com/spdfg/elektron/utilities"
 )
 
@@ -78,7 +78,7 @@ func (s *fillNextOfferCycle) apply(taskQueue []def.Task) (int, int) {
 	for _, task := range taskQueue {
 		numberOfTasksTraversed++
 		for i := *task.Instances; i > 0; i-- {
-			elekLog.Logf(elekLogTypes.CONSOLE, log.InfoLevel,
+			elekLog.Logf(CONSOLE, log.InfoLevel,
 				"Checking if Instance #%d of Task[%s] can be scheduled "+
 					"during the next offer cycle...", i, task.Name)
 			if canSchedule(task) {

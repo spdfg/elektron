@@ -26,7 +26,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	elekLog "github.com/spdfg/elektron/logging"
-	elekLogTypes "github.com/spdfg/elektron/logging/types"
+	. "github.com/spdfg/elektron/logging/types"
 )
 
 func Start(quit chan struct{}, logging *bool, pcpConfigFile string) {
@@ -47,7 +47,7 @@ func Start(quit chan struct{}, logging *bool, pcpConfigFile string) {
 		scanner.Scan()
 
 		// Write to logfile
-		elekLog.Log(elekLogTypes.PCP, log.InfoLevel, scanner.Text())
+		elekLog.Log(PCP, log.InfoLevel, scanner.Text())
 
 		// Throw away first set of results
 		scanner.Scan()
@@ -58,14 +58,14 @@ func Start(quit chan struct{}, logging *bool, pcpConfigFile string) {
 			text := scanner.Text()
 
 			if *logging {
-				elekLog.Log(elekLogTypes.PCP, log.InfoLevel, text)
+				elekLog.Log(PCP, log.InfoLevel, text)
 			}
 
 			seconds++
 		}
 	}(logging)
 
-	elekLog.Log(elekLogTypes.CONSOLE, log.InfoLevel, "PCP logging started")
+	elekLog.Log(CONSOLE, log.InfoLevel, "PCP logging started")
 
 	if err := cmd.Start(); err != nil {
 		log.Fatal(err)
@@ -75,7 +75,7 @@ func Start(quit chan struct{}, logging *bool, pcpConfigFile string) {
 
 	select {
 	case <-quit:
-		elekLog.Log(elekLogTypes.CONSOLE, log.InfoLevel, "Stopping PCP logging in 5 seconds")
+		elekLog.Log(CONSOLE, log.InfoLevel, "Stopping PCP logging in 5 seconds")
 		time.Sleep(5 * time.Second)
 
 		// http://stackoverflow.com/questions/22470193/why-wont-go-kill-a-child-process-correctly
