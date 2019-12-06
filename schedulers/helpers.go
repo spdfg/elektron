@@ -36,7 +36,7 @@ import (
 func coLocated(tasks map[string]bool, s BaseScheduler) {
 
 	for _, task := range tasks {
-		elekLog.WithFields(log.Fields{"Task": task}).Log(CONSOLE, log.InfoLevel, "")
+		elekLog.WithField("Task", fmt.Sprintf("%v", task)).Log(CONSOLE, log.InfoLevel, "")
 	}
 
 	elekLog.Log(CONSOLE, log.InfoLevel, "---------------------")

@@ -111,8 +111,10 @@ func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, hiThresh
 					powerHistories[host].Value = power
 					powerHistories[host] = powerHistories[host].Next()
 
-					elekLog.WithFields(log.Fields{"Host": fmt.Sprintf("%s", indexToHost[powerIndex]),
-						"Power": fmt.Sprintf("%f", (power * pcp.RAPLUnits))}).Log(CONSOLE, log.InfoLevel, "")
+					elekLog.WithFields(log.Fields{
+						"Host":  indexToHost[powerIndex],
+						"Power": fmt.Sprintf("%f", power*pcp.RAPLUnits),
+					}).Log(CONSOLE, log.InfoLevel, "")
 
 					totalPower += power
 				}
@@ -123,12 +125,13 @@ func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, hiThresh
 
 				clusterMean := pcp.AverageClusterPowerHistory(clusterPowerHist)
 
-				elekLog.WithFields(log.Fields{"Total power": fmt.Sprintf("%f %d", clusterPower, clusterPowerHist.Len()),
-					"Sec Avg": fmt.Sprintf("%f", clusterMean)}).Log(CONSOLE, log.InfoLevel, "")
+				elekLog.WithFields(log.Fields{
+					"Total power": fmt.Sprintf("%f %d Sec", clusterPower, clusterPowerHist.Len()),
+					"Avg":         fmt.Sprintf("%f", clusterMean),
+				}).Log(CONSOLE, log.InfoLevel, "")
 
 				if clusterMean > hiThreshold {
-					elekLog.Log(CONSOLE,
-						log.InfoLevel, "Need to cap a node")
+					elekLog.Log(CONSOLE, log.InfoLevel, "Need to cap a node")
 					// Create statics for all victims and choose one to cap
 					victims := make([]pcp.Victim, 0, 8)
 
@@ -149,12 +152,10 @@ func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, hiThresh
 						if !cappedHosts[victim.Host] {
 							cappedHosts[victim.Host] = true
 							orderCapped = append(orderCapped, victim.Host)
-							elekLog.WithFields(log.Fields{"Capping Victim": fmt.Sprintf("%s", victim.Host),
-								"Avg. Wattage": fmt.Sprintf("%f", victim.Watts*pcp.RAPLUnits)}).Log(CONSOLE, log.InfoLevel, "")
+							elekLog.WithField("Avg. Wattage",
+								fmt.Sprintf("%f", victim.Watts*pcp.RAPLUnits)).Logf(CONSOLE, log.InfoLevel, "Capping Victim %s", victim.Host)
 							if err := rapl.Cap(victim.Host, "rapl", 50); err != nil {
-								elekLog.Log(CONSOLE,
-									log.ErrorLevel,
-									"Error capping host")
+								elekLog.Log(CONSOLE, log.ErrorLevel, "Error capping host")
 							}
 							break // Only cap one machine at at time.
 						}
@@ -167,8 +168,7 @@ func StartPCPLogAndExtremaDynamicCap(quit chan struct{}, logging *bool, hiThresh
 						orderCapped = orderCapped[:len(orderCapped)-1]
 						cappedHosts[host] = false
 						// User RAPL package to send uncap.
-						log.Printf("Uncapping host %s", host)
-						elekLog.WithFields(log.Fields{"Uncapped host": host}).Log(CONSOLE, log.InfoLevel, "")
+						elekLog.Logf(CONSOLE, log.InfoLevel, "Uncapping host %s", host)
 						if err := rapl.Cap(host, "rapl", 100); err != nil {
 							elekLog.Log(CONSOLE, log.ErrorLevel, "Error capping host")
 						}
