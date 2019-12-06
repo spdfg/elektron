@@ -26,8 +26,8 @@ import (
 	"github.com/mash/gokmeans"
 	"github.com/montanaflynn/stats"
 	log "github.com/sirupsen/logrus"
-	elekLog "github.com/spdfg/elektron/elektronLogging"
-	elekLogTypes "github.com/spdfg/elektron/elektronLogging/types"
+	elekLog "github.com/spdfg/elektron/logging"
+	. "github.com/spdfg/elektron/logging/types"
 )
 
 // Information about a cluster of tasks.
@@ -52,7 +52,7 @@ func (tc TasksToClassify) taskObservationCalculator(task Task) []float64 {
 	} else if task.Watts != 0.0 {
 		return []float64{task.Watts}
 	} else {
-		elekLog.ElektronLogger.Log(elekLogTypes.CONSOLE, log.FatalLevel, "Unable to classify tasks. Missing Watts or ClassToWatts attribute in workload")
+		elekLog.Log(CONSOLE, log.FatalLevel, "Unable to classify tasks. Missing Watts or ClassToWatts attribute in workload")
 		return []float64{0.0} // Won't reach here.
 	}
 }
@@ -107,7 +107,7 @@ func clusterSizeAvgMMMPU(tasks []Task, taskObservation func(task Task) []float64
 			} else {
 				// skip this value
 				// there is an error in the task config.
-				elekLog.ElektronLogger.Log(elekLogTypes.CONSOLE, log.ErrorLevel, err.Error())
+				elekLog.Log(CONSOLE, log.ErrorLevel, err.Error())
 			}
 		} else {
 			// There is only one observation for the task.

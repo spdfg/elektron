@@ -31,8 +31,8 @@ import (
 	sched "github.com/mesos/mesos-go/api/v0/scheduler"
 	log "github.com/sirupsen/logrus"
 	"github.com/spdfg/elektron/def"
-	elekLog "github.com/spdfg/elektron/elektronLogging"
-	elekLogTypes "github.com/spdfg/elektron/elektronLogging/types"
+	elekLog "github.com/spdfg/elektron/logging"
+	. "github.com/spdfg/elektron/logging/types"
 	"github.com/spdfg/elektron/pcp"
 	"github.com/spdfg/elektron/powerCap"
 	"github.com/spdfg/elektron/schedulers"
@@ -226,8 +226,11 @@ func main() {
 	if strings.Contains(*pcplogPrefix, "/") {
 		log.Fatal("log file prefix should not contain '/'.")
 	}
-	// Build Logger for elektron.
-	elekLog.BuildLogger(*pcplogPrefix, *logConfigFilename)
+
+	// Build Logger.
+	if err := elekLog.BuildLogger(*pcplogPrefix, *logConfigFilename); err != nil {
+		log.Fatal(err)
+	}
 
 	// Starting PCP logging.
 	if noPowercap {
@@ -282,8 +285,10 @@ func main() {
 
 	// Starting the scheduler driver.
 	if status, err := driver.Run(); err != nil {
-		elekLog.ElektronLogger.WithFields(log.Fields{"status": status.String(), "error": err.Error()}).Log(elekLogTypes.CONSOLE,
-			log.ErrorLevel, "Framework stopped ")
+		elekLog.WithFields(log.Fields{
+			"status": status.String(),
+			"error":  err.Error(),
+		}).Log(CONSOLE, log.ErrorLevel, "Framework stopped ")
 	}
-	elekLog.ElektronLogger.Log(elekLogTypes.CONSOLE, log.InfoLevel, "Exiting...")
+	elekLog.Log(CONSOLE, log.InfoLevel, "Exiting...")
 }

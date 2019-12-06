@@ -24,8 +24,8 @@ import (
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 	log "github.com/sirupsen/logrus"
 	"github.com/spdfg/elektron/constants"
-	elekLog "github.com/spdfg/elektron/elektronLogging"
-	elekLogTypes "github.com/spdfg/elektron/elektronLogging/types"
+	elekLog "github.com/spdfg/elektron/logging"
+	. "github.com/spdfg/elektron/logging/types"
 )
 
 func OfferAgg(offer *mesos.Offer) (float64, float64, float64) {
@@ -90,13 +90,15 @@ func UpdateEnvironment(offer *mesos.Offer) {
 	var host = offer.GetHostname()
 	// If this host is not present in the set of hosts.
 	if _, ok := constants.Hosts[host]; !ok {
-		elekLog.ElektronLogger.WithFields(log.Fields{"Adding host": host}).Log(elekLogTypes.CONSOLE, log.InfoLevel, "New host detected")
+		elekLog.WithField("host", host).Log(CONSOLE, log.InfoLevel, "New host detected")
 		// Add this host.
 		constants.Hosts[host] = struct{}{}
 		// Get the power class of this host.
 		class := PowerClass(offer)
-		elekLog.ElektronLogger.WithFields(log.Fields{"host": host, "PowerClass": class}).Log(elekLogTypes.CONSOLE,
-			log.InfoLevel, "Registering the power class...")
+		elekLog.WithFields(log.Fields{
+			"host":       host,
+			"PowerClass": class,
+		}).Log(CONSOLE, log.InfoLevel, "Registering the power class...")
 		// If new power class, register the power class.
 		if _, ok := constants.PowerClasses[class]; !ok {
 			constants.PowerClasses[class] = make(map[string]struct{})

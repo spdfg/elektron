@@ -1,12 +1,13 @@
-package elektronLogging
+package logging
 
 import (
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 )
 
-type LoggerConfig struct {
+type loggerConfig struct {
 	SchedTraceConfig struct {
 		Enabled           bool   `yaml:"enabled"`
 		FilenameExtension string `yaml:"filenameExtension"`
@@ -47,16 +48,18 @@ type LoggerConfig struct {
 	Format []string `yaml:"format"`
 }
 
-func (c *LoggerConfig) GetConfig(logConfigFilename string) *LoggerConfig {
+func GetConfig(logConfigFilename string) (*loggerConfig, error) {
 
 	yamlFile, err := ioutil.ReadFile(logConfigFilename)
 	if err != nil {
-		log.Printf("Error in reading yaml file   #%v ", err)
+		return nil, errors.Wrap(err, "failed to read log config file")
 	}
+
+	c := &loggerConfig{}
 	err = yaml.Unmarshal(yamlFile, c)
 	if err != nil {
 		log.Fatalf("Error in unmarshalling yaml: %v", err)
 	}
 
-	return c
+	return c, nil
 }
