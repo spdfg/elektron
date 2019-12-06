@@ -8,19 +8,19 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type SchedTraceLogger struct {
+type schedTraceLogger struct {
 	baseElektronLogger
 }
 
-func NewSchedTraceLogger(
-	config *LoggerConfig,
+func newSchedTraceLogger(
+	config *loggerConfig,
 	b *baseLogData,
 	logType int,
 	prefix string,
 	logger *log.Logger,
-	logDir *logDirectory) *SchedTraceLogger {
+	logDir *logDirectory) *schedTraceLogger {
 
-	sLog := &SchedTraceLogger{
+	sLog := &schedTraceLogger{
 		baseElektronLogger: baseElektronLogger{
 			baseLogData: b,
 			config: struct {
@@ -43,7 +43,7 @@ func NewSchedTraceLogger(
 	return sLog
 }
 
-func (sLog SchedTraceLogger) Log(logType int, level log.Level, message string) {
+func (sLog schedTraceLogger) Log(logType int, level log.Level, message string) {
 	if sLog.logType == logType {
 		if sLog.isEnabled() {
 			if sLog.config.AllowOnConsole {
@@ -63,7 +63,7 @@ func (sLog SchedTraceLogger) Log(logType int, level log.Level, message string) {
 	}
 }
 
-func (sLog SchedTraceLogger) Logf(logType int, level log.Level, msgFmtString string, args ...interface{}) {
+func (sLog schedTraceLogger) Logf(logType int, level log.Level, msgFmtString string, args ...interface{}) {
 	if sLog.logType == logType {
 		if sLog.isEnabled() {
 			if sLog.config.AllowOnConsole {
@@ -84,7 +84,7 @@ func (sLog SchedTraceLogger) Logf(logType int, level log.Level, msgFmtString str
 	}
 }
 
-func (sLog *SchedTraceLogger) createLogFile(prefix string) {
+func (sLog *schedTraceLogger) createLogFile(prefix string) {
 	if sLog.isEnabled() {
 		filename := strings.Join([]string{prefix, sLog.config.FilenameExtension}, "")
 		dirName := sLog.logDir.getDirName()

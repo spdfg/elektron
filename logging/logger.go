@@ -10,8 +10,8 @@ import (
 	. "github.com/spdfg/elektron/logging/types"
 )
 
-// var config LoggerConfig
-var formatter ElektronFormatter
+// var config loggerConfig
+var formatter elektronFormatter
 var elektronLoggerInstance elektronLogger
 
 type elektronLogger interface {
@@ -103,12 +103,12 @@ func BuildLogger(prefix string, logConfigFilename string) error {
 	if config, err := GetConfig(logConfigFilename); err != nil {
 		return errors.Wrap(err, "Failed to build logger")
 	} else {
-		cLog := NewConsoleLogger(config, b, CONSOLE, prefix, logger, logDir)
-		pLog := NewPCPLogger(config, b, PCP, prefix, logger, logDir)
-		schedTraceLog := NewSchedTraceLogger(config, b, SCHED_TRACE, prefix, logger, logDir)
-		spsLog := NewSchedPolicySwitchLogger(config, b, SPS, prefix, logger, logDir)
-		schedWindowLog := NewSchedWindowLogger(config, b, SCHED_WINDOW, prefix, logger, logDir)
-		tskDistLog := NewClsfnTaskDistrOverheadLogger(config, b, CLSFN_TASKDISTR_OVERHEAD, prefix, logger, logDir)
+		cLog := newConsoleLogger(config, b, CONSOLE, prefix, logger, logDir)
+		pLog := newPCPLogger(config, b, PCP, prefix, logger, logDir)
+		schedTraceLog := newSchedTraceLogger(config, b, SCHED_TRACE, prefix, logger, logDir)
+		spsLog := newSchedPolicySwitchLogger(config, b, SPS, prefix, logger, logDir)
+		schedWindowLog := newSchedWindowLogger(config, b, SCHED_WINDOW, prefix, logger, logDir)
+		tskDistLog := newClsfnTaskDistrOverheadLogger(config, b, CLSFN_TASKDISTR_OVERHEAD, prefix, logger, logDir)
 
 		head.setNext(cLog)
 		cLog.setNext(pLog)

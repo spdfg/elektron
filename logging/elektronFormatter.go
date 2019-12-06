@@ -8,11 +8,11 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type ElektronFormatter struct {
+type elektronFormatter struct {
 	TimestampFormat string
 }
 
-func (f ElektronFormatter) Format(entry *log.Entry) ([]byte, error) {
+func (f elektronFormatter) Format(entry *log.Entry) ([]byte, error) {
 	var b *bytes.Buffer
 
 	if entry.Buffer != nil {

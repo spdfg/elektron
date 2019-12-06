@@ -8,19 +8,19 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type SchedWindowLogger struct {
+type schedWindowLogger struct {
 	baseElektronLogger
 }
 
-func NewSchedWindowLogger(
-	config *LoggerConfig,
+func newSchedWindowLogger(
+	config *loggerConfig,
 	b *baseLogData,
 	logType int,
 	prefix string,
 	logger *log.Logger,
-	logDir *logDirectory) *SchedWindowLogger {
+	logDir *logDirectory) *schedWindowLogger {
 
-	sLog := &SchedWindowLogger{
+	sLog := &schedWindowLogger{
 		baseElektronLogger: baseElektronLogger{
 			baseLogData: b,
 			config: struct {
@@ -43,7 +43,7 @@ func NewSchedWindowLogger(
 	return sLog
 }
 
-func (sLog SchedWindowLogger) Log(logType int, level log.Level, message string) {
+func (sLog schedWindowLogger) Log(logType int, level log.Level, message string) {
 	if sLog.logType == logType {
 		if sLog.isEnabled() {
 			if sLog.config.AllowOnConsole {
@@ -64,7 +64,7 @@ func (sLog SchedWindowLogger) Log(logType int, level log.Level, message string) 
 	}
 }
 
-func (sLog SchedWindowLogger) Logf(logType int, level log.Level, msgFmtString string, args ...interface{}) {
+func (sLog schedWindowLogger) Logf(logType int, level log.Level, msgFmtString string, args ...interface{}) {
 	if sLog.logType == logType {
 		if sLog.isEnabled() {
 			if sLog.config.AllowOnConsole {
@@ -84,7 +84,7 @@ func (sLog SchedWindowLogger) Logf(logType int, level log.Level, msgFmtString st
 	}
 }
 
-func (sLog *SchedWindowLogger) createLogFile(prefix string) {
+func (sLog *schedWindowLogger) createLogFile(prefix string) {
 	if sLog.isEnabled() {
 		filename := strings.Join([]string{prefix, sLog.config.FilenameExtension}, "")
 		dirName := sLog.logDir.getDirName()

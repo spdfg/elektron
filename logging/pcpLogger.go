@@ -8,19 +8,19 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type PCPLogger struct {
+type pcpLogger struct {
 	baseElektronLogger
 }
 
-func NewPCPLogger(
-	config *LoggerConfig,
+func newPCPLogger(
+	config *loggerConfig,
 	b *baseLogData,
 	logType int,
 	prefix string,
 	logger *log.Logger,
-	logDir *logDirectory) *PCPLogger {
+	logDir *logDirectory) *pcpLogger {
 
-	pLog := &PCPLogger{
+	pLog := &pcpLogger{
 		baseElektronLogger: baseElektronLogger{
 			baseLogData: b,
 			config: struct {
@@ -43,7 +43,7 @@ func NewPCPLogger(
 	return pLog
 }
 
-func (pLog PCPLogger) Log(logType int, level log.Level, message string) {
+func (pLog pcpLogger) Log(logType int, level log.Level, message string) {
 	if pLog.logType == logType {
 		if pLog.isEnabled() {
 			if pLog.config.AllowOnConsole {
@@ -63,7 +63,7 @@ func (pLog PCPLogger) Log(logType int, level log.Level, message string) {
 	}
 }
 
-func (pLog PCPLogger) Logf(logType int, level log.Level, msgFmtString string, args ...interface{}) {
+func (pLog pcpLogger) Logf(logType int, level log.Level, msgFmtString string, args ...interface{}) {
 	if pLog.logType == logType {
 		if pLog.isEnabled() {
 			if pLog.config.AllowOnConsole {
@@ -84,7 +84,7 @@ func (pLog PCPLogger) Logf(logType int, level log.Level, msgFmtString string, ar
 	}
 }
 
-func (pLog *PCPLogger) createLogFile(prefix string) {
+func (pLog *pcpLogger) createLogFile(prefix string) {
 	if pLog.isEnabled() {
 		filename := strings.Join([]string{prefix, pLog.config.FilenameExtension}, "")
 		dirName := pLog.logDir.getDirName()

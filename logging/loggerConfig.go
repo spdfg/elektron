@@ -7,7 +7,7 @@ import (
 	"io/ioutil"
 )
 
-type LoggerConfig struct {
+type loggerConfig struct {
 	SchedTraceConfig struct {
 		Enabled           bool   `yaml:"enabled"`
 		FilenameExtension string `yaml:"filenameExtension"`
@@ -48,14 +48,14 @@ type LoggerConfig struct {
 	Format []string `yaml:"format"`
 }
 
-func GetConfig(logConfigFilename string) (*LoggerConfig, error) {
+func GetConfig(logConfigFilename string) (*loggerConfig, error) {
 
 	yamlFile, err := ioutil.ReadFile(logConfigFilename)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read log config file")
 	}
 
-	c := &LoggerConfig{}
+	c := &loggerConfig{}
 	err = yaml.Unmarshal(yamlFile, c)
 	if err != nil {
 		log.Fatalf("Error in unmarshalling yaml: %v", err)

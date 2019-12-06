@@ -8,19 +8,19 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type SchedPolicySwitchLogger struct {
+type schedPolicySwitchLogger struct {
 	baseElektronLogger
 }
 
-func NewSchedPolicySwitchLogger(
-	config *LoggerConfig,
+func newSchedPolicySwitchLogger(
+	config *loggerConfig,
 	b *baseLogData,
 	logType int,
 	prefix string,
 	logger *log.Logger,
-	logDir *logDirectory) *SchedPolicySwitchLogger {
+	logDir *logDirectory) *schedPolicySwitchLogger {
 
-	sLog := &SchedPolicySwitchLogger{
+	sLog := &schedPolicySwitchLogger{
 		baseElektronLogger: baseElektronLogger{
 			baseLogData: b,
 			config: struct {
@@ -43,7 +43,7 @@ func NewSchedPolicySwitchLogger(
 	return sLog
 }
 
-func (sLog SchedPolicySwitchLogger) Log(logType int, level log.Level, message string) {
+func (sLog schedPolicySwitchLogger) Log(logType int, level log.Level, message string) {
 	if sLog.logType == logType {
 		if sLog.isEnabled() {
 			if sLog.config.AllowOnConsole {
@@ -63,7 +63,7 @@ func (sLog SchedPolicySwitchLogger) Log(logType int, level log.Level, message st
 	}
 }
 
-func (sLog SchedPolicySwitchLogger) Logf(logType int, level log.Level, msgFmtString string, args ...interface{}) {
+func (sLog schedPolicySwitchLogger) Logf(logType int, level log.Level, msgFmtString string, args ...interface{}) {
 	if sLog.logType == logType {
 		if sLog.isEnabled() {
 			if sLog.config.AllowOnConsole {
@@ -84,7 +84,7 @@ func (sLog SchedPolicySwitchLogger) Logf(logType int, level log.Level, msgFmtStr
 	}
 }
 
-func (sLog *SchedPolicySwitchLogger) createLogFile(prefix string) {
+func (sLog *schedPolicySwitchLogger) createLogFile(prefix string) {
 	if sLog.isEnabled() {
 		filename := strings.Join([]string{prefix, sLog.config.FilenameExtension}, "")
 		dirName := sLog.logDir.getDirName()

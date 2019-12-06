@@ -8,19 +8,19 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type ClsfnTaskDistrOverheadLogger struct {
+type clsfnTaskDistrOverheadLogger struct {
 	baseElektronLogger
 }
 
-func NewClsfnTaskDistrOverheadLogger(
-	config *LoggerConfig,
+func newClsfnTaskDistrOverheadLogger(
+	config *loggerConfig,
 	b *baseLogData,
 	logType int,
 	prefix string,
 	logger *log.Logger,
-	logDir *logDirectory) *ClsfnTaskDistrOverheadLogger {
+	logDir *logDirectory) *clsfnTaskDistrOverheadLogger {
 
-	cLog := &ClsfnTaskDistrOverheadLogger{
+	cLog := &clsfnTaskDistrOverheadLogger{
 		baseElektronLogger: baseElektronLogger{
 			baseLogData: b,
 			config: struct {
@@ -42,7 +42,7 @@ func NewClsfnTaskDistrOverheadLogger(
 	cLog.createLogFile(prefix)
 	return cLog
 }
-func (cLog ClsfnTaskDistrOverheadLogger) Log(logType int, level log.Level, message string) {
+func (cLog clsfnTaskDistrOverheadLogger) Log(logType int, level log.Level, message string) {
 	if cLog.logType == logType {
 		if cLog.isEnabled() {
 			if cLog.config.AllowOnConsole {
@@ -63,7 +63,7 @@ func (cLog ClsfnTaskDistrOverheadLogger) Log(logType int, level log.Level, messa
 	}
 }
 
-func (cLog ClsfnTaskDistrOverheadLogger) Logf(logType int, level log.Level, msgFmtString string, args ...interface{}) {
+func (cLog clsfnTaskDistrOverheadLogger) Logf(logType int, level log.Level, msgFmtString string, args ...interface{}) {
 	if cLog.logType == logType {
 		if cLog.isEnabled() {
 			if cLog.config.AllowOnConsole {
@@ -83,7 +83,7 @@ func (cLog ClsfnTaskDistrOverheadLogger) Logf(logType int, level log.Level, msgF
 	}
 }
 
-func (cLog *ClsfnTaskDistrOverheadLogger) createLogFile(prefix string) {
+func (cLog *clsfnTaskDistrOverheadLogger) createLogFile(prefix string) {
 
 	if cLog.isEnabled() {
 		filename := strings.Join([]string{prefix, cLog.config.FilenameExtension}, "")
