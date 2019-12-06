@@ -17,6 +17,8 @@ var elektronLoggerInstance elektronLogger
 type elektronLogger interface {
 	setNext(next elektronLogger)
 	isEnabled() bool
+	isAllowedOnConsole() bool
+	getFilenameExtension() string
 	Log(logType int, level log.Level, message string)
 	Logf(logType int, level log.Level, msgFmtString string, args ...interface{})
 	WithFields(logData log.Fields) elektronLogger
@@ -45,6 +47,14 @@ type baseElektronLogger struct {
 
 func (l baseElektronLogger) isEnabled() bool {
 	return l.config.Enabled
+}
+
+func (l baseElektronLogger) isAllowedOnConsole() bool {
+	return l.config.AllowOnConsole
+}
+
+func (l baseElektronLogger) getFilenameExtension() string {
+	return l.config.FilenameExtension
 }
 
 func (l *baseElektronLogger) WithFields(logData log.Fields) elektronLogger {

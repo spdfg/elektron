@@ -45,7 +45,7 @@ func newClsfnTaskDistrOverheadLogger(
 func (cLog clsfnTaskDistrOverheadLogger) Log(logType int, level log.Level, message string) {
 	if cLog.logType == logType {
 		if cLog.isEnabled() {
-			if cLog.config.AllowOnConsole {
+			if cLog.isAllowedOnConsole() {
 				cLog.logger.SetOutput(os.Stdout)
 				cLog.logger.WithFields(cLog.data).Log(level, message)
 			}
@@ -66,7 +66,7 @@ func (cLog clsfnTaskDistrOverheadLogger) Log(logType int, level log.Level, messa
 func (cLog clsfnTaskDistrOverheadLogger) Logf(logType int, level log.Level, msgFmtString string, args ...interface{}) {
 	if cLog.logType == logType {
 		if cLog.isEnabled() {
-			if cLog.config.AllowOnConsole {
+			if cLog.isAllowedOnConsole() {
 				cLog.logger.SetOutput(os.Stdout)
 				cLog.logger.WithFields(cLog.data).Logf(level, msgFmtString, args...)
 			}
@@ -86,7 +86,7 @@ func (cLog clsfnTaskDistrOverheadLogger) Logf(logType int, level log.Level, msgF
 func (cLog *clsfnTaskDistrOverheadLogger) createLogFile(prefix string) {
 
 	if cLog.isEnabled() {
-		filename := strings.Join([]string{prefix, cLog.config.FilenameExtension}, "")
+		filename := strings.Join([]string{prefix, cLog.getFilenameExtension()}, "")
 		dirName := cLog.logDir.getDirName()
 		if dirName != "" {
 			if logFile, err := os.Create(filepath.Join(dirName, filename)); err != nil {

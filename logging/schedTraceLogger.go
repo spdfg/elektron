@@ -46,7 +46,7 @@ func newSchedTraceLogger(
 func (sLog schedTraceLogger) Log(logType int, level log.Level, message string) {
 	if sLog.logType == logType {
 		if sLog.isEnabled() {
-			if sLog.config.AllowOnConsole {
+			if sLog.isAllowedOnConsole() {
 				sLog.logger.SetOutput(os.Stdout)
 				sLog.logger.WithFields(sLog.data).Log(level, message)
 			}
@@ -66,7 +66,7 @@ func (sLog schedTraceLogger) Log(logType int, level log.Level, message string) {
 func (sLog schedTraceLogger) Logf(logType int, level log.Level, msgFmtString string, args ...interface{}) {
 	if sLog.logType == logType {
 		if sLog.isEnabled() {
-			if sLog.config.AllowOnConsole {
+			if sLog.isAllowedOnConsole() {
 				sLog.logger.SetOutput(os.Stdout)
 				sLog.logger.WithFields(sLog.data).Logf(level, msgFmtString, args...)
 			}
@@ -86,7 +86,7 @@ func (sLog schedTraceLogger) Logf(logType int, level log.Level, msgFmtString str
 
 func (sLog *schedTraceLogger) createLogFile(prefix string) {
 	if sLog.isEnabled() {
-		filename := strings.Join([]string{prefix, sLog.config.FilenameExtension}, "")
+		filename := strings.Join([]string{prefix, sLog.getFilenameExtension()}, "")
 		dirName := sLog.logDir.getDirName()
 		if dirName != "" {
 			if logFile, err := os.Create(filepath.Join(dirName, filename)); err != nil {

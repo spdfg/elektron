@@ -46,7 +46,7 @@ func newPCPLogger(
 func (pLog pcpLogger) Log(logType int, level log.Level, message string) {
 	if pLog.logType == logType {
 		if pLog.isEnabled() {
-			if pLog.config.AllowOnConsole {
+			if pLog.isAllowedOnConsole() {
 				pLog.logger.SetOutput(os.Stdout)
 				pLog.logger.WithFields(pLog.data).Log(level, message)
 			}
@@ -66,7 +66,7 @@ func (pLog pcpLogger) Log(logType int, level log.Level, message string) {
 func (pLog pcpLogger) Logf(logType int, level log.Level, msgFmtString string, args ...interface{}) {
 	if pLog.logType == logType {
 		if pLog.isEnabled() {
-			if pLog.config.AllowOnConsole {
+			if pLog.isAllowedOnConsole() {
 				pLog.logger.SetOutput(os.Stdout)
 				pLog.logger.WithFields(pLog.data).Logf(level, msgFmtString, args...)
 			}
@@ -86,7 +86,7 @@ func (pLog pcpLogger) Logf(logType int, level log.Level, msgFmtString string, ar
 
 func (pLog *pcpLogger) createLogFile(prefix string) {
 	if pLog.isEnabled() {
-		filename := strings.Join([]string{prefix, pLog.config.FilenameExtension}, "")
+		filename := strings.Join([]string{prefix, pLog.getFilenameExtension()}, "")
 		dirName := pLog.logDir.getDirName()
 		if dirName != "" {
 			if logFile, err := os.Create(filepath.Join(dirName, filename)); err != nil {

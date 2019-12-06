@@ -86,7 +86,7 @@ func (cLog consoleLogger) Logf(logType int, level log.Level, msgFmtString string
 func (cLog *consoleLogger) createLogFile(prefix string) {
 	// Create log file for the type if it is enabled.
 	if cLog.isEnabled() {
-		filename := strings.Join([]string{prefix, cLog.config.FilenameExtension}, "")
+		filename := strings.Join([]string{prefix, cLog.getFilenameExtension()}, "")
 		dirName := cLog.logDir.getDirName()
 		fmt.Println(dirName)
 		if dirName != "" {

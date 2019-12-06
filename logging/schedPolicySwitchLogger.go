@@ -46,7 +46,7 @@ func newSchedPolicySwitchLogger(
 func (sLog schedPolicySwitchLogger) Log(logType int, level log.Level, message string) {
 	if sLog.logType == logType {
 		if sLog.isEnabled() {
-			if sLog.config.AllowOnConsole {
+			if sLog.isAllowedOnConsole() {
 				sLog.logger.SetOutput(os.Stdout)
 				sLog.logger.WithFields(sLog.data).Log(level, message)
 			}
@@ -66,7 +66,7 @@ func (sLog schedPolicySwitchLogger) Log(logType int, level log.Level, message st
 func (sLog schedPolicySwitchLogger) Logf(logType int, level log.Level, msgFmtString string, args ...interface{}) {
 	if sLog.logType == logType {
 		if sLog.isEnabled() {
-			if sLog.config.AllowOnConsole {
+			if sLog.isAllowedOnConsole() {
 				sLog.logger.SetOutput(os.Stdout)
 				sLog.logger.WithFields(sLog.data).Logf(level, msgFmtString, args...)
 			}
@@ -86,7 +86,7 @@ func (sLog schedPolicySwitchLogger) Logf(logType int, level log.Level, msgFmtStr
 
 func (sLog *schedPolicySwitchLogger) createLogFile(prefix string) {
 	if sLog.isEnabled() {
-		filename := strings.Join([]string{prefix, sLog.config.FilenameExtension}, "")
+		filename := strings.Join([]string{prefix, sLog.getFilenameExtension()}, "")
 		dirName := sLog.logDir.getDirName()
 		if dirName != "" {
 			if logFile, err := os.Create(filepath.Join(dirName, filename)); err != nil {
