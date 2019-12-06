@@ -316,8 +316,8 @@ func (s *BaseScheduler) LogSlaveLost(slaveID *mesos.SlaveID) {
 
 func (s *BaseScheduler) LogExecutorLost(executorID *mesos.ExecutorID, slaveID *mesos.SlaveID) {
 	elekLog.WithFields(log.Fields{
-		"ExecutorID": executorID,
-		"SlaveID":    slaveID,
+		"ExecutorID": *executorID.Value,
+		"SlaveID":    *slaveID.Value,
 	}).Log(CONSOLE, log.ErrorLevel, "EXECUTOR LOST")
 }
 
@@ -337,7 +337,7 @@ func (s *BaseScheduler) LogElectronError(err error) {
 func (s *BaseScheduler) LogFrameworkRegistered(frameworkID *mesos.FrameworkID,
 	masterInfo *mesos.MasterInfo) {
 	elekLog.WithFields(log.Fields{
-		"frameworkID": frameworkID,
+		"frameworkID": *frameworkID.Value,
 		"master":      fmt.Sprintf("%v", masterInfo),
 	}).Log(CONSOLE, log.InfoLevel, "FRAMEWORK REGISTERED!")
 }
