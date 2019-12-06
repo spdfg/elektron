@@ -1,6 +1,7 @@
 package logging
 
 import (
+	"github.com/pkg/errors"
 	"os"
 	"strings"
 	"time"
@@ -9,14 +10,75 @@ import (
 	. "github.com/spdfg/elektron/logging/types"
 )
 
-var config LoggerConfig
+// var config LoggerConfig
 var formatter ElektronFormatter
-var ElektronLogger *loggerImpl
+var elektronLoggerInstance elektronLogger
 
-func BuildLogger(prefix string, logConfigFilename string) {
+type elektronLogger interface {
+	setNext(next elektronLogger)
+	isEnabled() bool
+	Log(logType int, level log.Level, message string)
+	Logf(logType int, level log.Level, msgFmtString string, args ...interface{})
+	WithFields(logData log.Fields) elektronLogger
+	WithField(key string, value string) elektronLogger
+}
 
-	// Read configuration from yaml.
-	config.GetConfig(logConfigFilename)
+type baseLogData struct {
+	data log.Fields
+}
+
+type baseElektronLogger struct {
+	*baseLogData
+
+	config struct {
+		Enabled           bool
+		FilenameExtension string
+		AllowOnConsole    bool
+	}
+
+	logType int
+	logFile *os.File
+	next    elektronLogger
+	logger  *log.Logger
+	logDir  *logDirectory
+}
+
+func (l baseElektronLogger) isEnabled() bool {
+	return l.config.Enabled
+}
+
+func (l *baseElektronLogger) WithFields(logData log.Fields) elektronLogger {
+	l.data = logData
+	return l
+}
+
+func (l *baseElektronLogger) WithField(key string, value string) elektronLogger {
+	l.data[key] = value
+	return l
+}
+
+func (l *baseElektronLogger) setNext(next elektronLogger) {
+	l.next = next
+}
+
+func (l baseElektronLogger) Log(logType int, level log.Level, message string) {
+	if l.next != nil {
+		l.next.Log(logType, level, message)
+	}
+}
+
+func (l baseElektronLogger) Logf(logType int, level log.Level, msgFmtString string, args ...interface{}) {
+	if l.next != nil {
+		l.next.Logf(logType, level, msgFmtString, args...)
+	}
+}
+
+func (l *baseElektronLogger) resetFields() {
+	l.data = nil
+	l.data = log.Fields{}
+}
+
+func BuildLogger(prefix string, logConfigFilename string) error {
 
 	// Create the log directory.
 	startTime := time.Now()
@@ -35,20 +97,44 @@ func BuildLogger(prefix string, logConfigFilename string) {
 
 	// Create a chain of loggers.
 	b := &baseLogData{data: log.Fields{}}
-	head := &loggerImpl{baseLogData: b}
-	cLog := NewConsoleLogger(b, CONSOLE, prefix, logger, logDir)
-	pLog := NewPCPLogger(b, PCP, prefix, logger, logDir)
-	schedTraceLog := NewSchedTraceLogger(b, SCHED_TRACE, prefix, logger, logDir)
-	spsLog := NewSchedPolicySwitchLogger(b, SPS, prefix, logger, logDir)
-	schedWindowLog := NewSchedWindowLogger(b, SCHED_WINDOW, prefix, logger, logDir)
-	tskDistLog := NewClsfnTaskDistrOverheadLogger(b, CLSFN_TASKDISTR_OVERHEAD, prefix, logger, logDir)
+	head := &baseElektronLogger{baseLogData: b}
 
-	head.setNext(cLog)
-	cLog.setNext(pLog)
-	pLog.setNext(schedTraceLog)
-	schedTraceLog.setNext(spsLog)
-	spsLog.setNext(schedWindowLog)
-	schedWindowLog.setNext(tskDistLog)
+	// Read configuration from yaml.
+	if config, err := GetConfig(logConfigFilename); err != nil {
+		return errors.Wrap(err, "Failed to build logger")
+	} else {
+		cLog := NewConsoleLogger(config, b, CONSOLE, prefix, logger, logDir)
+		pLog := NewPCPLogger(config, b, PCP, prefix, logger, logDir)
+		schedTraceLog := NewSchedTraceLogger(config, b, SCHED_TRACE, prefix, logger, logDir)
+		spsLog := NewSchedPolicySwitchLogger(config, b, SPS, prefix, logger, logDir)
+		schedWindowLog := NewSchedWindowLogger(config, b, SCHED_WINDOW, prefix, logger, logDir)
+		tskDistLog := NewClsfnTaskDistrOverheadLogger(config, b, CLSFN_TASKDISTR_OVERHEAD, prefix, logger, logDir)
 
-	ElektronLogger = head
+		head.setNext(cLog)
+		cLog.setNext(pLog)
+		pLog.setNext(schedTraceLog)
+		schedTraceLog.setNext(spsLog)
+		spsLog.setNext(schedWindowLog)
+		schedWindowLog.setNext(tskDistLog)
+
+	}
+
+	elektronLoggerInstance = head
+	return nil
+}
+
+func Log(logType int, level log.Level, message string) {
+	elektronLoggerInstance.Log(logType, level, message)
+}
+
+func Logf(logType int, level log.Level, msgFmtString string, args ...interface{}) {
+	elektronLoggerInstance.Logf(logType, level, msgFmtString, args...)
+}
+
+func WithFields(logData log.Fields) elektronLogger {
+	return elektronLoggerInstance.WithFields(logData)
+}
+
+func WithField(key string, value string) elektronLogger {
+	return elektronLoggerInstance.WithField(key, value)
 }

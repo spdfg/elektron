@@ -1,4 +1,4 @@
-package elektronLogging
+package types
 
 const (
 	CONSOLE = iota

@@ -78,7 +78,7 @@ func (s *fillNextOfferCycle) apply(taskQueue []def.Task) (int, int) {
 	for _, task := range taskQueue {
 		numberOfTasksTraversed++
 		for i := *task.Instances; i > 0; i-- {
-			elekLog.ElektronLogger.Logf(elekLogTypes.CONSOLE, log.InfoLevel,
+			elekLog.Logf(elekLogTypes.CONSOLE, log.InfoLevel,
 				"Checking if Instance #%d of Task[%s] can be scheduled "+
 					"during the next offer cycle...", i, task.Name)
 			if canSchedule(task) {

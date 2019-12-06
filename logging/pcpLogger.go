@@ -9,25 +9,44 @@ import (
 )
 
 type PCPLogger struct {
-	loggerImpl
+	baseElektronLogger
 }
 
-func NewPCPLogger(b *baseLogData, logType int, prefix string,
-	logger *log.Logger, logDir *logDirectory) *PCPLogger {
-	pLog := &PCPLogger{}
-	pLog.logType = logType
-	pLog.logDir = logDir
-	pLog.next = nil
-	pLog.baseLogData = b
-	pLog.logger = logger
+func NewPCPLogger(
+	config *LoggerConfig,
+	b *baseLogData,
+	logType int,
+	prefix string,
+	logger *log.Logger,
+	logDir *logDirectory) *PCPLogger {
+
+	pLog := &PCPLogger{
+		baseElektronLogger: baseElektronLogger{
+			baseLogData: b,
+			config: struct {
+				Enabled           bool
+				FilenameExtension string
+				AllowOnConsole    bool
+			}{
+				Enabled:           config.PCPConfig.Enabled,
+				FilenameExtension: config.PCPConfig.FilenameExtension,
+				AllowOnConsole:    config.PCPConfig.AllowOnConsole,
+			},
+			logType: logType,
+			next:    nil,
+			logger:  logger,
+			logDir:  logDir,
+		},
+	}
+
 	pLog.createLogFile(prefix)
 	return pLog
 }
 
 func (pLog PCPLogger) Log(logType int, level log.Level, message string) {
 	if pLog.logType == logType {
-		if config.PCPConfig.Enabled {
-			if pLog.allowOnConsole {
+		if pLog.isEnabled() {
+			if pLog.config.AllowOnConsole {
 				pLog.logger.SetOutput(os.Stdout)
 				pLog.logger.WithFields(pLog.data).Log(level, message)
 			}
@@ -46,8 +65,8 @@ func (pLog PCPLogger) Log(logType int, level log.Level, message string) {
 
 func (pLog PCPLogger) Logf(logType int, level log.Level, msgFmtString string, args ...interface{}) {
 	if pLog.logType == logType {
-		if config.PCPConfig.Enabled {
-			if pLog.allowOnConsole {
+		if pLog.isEnabled() {
+			if pLog.config.AllowOnConsole {
 				pLog.logger.SetOutput(os.Stdout)
 				pLog.logger.WithFields(pLog.data).Logf(level, msgFmtString, args...)
 			}
@@ -66,15 +85,14 @@ func (pLog PCPLogger) Logf(logType int, level log.Level, msgFmtString string, ar
 }
 
 func (pLog *PCPLogger) createLogFile(prefix string) {
-	if config.PCPConfig.Enabled {
-		filename := strings.Join([]string{prefix, config.PCPConfig.FilenameExtension}, "")
+	if pLog.isEnabled() {
+		filename := strings.Join([]string{prefix, pLog.config.FilenameExtension}, "")
 		dirName := pLog.logDir.getDirName()
 		if dirName != "" {
 			if logFile, err := os.Create(filepath.Join(dirName, filename)); err != nil {
 				log.Fatal("Unable to create logFile: ", err)
 			} else {
 				pLog.logFile = logFile
-				pLog.allowOnConsole = config.PCPConfig.AllowOnConsole
 			}
 		}
 	}

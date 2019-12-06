@@ -226,8 +226,11 @@ func main() {
 	if strings.Contains(*pcplogPrefix, "/") {
 		log.Fatal("log file prefix should not contain '/'.")
 	}
-	// Build Logger for elektron.
-	elekLog.BuildLogger(*pcplogPrefix, *logConfigFilename)
+
+	// Build Logger.
+	if err := elekLog.BuildLogger(*pcplogPrefix, *logConfigFilename); err != nil {
+		log.Fatal(err)
+	}
 
 	// Starting PCP logging.
 	if noPowercap {
@@ -282,8 +285,8 @@ func main() {
 
 	// Starting the scheduler driver.
 	if status, err := driver.Run(); err != nil {
-		elekLog.ElektronLogger.WithFields(log.Fields{"status": status.String(), "error": err.Error()}).Log(elekLogTypes.CONSOLE,
+		elekLog.WithFields(log.Fields{"status": status.String(), "error": err.Error()}).Log(elekLogTypes.CONSOLE,
 			log.ErrorLevel, "Framework stopped ")
 	}
-	elekLog.ElektronLogger.Log(elekLogTypes.CONSOLE, log.InfoLevel, "Exiting...")
+	elekLog.Log(elekLogTypes.CONSOLE, log.InfoLevel, "Exiting...")
 }
