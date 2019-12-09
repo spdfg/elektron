@@ -8,7 +8,7 @@ The logs are written to a file named _\<logFilePrefix\>\_\<timestamp\>\_schedPol
 
 The format of the data logged is as shown below.
 ```
-[<loglevel>]: <yyyy-mm-dd> <hh:mm:ss> <sched policy name>
+[<loglevel>]: <yyyy-mm-dd> <hh:mm:ss> Name=<sched policy name>
 ```
 
 _Note: The names of the scheduling policies can be found [here](https://gitlab.com/spdf/elektron/blob/master/schedulers/store.go#L14)_
