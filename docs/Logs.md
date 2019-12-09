@@ -12,3 +12,17 @@ _Elektron_ logs can be categorized into the following.
     * [**Scheduling Policy Switch trace (SPS)**](data/withSpsEnabled/SchedulingPolicySwitchTrace.md) - Every time _Elektron_ switches to a different scheduling policy, the _name_ of the scheduling policy and the corresponding _time stamp_ is logged.<br>
     * [**SCHED_WINDOW**](data/withSpsEnabled/SchedulingWindow.md) - For every switch, the size of the scheduling window and the name of the scheduling policy is logged.
     * [**CLSFN_TASKDISTR_OVERHEAD**](data/withSpsEnabled/TaskClassificationOverhead.md) - If the switching criteria is task distribution based, then the time taken to classify the tasks into low power consuming and high power consuming, and then to determine the task distribution is logged.
+
+_Elektron_ logs can be configured through [Log config file](../logConfig.yaml). The following is the format for configuration.
+```
+<logtype>:
+  enabled: <true/false>
+  filenameExtension: <filename extension>
+  minLogLevel: <minimum log level>
+  allowOnConsole: <true/false>
+```
+The file has default configurations set. One can also configure the above fields for every log type.
+* `enabled` - Enable or disable a specific log type.
+* `filenameExtension` - Provide the file extension for specific log type.
+* `minLogLevel` - Provide a minimum log level above which all logs should be logged. This is available only for Console log type. The default value is debug). 
+* `allowOnConsole` - Allow or Disallow a specific log type on the console.
