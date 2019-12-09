@@ -25,12 +25,12 @@ myhost:kernel.all.cpu.sys
 
 When we run the `pmdumptext` command mentioned above for 5 seconds, the PCP log from _Elektron_ would be as shown below.
 ```
-<yyyy/mm/dd> <hh:mm:ss> myhost:kernel.all.cpu.user,myhost:kernel.all.cpu.sys
-<yyyy/mm/dd> <hh:mm:ss> <myhost user cpu time>,<myhost system cpu time>
-<yyyy/mm/dd> <hh:mm:ss> <myhost user cpu time>,<myhost system cpu time>
-<yyyy/mm/dd> <hh:mm:ss> <myhost user cpu time>,<myhost system cpu time>
-<yyyy/mm/dd> <hh:mm:ss> <myhost user cpu time>,<myhost system cpu time>
-<yyyy/mm/dd> <hh:mm:ss> <myhost user cpu time>,<myhost system cpu time>
+[<loglevel>]: <yyyy-mm-dd> <hh:mm:ss> myhost:kernel.all.cpu.user,myhost:kernel.all.cpu.sys
+[<loglevel>]: <yyyy-mm-dd> <hh:mm:ss> <myhost user cpu time>,<myhost system cpu time>
+[<loglevel>]: <yyyy-mm-dd> <hh:mm:ss> <myhost user cpu time>,<myhost system cpu time>
+[<loglevel>]: <yyyy-mm-dd> <hh:mm:ss> <myhost user cpu time>,<myhost system cpu time>
+[<loglevel>]: <yyyy-mm-dd> <hh:mm:ss> <myhost user cpu time>,<myhost system cpu time>
+[<loglevel>]: <yyyy-mm-dd> <hh:mm:ss> <myhost user cpu time>,<myhost system cpu time>
 ```
 
 ## Power Measurements
