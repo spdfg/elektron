@@ -9,6 +9,6 @@ The scheduled trace logs are written to a file named _\<logFilePrefix\>\_\<times
 
 The format of the data logged is as shown below.
 ```
-<yyyy/mm/dd> <hh:mm:ss> <hostname>:<task ID>
+[<loglevel>]: <yyyy-mm-dd> <hh:mm:ss> <hostname>=<task ID>
 ```
 
