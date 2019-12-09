@@ -78,7 +78,7 @@ func init() {
 	flag.BoolVar(fixSchedWindow, "fixSw", false, "Fix the size of the scheduling window that every deployed scheduling policy should schedule, provided switching is enabled (shorthand).")
 	flag.IntVar(schedWindowSize, "swSize", 200, "Size of the scheduling window if fixSchedWindow is set (shorthand).")
 	flag.StringVar(schedPolSwitchCriteria, "spsCriteria", "taskDist", "Scheduling policy switching criteria (shorthand).")
-	flag.StringVar(logConfigFilename, "lgConfigName", "logConfig.yaml", "Log Configuration file name (shorthand).")
+	flag.StringVar(logConfigFilename, "lgCfg", "logConfig.yaml", "Log Configuration file name (shorthand).")
 }
 
 func listAllSchedulingPolicies() {

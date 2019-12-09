@@ -1,11 +1,11 @@
 package logging
 
 import (
-	"fmt"
-	log "github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type consoleLogger struct {
@@ -88,7 +88,6 @@ func (cLog *consoleLogger) createLogFile(prefix string) {
 	if cLog.isEnabled() {
 		filename := strings.Join([]string{prefix, cLog.getFilenameExtension()}, "")
 		dirName := cLog.logDir.getDirName()
-		fmt.Println(dirName)
 		if dirName != "" {
 			if logFile, err := os.Create(filepath.Join(dirName, filename)); err != nil {
 				log.Fatal("Unable to create logFile: ", err)

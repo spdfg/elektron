@@ -79,8 +79,7 @@ func (s *fillNextOfferCycle) apply(taskQueue []def.Task) (int, int) {
 		numberOfTasksTraversed++
 		for i := *task.Instances; i > 0; i-- {
 			elekLog.Logf(CONSOLE, log.InfoLevel,
-				"Checking if Instance #%d of Task[%s] can be scheduled "+
-					"during the next offer cycle...", i, task.Name)
+				"Checking if Instance #%d of Task[%s] can be scheduled "+"during the next offer cycle...", i, task.Name)
 			if canSchedule(task) {
 				filledCPU += task.CPU
 				filledRAM += task.RAM

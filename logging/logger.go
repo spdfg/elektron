@@ -16,9 +16,6 @@ var elektronLoggerInstance elektronLogger
 
 type elektronLogger interface {
 	setNext(next elektronLogger)
-	isEnabled() bool
-	isAllowedOnConsole() bool
-	getFilenameExtension() string
 	Log(logType int, level log.Level, message string)
 	Logf(logType int, level log.Level, msgFmtString string, args ...interface{})
 	WithFields(logData log.Fields) elektronLogger
