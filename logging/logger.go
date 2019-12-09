@@ -107,7 +107,7 @@ func BuildLogger(prefix string, logConfigFilename string) error {
 	head := &baseElektronLogger{baseLogData: b}
 
 	// Read configuration from yaml.
-	if config, err := GetConfig(logConfigFilename); err != nil {
+	if config, err := getConfig(logConfigFilename); err != nil {
 		return errors.Wrap(err, "Failed to build logger")
 	} else {
 		cLog := newConsoleLogger(config, b, CONSOLE, prefix, logger, logDir)

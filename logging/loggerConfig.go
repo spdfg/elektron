@@ -48,7 +48,7 @@ type loggerConfig struct {
 	Format []string `yaml:"format"`
 }
 
-func GetConfig(logConfigFilename string) (*loggerConfig, error) {
+func getConfig(logConfigFilename string) (*loggerConfig, error) {
 
 	yamlFile, err := ioutil.ReadFile(logConfigFilename)
 	if err != nil {
