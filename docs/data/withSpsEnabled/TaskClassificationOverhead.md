@@ -8,7 +8,7 @@ The logs are written to a file named _\<logFilePrefix\>\_\<timestamp\>\_classifi
 
 The format of the data logged is as shown below.
 ```
-<yyyy/mm/dd> <hh:mm:ss> <overhead>
+[<loglevel>]: <yyyy-mm-dd> <hh:mm:ss> Overhead in microseconds=<overhead>
 ```
 
 _Note: The classification overhead is logged in **microseconds**._
