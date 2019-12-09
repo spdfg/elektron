@@ -8,5 +8,5 @@ The logs are written to a file named _\<logFilePrefix\>\_\<timestamp\>\_schedWin
 
 The format of the data logged is as shown below.
 ```
-<yyyy/mm/dd> <hh:mm:ss> <sched window size> <sched policy name>
+[<loglevel>]: <yyyy-mm-dd> <hh:mm:ss> Window size=<sched window size>, Name=<sched policy name>
 ```
