@@ -1,0 +1,26 @@
+schedTrace:
+  enabled: true
+  filenameExtension: _schedTrace.log
+  allowOnConsole: true
+sps:
+  enabled: false
+  filenameExtension: _schedPolicySwitch.log
+  allowOnConsole: true
+console:
+  enabled: true
+  filenameExtension: _console.log
+  minLogLevel: debug
+  allowOnConsole: true
+pcp:
+  enabled: true
+  filenameExtension: .pcplog
+  allowOnConsole: false
+schedWindow:
+  enabled: false
+  filenameExtension: _schedWindow.log
+  allowOnConsole: true
+clsfnTaskDistrOverhead:
+  enabled: false
+  filenameExtension: _classificationOverhead.log
+  allowOnConsole: true
+

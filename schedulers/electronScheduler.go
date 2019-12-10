@@ -1,20 +1,20 @@
 // Copyright (C) 2018 spdfg
-// 
+//
 // This file is part of Elektron.
-// 
+//
 // Elektron is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // Elektron is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with Elektron.  If not, see <http://www.gnu.org/licenses/>.
-// 
+//
 
 package schedulers
 
@@ -24,7 +24,6 @@ import (
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 	sched "github.com/mesos/mesos-go/api/v0/scheduler"
 	"github.com/spdfg/elektron/def"
-	elekLogDef "github.com/spdfg/elektron/logging/def"
 )
 
 // Implements mesos scheduler.
@@ -38,8 +37,6 @@ type ElectronScheduler interface {
 	// Each of these functions are supposed to call the Log(...) that sends the
 	//   log message type, and the log message to the corresponding channels.
 
-	// Pass the logMessageType and the logMessage to the loggers for logging.
-	Log(logMType elekLogDef.LogMessageType, logMsg string)
 	// To be called when about to launch a task.
 	// Log message indicating that a task is about to start executing.
 	//   Also, log the host on which the task is going to be launched.

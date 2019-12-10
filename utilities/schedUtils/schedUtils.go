@@ -1,27 +1,28 @@
 // Copyright (C) 2018 spdfg
-// 
+//
 // This file is part of Elektron.
-// 
+//
 // Elektron is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // Elektron is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with Elektron.  If not, see <http://www.gnu.org/licenses/>.
-// 
+//
 
 package schedUtils
 
 import (
-	"log"
-
+	log "github.com/sirupsen/logrus"
 	"github.com/spdfg/elektron/def"
+	elekLog "github.com/spdfg/elektron/logging"
+	. "github.com/spdfg/elektron/logging/types"
 	"github.com/spdfg/elektron/utilities"
 )
 
@@ -77,8 +78,8 @@ func (s *fillNextOfferCycle) apply(taskQueue []def.Task) (int, int) {
 	for _, task := range taskQueue {
 		numberOfTasksTraversed++
 		for i := *task.Instances; i > 0; i-- {
-			log.Printf("Checking if Instance #%d of Task[%s] can be scheduled "+
-				"during the next offer cycle...", i, task.Name)
+			elekLog.Logf(CONSOLE, log.InfoLevel,
+				"Checking if Instance #%d of Task[%s] can be scheduled "+"during the next offer cycle...", i, task.Name)
 			if canSchedule(task) {
 				filledCPU += task.CPU
 				filledRAM += task.RAM

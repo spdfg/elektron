@@ -1,32 +1,33 @@
 // Copyright (C) 2018 spdfg
-// 
+//
 // This file is part of Elektron.
-// 
+//
 // Elektron is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // Elektron is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with Elektron.  If not, see <http://www.gnu.org/licenses/>.
-// 
+//
 
 package schedulers
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 	sched "github.com/mesos/mesos-go/api/v0/scheduler"
+	log "github.com/sirupsen/logrus"
 	"github.com/spdfg/elektron/def"
-	elekLogDef "github.com/spdfg/elektron/logging/def"
+	elekLog "github.com/spdfg/elektron/logging"
+	. "github.com/spdfg/elektron/logging/types"
 )
 
 type SchedPolicyContext interface {
@@ -89,7 +90,7 @@ func switchTaskDistBased(baseSchedRef *BaseScheduler) string {
 	// Determine the distribution of tasks in the new scheduling window.
 	taskDist, err := def.GetTaskDistributionInWindow(baseSchedRef.schedWindowSize, baseSchedRef.tasks)
 	baseSchedRef.LogClsfnAndTaskDistOverhead(time.Now().Sub(startTime))
-	baseSchedRef.Log(elekLogDef.GENERAL, fmt.Sprintf("Switching... TaskDistribution[%f]", taskDist))
+	elekLog.WithField("Task Distribution", fmt.Sprintf("%f", taskDist)).Log(CONSOLE, log.InfoLevel, "Switching... ")
 	if err != nil {
 		// All the tasks in the window were only classified into 1 cluster.
 		// Max-Min and Max-GreedyMins would work the same way as Bin-Packing for this situation.
@@ -217,9 +218,11 @@ func (bsps *baseSchedPolicyState) SwitchIfNecessary(spc SchedPolicyContext) {
 					switchToPolicyName = switchBasedOn[baseSchedRef.schedPolSwitchCriteria](baseSchedRef)
 				} else {
 					// We continue working with the currently deployed scheduling policy.
-					log.Println("Continuing with the current scheduling policy...")
-					log.Printf("TasksScheduled[%d], SchedWindowSize[%d]", bsps.numTasksScheduled,
-						baseSchedRef.schedWindowSize)
+					elekLog.Log(CONSOLE, log.InfoLevel, "Continuing with the current scheduling policy...")
+					elekLog.WithFields(log.Fields{
+						"TasksScheduled":  fmt.Sprintf("%d", bsps.numTasksScheduled),
+						"SchedWindowSize": fmt.Sprintf("%d", baseSchedRef.schedWindowSize),
+					}).Log(CONSOLE, log.InfoLevel, "")
 					return
 				}
 			}
@@ -231,9 +234,11 @@ func (bsps *baseSchedPolicyState) SwitchIfNecessary(spc SchedPolicyContext) {
 			bsps.numTasksScheduled = 0
 		} else {
 			// We continue working with the currently deployed scheduling policy.
-			log.Println("Continuing with the current scheduling policy...")
-			log.Printf("TasksScheduled[%d], SchedWindowSize[%d]", bsps.numTasksScheduled,
-				baseSchedRef.schedWindowSize)
+			elekLog.Log(CONSOLE, log.InfoLevel, "Continuing with the current scheduling policy...")
+			elekLog.WithFields(log.Fields{
+				"TasksScheduled":  fmt.Sprintf("%d", bsps.numTasksScheduled),
+				"SchedWindowSize": fmt.Sprintf("%d", baseSchedRef.schedWindowSize),
+			}).Log(CONSOLE, log.InfoLevel, "")
 			return
 		}
 	}

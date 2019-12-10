@@ -20,24 +20,26 @@ package schedulers
 
 import (
 	"fmt"
+
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 	sched "github.com/mesos/mesos-go/api/v0/scheduler"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 	"github.com/spdfg/elektron/constants"
 	"github.com/spdfg/elektron/def"
-	elekLogDef "github.com/spdfg/elektron/logging/def"
+	elekLog "github.com/spdfg/elektron/logging"
+	. "github.com/spdfg/elektron/logging/types"
 	"github.com/spdfg/elektron/utilities"
 	"github.com/spdfg/elektron/utilities/mesosUtils"
-	"log"
 )
 
 func coLocated(tasks map[string]bool, s BaseScheduler) {
 
-	for task := range tasks {
-		s.Log(elekLogDef.GENERAL, task)
+	for _, task := range tasks {
+		elekLog.WithField("Task", fmt.Sprintf("%v", task)).Log(CONSOLE, log.InfoLevel, "")
 	}
 
-	s.Log(elekLogDef.GENERAL, "---------------------")
+	elekLog.Log(CONSOLE, log.InfoLevel, "---------------------")
 }
 
 // Get the powerClass of the given hostname.
@@ -126,14 +128,6 @@ func WithPCPLog(pcpLog chan struct{}) SchedulerOptions {
 			s.(*BaseScheduler).PCPLog = pcpLog
 			return nil
 		}
-	}
-}
-
-func WithLoggingChannels(lmt chan elekLogDef.LogMessageType, msg chan string) SchedulerOptions {
-	return func(s ElectronScheduler) error {
-		s.(*BaseScheduler).logMsgType = lmt
-		s.(*BaseScheduler).logMsg = msg
-		return nil
 	}
 }
 

@@ -21,7 +21,6 @@ package main // import github.com/spdfg/elektron
 import (
 	"flag"
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 	"strings"
@@ -30,8 +29,10 @@ import (
 	"github.com/golang/protobuf/proto"
 	mesos "github.com/mesos/mesos-go/api/v0/mesosproto"
 	sched "github.com/mesos/mesos-go/api/v0/scheduler"
+	log "github.com/sirupsen/logrus"
 	"github.com/spdfg/elektron/def"
-	elekLogDef "github.com/spdfg/elektron/logging/def"
+	elekLog "github.com/spdfg/elektron/logging"
+	. "github.com/spdfg/elektron/logging/types"
 	"github.com/spdfg/elektron/pcp"
 	"github.com/spdfg/elektron/powerCap"
 	"github.com/spdfg/elektron/schedulers"
@@ -55,6 +56,7 @@ var fixFirstSchedPol = flag.String("fixFirstSchedPol", "", "Name of the scheduli
 var fixSchedWindow = flag.Bool("fixSchedWindow", false, "Fix the size of the scheduling window that every deployed scheduling policy should schedule, provided switching is enabled.")
 var schedWindowSize = flag.Int("schedWindowSize", 200, "Size of the scheduling window if fixSchedWindow is set.")
 var schedPolSwitchCriteria = flag.String("schedPolSwitchCriteria", "taskDist", "Scheduling policy switching criteria.")
+var logConfigFilename = flag.String("logConfigFilename", "logConfig.yaml", "Log Configuration file name")
 
 // Short hand args
 func init() {
@@ -76,6 +78,7 @@ func init() {
 	flag.BoolVar(fixSchedWindow, "fixSw", false, "Fix the size of the scheduling window that every deployed scheduling policy should schedule, provided switching is enabled (shorthand).")
 	flag.IntVar(schedWindowSize, "swSize", 200, "Size of the scheduling window if fixSchedWindow is set (shorthand).")
 	flag.StringVar(schedPolSwitchCriteria, "spsCriteria", "taskDist", "Scheduling policy switching criteria (shorthand).")
+	flag.StringVar(logConfigFilename, "lgCfg", "logConfig.yaml", "Log Configuration file name (shorthand).")
 }
 
 func listAllSchedulingPolicies() {
@@ -94,10 +97,6 @@ func main() {
 		listAllSchedulingPolicies()
 		os.Exit(1)
 	}
-
-	// Logging channels.
-	logMType := make(chan elekLogDef.LogMessageType)
-	logMsg := make(chan string)
 
 	// First we need to build the scheduler using scheduler options.
 	var schedOptions []schedulers.SchedulerOptions = make([]schedulers.SchedulerOptions, 0, 10)
@@ -119,11 +118,6 @@ func main() {
 	done := make(chan struct{})
 	pcpLog := make(chan struct{})
 	recordPCP := false
-
-	// Logging channels.
-	// These channels are used by the framework to log messages.
-	// The channels are used to send the type of log message and the message string.
-	schedOptions = append(schedOptions, schedulers.WithLoggingChannels(logMType, logMsg))
 
 	// Shutdown indicator channels.
 	// These channels are used to notify,
@@ -228,28 +222,25 @@ func main() {
 		log.Fatal(fmt.Sprintf("Unable to create scheduler driver: %s", err))
 	}
 
-	// If here, then all command-line arguments validate.
-	// Creating logger and attaching different logging platforms.
-	startTime := time.Now()
-	formattedStartTime := startTime.Format("20060102150405")
 	// Checking if prefix contains any special characters.
 	if strings.Contains(*pcplogPrefix, "/") {
 		log.Fatal("log file prefix should not contain '/'.")
 	}
-	logPrefix := *pcplogPrefix + "_" + formattedStartTime
-	logger := elekLogDef.BuildLogger(startTime, logPrefix)
-	// Starting the logging go-routine.
-	go logger.Listen(logMType, logMsg)
+
+	// Build Logger.
+	if err := elekLog.BuildLogger(*pcplogPrefix, *logConfigFilename); err != nil {
+		log.Fatal(err)
+	}
 
 	// Starting PCP logging.
 	if noPowercap {
-		go pcp.Start(pcpLog, &recordPCP, logMType, logMsg, *pcpConfigFile)
+		go pcp.Start(pcpLog, &recordPCP, *pcpConfigFile)
 	} else if extrema {
 		go powerCap.StartPCPLogAndExtremaDynamicCap(pcpLog, &recordPCP, *hiThreshold,
-			*loThreshold, logMType, logMsg, *pcpConfigFile)
+			*loThreshold, *pcpConfigFile)
 	} else if progExtrema {
 		go powerCap.StartPCPLogAndProgressiveExtremaCap(pcpLog, &recordPCP, *hiThreshold,
-			*loThreshold, logMType, logMsg, *pcpConfigFile)
+			*loThreshold, *pcpConfigFile)
 	}
 
 	// Take a second between starting PCP log and continuing.
@@ -284,8 +275,6 @@ func main() {
 			close(pcpLog)
 			time.Sleep(5 * time.Second) //Wait for PCP to log a few more seconds
 			// Closing logging channels.
-			close(logMType)
-			close(logMsg)
 			//case <-time.After(shutdownTimeout):
 		}
 
@@ -296,7 +285,10 @@ func main() {
 
 	// Starting the scheduler driver.
 	if status, err := driver.Run(); err != nil {
-		log.Printf("Framework stopped with status %s and error: %s\n", status.String(), err.Error())
+		elekLog.WithFields(log.Fields{
+			"status": status.String(),
+			"error":  err.Error(),
+		}).Log(CONSOLE, log.ErrorLevel, "Framework stopped ")
 	}
-	log.Println("Exiting...")
+	elekLog.Log(CONSOLE, log.InfoLevel, "Exiting...")
 }

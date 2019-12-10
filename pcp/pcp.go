@@ -1,35 +1,35 @@
 // Copyright (C) 2018 spdfg
-// 
+//
 // This file is part of Elektron.
-// 
+//
 // Elektron is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // Elektron is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with Elektron.  If not, see <http://www.gnu.org/licenses/>.
-// 
+//
 
 package pcp
 
 import (
 	"bufio"
-	"log"
 	"os/exec"
 	"syscall"
 	"time"
 
-	elekLogDef "github.com/spdfg/elektron/logging/def"
+	log "github.com/sirupsen/logrus"
+	elekLog "github.com/spdfg/elektron/logging"
+	. "github.com/spdfg/elektron/logging/types"
 )
 
-func Start(quit chan struct{}, logging *bool, logMType chan elekLogDef.LogMessageType,
-	logMsg chan string, pcpConfigFile string) {
+func Start(quit chan struct{}, logging *bool, pcpConfigFile string) {
 	var pcpCommand string = "pmdumptext -m -l -f '' -t 1.0 -d , -c " + pcpConfigFile
 	cmd := exec.Command("sh", "-c", pcpCommand)
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
@@ -47,8 +47,7 @@ func Start(quit chan struct{}, logging *bool, logMType chan elekLogDef.LogMessag
 		scanner.Scan()
 
 		// Write to logfile
-		logMType <- elekLogDef.PCP
-		logMsg <- scanner.Text()
+		elekLog.Log(PCP, log.InfoLevel, scanner.Text())
 
 		// Throw away first set of results
 		scanner.Scan()
@@ -59,16 +58,14 @@ func Start(quit chan struct{}, logging *bool, logMType chan elekLogDef.LogMessag
 			text := scanner.Text()
 
 			if *logging {
-				logMType <- elekLogDef.PCP
-				logMsg <- text
+				elekLog.Log(PCP, log.InfoLevel, text)
 			}
 
 			seconds++
 		}
 	}(logging)
 
-	logMType <- elekLogDef.GENERAL
-	logMsg <- "PCP logging started"
+	elekLog.Log(CONSOLE, log.InfoLevel, "PCP logging started")
 
 	if err := cmd.Start(); err != nil {
 		log.Fatal(err)
@@ -78,8 +75,7 @@ func Start(quit chan struct{}, logging *bool, logMType chan elekLogDef.LogMessag
 
 	select {
 	case <-quit:
-		logMType <- elekLogDef.GENERAL
-		logMsg <- "Stopping PCP logging in 5 seconds"
+		elekLog.Log(CONSOLE, log.InfoLevel, "Stopping PCP logging in 5 seconds")
 		time.Sleep(5 * time.Second)
 
 		// http://stackoverflow.com/questions/22470193/why-wont-go-kill-a-child-process-correctly

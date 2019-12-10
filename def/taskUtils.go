@@ -1,31 +1,33 @@
 // Copyright (C) 2018 spdfg
-// 
+//
 // This file is part of Elektron.
-// 
+//
 // Elektron is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // Elektron is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with Elektron.  If not, see <http://www.gnu.org/licenses/>.
-// 
+//
 
 package def
 
 import (
 	"errors"
 	"fmt"
-	"log"
 	"sort"
 
 	"github.com/mash/gokmeans"
 	"github.com/montanaflynn/stats"
+	log "github.com/sirupsen/logrus"
+	elekLog "github.com/spdfg/elektron/logging"
+	. "github.com/spdfg/elektron/logging/types"
 )
 
 // Information about a cluster of tasks.
@@ -50,7 +52,7 @@ func (tc TasksToClassify) taskObservationCalculator(task Task) []float64 {
 	} else if task.Watts != 0.0 {
 		return []float64{task.Watts}
 	} else {
-		log.Fatal("Unable to classify tasks. Missing Watts or ClassToWatts attribute in workload.")
+		elekLog.Log(CONSOLE, log.FatalLevel, "Unable to classify tasks. Missing Watts or ClassToWatts attribute in workload")
 		return []float64{0.0} // Won't reach here.
 	}
 }
@@ -105,7 +107,7 @@ func clusterSizeAvgMMMPU(tasks []Task, taskObservation func(task Task) []float64
 			} else {
 				// skip this value
 				// there is an error in the task config.
-				log.Println(err)
+				elekLog.Log(CONSOLE, log.ErrorLevel, err.Error())
 			}
 		} else {
 			// There is only one observation for the task.
