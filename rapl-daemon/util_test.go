@@ -52,6 +52,16 @@ func TestMain(m *testing.M) {
 func TestCapNode(t *testing.T) {
 	err := capNode(raplDir, 95)
 	assert.NoError(t, err)
+
+	t.Run("badPercentage", func(t *testing.T) {
+		err := capNode(raplDir, 1000)
+		assert.Error(t, err)
+	})
+
+	t.Run("zeroPercent", func(t *testing.T) {
+		err := capNode(raplDir, 0)
+		assert.Error(t, err)
+	})
 }
 
 func TestMaxPower(t *testing.T) {
@@ -60,6 +70,11 @@ func TestMaxPower(t *testing.T) {
 	maxWatts, err := maxPower(maxFile)
 	assert.NoError(t, err)
 	assert.Equal(t, maxWattage, maxWatts)
+
+	t.Run("nameDoesNotExist", func(t *testing.T) {
+		_, err := maxPower("madeupname")
+		assert.Error(t, err)
+	})
 }
 
 func TestCapZone(t *testing.T) {
@@ -76,4 +91,9 @@ func TestCapZone(t *testing.T) {
 	newCap, err := strconv.ParseUint(strings.TrimSpace(string(newCapBytes)), 10, 64)
 	assert.NoError(t, err)
 	assert.Equal(t, powercap, newCap)
+
+	t.Run("nameDoesNotExist", func(t *testing.T) {
+		err := capZone("madeupname", powercap)
+		assert.Error(t, err)
+	})
 }

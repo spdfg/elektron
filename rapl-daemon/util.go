@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -65,12 +66,12 @@ func capNode(base string, percentage int) error {
 func maxPower(maxFile string) (uint64, error) {
 	maxPower, err := ioutil.ReadFile(maxFile)
 	if err != nil {
-		return 0.0, err
+		return 0, err
 	}
 
 	maxPoweruW, err := strconv.ParseUint(strings.TrimSpace(string(maxPower)), 10, 64)
 	if err != nil {
-		return 0.0, err
+		return 0, err
 	}
 
 	return maxPoweruW, nil
@@ -78,6 +79,10 @@ func maxPower(maxFile string) (uint64, error) {
 
 // capZone caps a power zone to a specific amount of watts specified by value
 func capZone(limitFile string, value uint64) error {
+	if _, err := os.Stat(limitFile); os.IsNotExist(err) {
+		return err
+	}
+
 	err := ioutil.WriteFile(limitFile, []byte(strconv.FormatUint(value, 10)), 0644)
 	if err != nil {
 		return err
