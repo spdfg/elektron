@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"math"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
@@ -15,11 +16,20 @@ import (
 // that mimic the powercap subsystem and create test to operate on it.
 func TestCapNode(t *testing.T) {
 
-	err := capNode("/sys/devices/virtual/powercap/intel-rapl", 95)
+	RAPLdir, err := ioutil.TempDir("", "intel-rapl")
+	assert.NoError(t, err)
+	defer os.RemoveAll(RAPLdir)
 
-	if err != nil {
-		t.Fail()
-	}
+	zonePath := filepath.Join(RAPLdir, raplPrefixCPU+":0")
+	err = os.Mkdir(zonePath, 755)
+	assert.NoError(t, err)
+	err = ioutil.WriteFile(filepath.Join(zonePath, maxPowerFileShortWindow), []byte("1500000"), 0444)
+	assert.NoError(t, err)
+	err = ioutil.WriteFile(filepath.Join(zonePath, powerLimitFileShortWindow), []byte("1500000"), 0644)
+	assert.NoError(t, err)
+
+	err = capNode(RAPLdir, 95)
+	assert.NoError(t, err)
 }
 
 func TestMaxPower(t *testing.T) {
@@ -42,7 +52,6 @@ func TestMaxPower(t *testing.T) {
 }
 
 func TestCapZone(t *testing.T) {
-
 	const maxPower float64 = 1500000
 	const percentage float64 = .50
 
