@@ -54,7 +54,6 @@ func capNode(base string, percentage int) error {
 				fmt.Println("unable to write powercap value: ", err)
 				continue
 			}
-			fmt.Println(file.Name(), ": ", int(maxPower), ", ", int(powercap))
 		}
 	}
 
