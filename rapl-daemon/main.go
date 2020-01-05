@@ -34,11 +34,6 @@ func powercapEndpoint(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if payload.Percentage < 0 || payload.Percentage > 100 {
-		http.Error(w, "Bad payload: percentage must be between 0 and 100", 400)
-		return
-	}
-
 	err = capNode(powercapDir, payload.Percentage)
 	if err != nil {
 		http.Error(w, err.Error(), 400)
