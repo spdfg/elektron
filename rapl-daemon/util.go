@@ -62,8 +62,8 @@ func capNode(base string, percentage int) error {
 
 // maxPower returns the value in float of the maximum watts a power zone
 // can use.
-func maxPower(zone string) (uint64, error) {
-	maxPower, err := ioutil.ReadFile(zone)
+func maxPower(maxFile string) (uint64, error) {
+	maxPower, err := ioutil.ReadFile(maxFile)
 	if err != nil {
 		return 0.0, err
 	}
@@ -74,12 +74,11 @@ func maxPower(zone string) (uint64, error) {
 	}
 
 	return maxPoweruW, nil
-
 }
 
 // capZone caps a power zone to a specific amount of watts specified by value
-func capZone(zone string, value uint64) error {
-	err := ioutil.WriteFile(zone, []byte(strconv.FormatUint(value, 10)), 0644)
+func capZone(limitFile string, value uint64) error {
+	err := ioutil.WriteFile(limitFile, []byte(strconv.FormatUint(value, 10)), 0644)
 	if err != nil {
 		return err
 	}
