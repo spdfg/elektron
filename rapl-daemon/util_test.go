@@ -12,8 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// TODO(rdelvalle): Add more thourough testing. Generate mock files
-// that mimic the powercap subsystem and create test to operate on it.
+// TODO(rdelvalle): Create filesystem only once and allow tests to use it
 func TestCapNode(t *testing.T) {
 
 	RAPLdir, err := ioutil.TempDir("", "intel-rapl")
