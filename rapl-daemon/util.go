@@ -47,7 +47,7 @@ func capNode(base string, percentage int) error {
 			}
 
 			// We use floats to mitigate the possibility of an integer overflows.
-			powercap := uint(math.Ceil(float64(maxPower) * (float64(percentage) / 100)))
+			powercap := uint64(math.Ceil(float64(maxPower) * (float64(percentage) / 100)))
 
 			err = capZone(filepath.Join(base, file.Name(), powerLimitFileShortWindow), powercap)
 			if err != nil {
@@ -79,8 +79,8 @@ func maxPower(zone string) (uint64, error) {
 }
 
 // capZone caps a power zone to a specific amount of watts specified by value
-func capZone(zone string, value uint) error {
-	err := ioutil.WriteFile(zone, []byte(string(value)), 0644)
+func capZone(zone string, value uint64) error {
+	err := ioutil.WriteFile(zone, []byte(strconv.FormatUint(value, 10)), 0644)
 	if err != nil {
 		return err
 	}
