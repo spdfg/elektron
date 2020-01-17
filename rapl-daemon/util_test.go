@@ -35,12 +35,12 @@ func TestMain(m *testing.M) {
 
 	initialWatts := strconv.FormatUint(maxWattage, 10)
 
-	err = ioutil.WriteFile(filepath.Join(zonePath, maxPowerFileShortWindow), []byte(initialWatts), 0444)
+	err = ioutil.WriteFile(filepath.Join(zonePath, maxPowerFileLongWindow), []byte(initialWatts), 0444)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	err = ioutil.WriteFile(filepath.Join(zonePath, powerLimitFileShortWindow), []byte(initialWatts), 0644)
+	err = ioutil.WriteFile(filepath.Join(zonePath, powerLimitFileLongWindow), []byte(initialWatts), 0644)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -48,30 +48,29 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-// TODO(rdelvalle): Create filesystem only once and allow tests to use it
 func TestCapNode(t *testing.T) {
 	err := capNode(raplDir, 95)
 	assert.NoError(t, err)
 
-	t.Run("badPercentage", func(t *testing.T) {
+	t.Run("bad-percentage", func(t *testing.T) {
 		err := capNode(raplDir, 1000)
 		assert.Error(t, err)
 	})
 
-	t.Run("zeroPercent", func(t *testing.T) {
+	t.Run("zero-percent", func(t *testing.T) {
 		err := capNode(raplDir, 0)
 		assert.Error(t, err)
 	})
 }
 
 func TestMaxPower(t *testing.T) {
-	maxFile := filepath.Join(raplDir, raplPrefixCPU+":0", maxPowerFileShortWindow)
+	maxFile := filepath.Join(raplDir, raplPrefixCPU+":0", maxPowerFileLongWindow)
 
 	maxWatts, err := maxPower(maxFile)
 	assert.NoError(t, err)
 	assert.Equal(t, maxWattage, maxWatts)
 
-	t.Run("nameDoesNotExist", func(t *testing.T) {
+	t.Run("name-does-not-exist", func(t *testing.T) {
 		_, err := maxPower("madeupname")
 		assert.Error(t, err)
 	})
@@ -81,7 +80,7 @@ func TestCapZone(t *testing.T) {
 	const percentage float64 = .50
 
 	powercap := uint64(math.Ceil(float64(maxWattage) * percentage))
-	limitFile := filepath.Join(raplDir, raplPrefixCPU+":0", powerLimitFileShortWindow)
+	limitFile := filepath.Join(raplDir, raplPrefixCPU+":0", powerLimitFileLongWindow)
 	err := capZone(limitFile, powercap)
 	assert.NoError(t, err)
 
@@ -92,7 +91,7 @@ func TestCapZone(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, powercap, newCap)
 
-	t.Run("nameDoesNotExist", func(t *testing.T) {
+	t.Run("name-does-not-exist", func(t *testing.T) {
 		err := capZone("madeupname", powercap)
 		assert.Error(t, err)
 	})

@@ -61,8 +61,7 @@ func capNode(base string, percentage int) error {
 	return nil
 }
 
-// maxPower returns the value in float of the maximum watts a power zone
-// can use.
+// maxPower returns the value in float of the maximum watts a power zone can use.
 func maxPower(maxFile string) (uint64, error) {
 	maxPower, err := ioutil.ReadFile(maxFile)
 	if err != nil {
