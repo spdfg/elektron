@@ -10,7 +10,7 @@ import (
 
 const powercapDir = "/sys/class/powercap/"
 
-// Cap is a payload that is expected from Elektron to cap a node
+// Cap is a payload that is expected from Elektron to cap a node.
 type Cap struct {
 	Percentage int
 }
@@ -24,13 +24,13 @@ func main() {
 	log.Fatal(http.ListenAndServe(":9090", nil))
 }
 
-// Handler powercapping HTTP API endpoint
+// Handler for the powercapping HTTP API endpoint.
 func powercapEndpoint(w http.ResponseWriter, r *http.Request) {
 	var payload Cap
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&payload)
 	if err != nil {
-		http.Error(w, "Error parsing payload: "+err.Error(), 400)
+		http.Error(w, "error parsing payload: "+err.Error(), 400)
 		return
 	}
 
@@ -40,5 +40,5 @@ func powercapEndpoint(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Fprintf(w, "Capped node at %d percent", payload.Percentage)
+	fmt.Fprintf(w, "capped node at %d percent", payload.Percentage)
 }
