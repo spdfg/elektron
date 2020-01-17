@@ -12,9 +12,9 @@ import (
 
 const raplPrefixCPU = "intel-rapl"
 
-// constraint_0 is usually the longer window while constraint_1 is usually the longer window
-const maxPowerFileShortWindow = "constraint_0_max_power_uw"
-const powerLimitFileShortWindow = "constraint_0_power_limit_uw"
+// constraint_0 is usually the longer window while constraint_1 is usually the shorter window
+const maxPowerFileLongWindow = "constraint_0_max_power_uw"
+const powerLimitFileLongWindow = "constraint_0_power_limit_uw"
 
 // capNode uses pseudo files made available by the Linux kernel
 // in order to capNode CPU power. More information is available at:
@@ -22,7 +22,7 @@ const powerLimitFileShortWindow = "constraint_0_power_limit_uw"
 func capNode(base string, percentage int) error {
 
 	if percentage <= 0 || percentage > 100 {
-		return fmt.Errorf("cap percentage must be between 0 (non-inclusive) and 100 (inclusive): %d", percentage)
+		return fmt.Errorf("cap percentage must be between (0, 100]: %d", percentage)
 	}
 
 	files, err := ioutil.ReadDir(base)
@@ -41,7 +41,7 @@ func capNode(base string, percentage int) error {
 		}
 
 		if fields[0] == raplPrefixCPU {
-			maxPower, err := maxPower(filepath.Join(base, file.Name(), maxPowerFileShortWindow))
+			maxPower, err := maxPower(filepath.Join(base, file.Name(), maxPowerFileLongWindow))
 			if err != nil {
 				fmt.Println("unable to retreive max power for zone ", err)
 				continue
@@ -50,7 +50,7 @@ func capNode(base string, percentage int) error {
 			// We use floats to mitigate the possibility of an integer overflows.
 			powercap := uint64(math.Ceil(float64(maxPower) * (float64(percentage) / 100)))
 
-			err = capZone(filepath.Join(base, file.Name(), powerLimitFileShortWindow), powercap)
+			err = capZone(filepath.Join(base, file.Name(), powerLimitFileLongWindow), powercap)
 			if err != nil {
 				fmt.Println("unable to write powercap value: ", err)
 				continue
