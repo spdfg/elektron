@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -48,18 +47,25 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
+// TODO(rdelvalle): Add tests where capping fails
 func TestCapNode(t *testing.T) {
-	err := capNode(raplDir, 95)
+	capped, failed, err := capNode(raplDir, 95)
 	assert.NoError(t, err)
+	assert.Len(t, capped, 1)
+	assert.Nil(t, failed)
 
 	t.Run("bad-percentage", func(t *testing.T) {
-		err := capNode(raplDir, 1000)
+		capped, failed, err := capNode(raplDir, 1000)
 		assert.Error(t, err)
+		assert.Nil(t, capped)
+		assert.Nil(t, failed)
 	})
 
 	t.Run("zero-percent", func(t *testing.T) {
-		err := capNode(raplDir, 0)
+		capped, failed, err := capNode(raplDir, 0)
 		assert.Error(t, err)
+		assert.Nil(t, capped)
+		assert.Nil(t, failed)
 	})
 }
 
@@ -84,10 +90,7 @@ func TestCapZone(t *testing.T) {
 	err := capZone(limitFile, powercap)
 	assert.NoError(t, err)
 
-	newCapBytes, err := ioutil.ReadFile(limitFile)
-	assert.NoError(t, err)
-
-	newCap, err := strconv.ParseUint(strings.TrimSpace(string(newCapBytes)), 10, 64)
+	newCap, err := currentCap(limitFile)
 	assert.NoError(t, err)
 	assert.Equal(t, powercap, newCap)
 

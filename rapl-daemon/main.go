@@ -15,6 +15,13 @@ type Cap struct {
 	Percentage int
 }
 
+// CapResponse is the payload sent with information about the capping call
+type CapResponse struct {
+	CappedZones []string `json:"cappedZones"`
+	FailedZones []string `json:"failedZones"`
+	Error       *string  `json:"error"`
+}
+
 func main() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Unsupported endpoint %s", html.EscapeString(r.URL.Path))
@@ -26,19 +33,28 @@ func main() {
 
 // Handler for the powercapping HTTP API endpoint.
 func powercapEndpoint(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
 	var payload Cap
+	var response CapResponse
+
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&payload)
 	if err != nil {
-		http.Error(w, "error parsing payload: "+err.Error(), 400)
+		errorMsg := "error parsing payload: " + err.Error()
+		response.Error = &errorMsg
+		json.NewEncoder(w).Encode(response)
 		return
 	}
 
-	err = capNode(powercapDir, payload.Percentage)
+	cappedZones, failedZones, err := capNode(powercapDir, payload.Percentage)
 	if err != nil {
-		http.Error(w, err.Error(), 400)
-		return
+		errorMsg := err.Error()
+		response.Error = &errorMsg
 	}
 
-	fmt.Fprintf(w, "capped node at %d percent", payload.Percentage)
+	response.CappedZones = cappedZones
+	response.FailedZones = failedZones
+
+	json.NewEncoder(w).Encode(response)
 }

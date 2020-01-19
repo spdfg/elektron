@@ -19,19 +19,19 @@ const powerLimitFileLongWindow = "constraint_0_power_limit_uw"
 // capNode uses pseudo files made available by the Linux kernel
 // in order to capNode CPU power. More information is available at:
 // https://www.kernel.org/doc/html/latest/power/powercap/powercap.html
-func capNode(base string, percentage int) error {
+func capNode(base string, percentage int) ([]string, []string, error) {
 
 	if percentage <= 0 || percentage > 100 {
-		return fmt.Errorf("cap percentage must be between (0, 100]: %d", percentage)
+		return nil, nil, fmt.Errorf("cap percentage must be between 0 (non-inclusive) and 100 (inclusive): %d", percentage)
 	}
 
 	files, err := ioutil.ReadDir(base)
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
 
+	var capped, failed []string
 	for _, file := range files {
-
 		fields := strings.Split(file.Name(), ":")
 
 		// Fields should be in the form intel-rapl:X where X is the power zone
@@ -43,22 +43,28 @@ func capNode(base string, percentage int) error {
 		if fields[0] == raplPrefixCPU {
 			maxPower, err := maxPower(filepath.Join(base, file.Name(), maxPowerFileLongWindow))
 			if err != nil {
+				failed = append(failed, file.Name())
 				fmt.Println("unable to retreive max power for zone ", err)
 				continue
 			}
 
-			// We use floats to mitigate the possibility of an integer overflows.
+			// We use floats to mitigate the possibility of an integer overflow.
 			powercap := uint64(math.Ceil(float64(maxPower) * (float64(percentage) / 100)))
 
-			err = capZone(filepath.Join(base, file.Name(), powerLimitFileLongWindow), powercap)
-			if err != nil {
+			if err := capZone(filepath.Join(base, file.Name(), powerLimitFileLongWindow), powercap); err != nil {
+				failed = append(failed, file.Name())
 				fmt.Println("unable to write powercap value: ", err)
 				continue
 			}
+			capped = append(capped, file.Name())
 		}
 	}
 
-	return nil
+	if len(failed) > 0 {
+		return capped, failed, fmt.Errorf("some zones were not able to be powercapped")
+	}
+
+	return capped, nil, nil
 }
 
 // maxPower returns the value in float of the maximum watts a power zone can use.
@@ -87,4 +93,18 @@ func capZone(limitFile string, value uint64) error {
 		return err
 	}
 	return nil
+}
+
+func currentCap(limit string) (uint64, error) {
+	powercap, err := ioutil.ReadFile(limit)
+	if err != nil {
+		return 0, err
+	}
+
+	powercapuW, err := strconv.ParseUint(strings.TrimSpace(string(powercap)), 10, 64)
+	if err != nil {
+		return 0, err
+	}
+
+	return powercapuW, nil
 }
