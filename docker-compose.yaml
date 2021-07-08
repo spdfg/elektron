@@ -1,0 +1,103 @@
+# Copyright (C) 2018 spdfg
+#
+# This file is part of Elektron.
+#
+# Elektron is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Elektron is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Elektron.  If not, see <http://www.gnu.org/licenses/>.
+#
+version: "2"
+
+services:
+  zk:
+    image: rdelvalle/zookeeper
+    restart: on-failure
+    ports:
+    - "2181:2181"
+    environment:
+      ZK_CONFIG: tickTime=2000,initLimit=10,syncLimit=5,maxClientCnxns=128,forceSync=no,clientPort=2181
+      ZK_ID: 1
+    networks:
+      elektron-cluster:
+        ipv4_address: 19.16.4.3
+    logging:
+      driver: none
+        
+  mesos-master:
+    image: rdelvalle/mesos-master:1.5.1
+    restart: on-failure
+    ports:
+    - "5050:5050"
+    environment:
+      MESOS_ZK: zk://19.16.4.3:2181/mesos
+      MESOS_QUORUM: 1
+      MESOS_HOSTNAME: localhost
+      MESOS_CLUSTER: test-cluster
+      MESOS_REGISTRY: replicated_log
+      MESOS_WORK_DIR: /tmp/mesos
+    networks:
+      elektron-cluster:
+        ipv4_address: 19.16.4.4
+    logging:
+      driver: none
+    depends_on:
+    - zk
+
+  mesos-agent:
+    image: spdf/mesos-agent-elektron:1.5.1
+    pid: host
+    restart: on-failure
+    ports:
+    - "5051:5051"
+    environment:
+      MESOS_MASTER: zk://19.16.4.3:2181/mesos
+      MESOS_CONTAINERIZERS: mesos,docker
+      MESOS_ISOLATION: cgroups/cpu
+      MESOS_PORT: 5051
+      MESOS_HOSTNAME: localhost
+      MESOS_RESOURCES: ports(*):[11000-11999]
+      MESOS_SYSTEMD_ENABLE_SUPPORT: 'false'
+      MESOS_WORK_DIR: /tmp/mesos
+    networks:
+      elektron-cluster:
+        ipv4_address: 19.16.4.5
+    logging:
+      driver: none
+    volumes:
+    - /sys/fs/cgroup:/sys/fs/cgroup
+    - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+    - mesos-master
+
+  elektron:
+    image: spdf/elektron:v1
+    restart: on-failure
+    environment:
+      ELEKTRON_EXECUTABLE_NAME: elektron
+      ELEKTRON_WORKLOAD: workload_sample.json
+      ELEKTRON_MESOS_MASTER_LOCATION: 19.16.4.4:5050
+      ELEKTRON_LOGDIR_PREFIX: Elektron-Test-Run
+      HOST_IP: ${HOST_IP}
+    networks:
+      elektron-cluster:
+        ipv4_address: 19.16.4.6
+    volumes:
+      - ./:/elektron
+    depends_on:
+    - mesos-agent
+
+networks:
+  elektron-cluster:
+    ipam:
+      config:
+      - subnet: 19.16.4.0/16
+        gateway: 19.16.4.1
